@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavItem {
@@ -12,45 +11,42 @@ interface NavSection {
   items: NavItem[];
 }
 
+// Only sections/routes backed by real GL data or API endpoints
 const nav: NavSection[] = [
   {
     label: 'Finance',
     items: [
-      { label: 'Executive Dashboard', path: '/dashboard',  icon: '▦' },
-      { label: 'Close Cockpit',       path: '/close',      icon: '✓' },
-      { label: 'Explorer',            path: '/explorer',   icon: '◈' },
+      { label: 'Executive Dashboard', path: '/dashboard',   icon: '▦' },
+      { label: 'Close Cockpit',       path: '/close',       icon: '✓' },
+      { label: 'GL Explorer',         path: '/explorer',    icon: '◈' },
+      { label: 'Annotations / NLQ',   path: '/annotations', icon: '◎' },
     ],
   },
   {
     label: 'Administration',
     items: [
-      { label: 'Mapping Console',     path: '/admin/mappings',        icon: '⇄' },
-      { label: 'Onboarding Wizard',   path: '/admin/onboarding',      icon: '+' },
-      { label: 'Pipeline Health',     path: '/admin/pipeline-health', icon: '⚡' },
-      { label: 'BC Tenants',          path: '/admin/bc-tenants',      icon: '⊞' },
+      { label: 'Mapping Console',   path: '/admin/mappings',        icon: '⇄' },
+      { label: 'Pipeline Health',   path: '/admin/pipeline-health', icon: '⚡' },
+      { label: 'BC Tenants',        path: '/admin/bc-tenants',      icon: '⊞' },
     ],
   },
   {
-    label: 'Data Platform',
+    label: 'GL Data',
     items: [
-      { label: 'Canonical CoA',       path: '/admin/coa',            icon: '≡' },
-      { label: 'Dimensions',          path: '/admin/dimensions',     icon: '⊕' },
-      { label: 'Data Quality',        path: '/admin/dq',             icon: '◎' },
-      { label: 'Data Lineage',        path: '/admin/lineage',        icon: '⊸' },
-      { label: 'FX Translation',      path: '/admin/fx',             icon: '$' },
-      { label: 'IC Elimination',      path: '/admin/ic-elimination', icon: '⇌' },
+      { label: 'Canonical CoA',     path: '/admin/coa',            icon: '≡' },
+      { label: 'Data Quality',      path: '/admin/dq',             icon: '◎' },
+      { label: 'IC Elimination',    path: '/admin/ic-elimination', icon: '⇌' },
     ],
   },
   {
-    label: 'Security',
+    label: 'System',
     items: [
-      { label: 'Security & Compliance', path: '/admin/security', icon: '⚿' },
-      { label: 'API Status',            path: '/admin/api',      icon: '⟁' },
+      { label: 'API Status',        path: '/admin/api',      icon: '⟁' },
     ],
   },
 ];
 
-export const Sidebar: React.FC = () => {
+export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -78,4 +74,4 @@ export const Sidebar: React.FC = () => {
       ))}
     </aside>
   );
-};
+}

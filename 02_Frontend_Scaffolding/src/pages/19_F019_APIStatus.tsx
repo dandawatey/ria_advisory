@@ -1,102 +1,131 @@
 /**
- * F019 — API Layer Status
- * Admin page: endpoint registry, health, rate limits, API version status.
+ * F019 — API Status
+ * Shows health of the UFIP FastAPI backend and real data stats.
  */
+import { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import type { Status } from '../types';
+import { api } from '../api/client';
 
-interface Endpoint {
-  method: 'GET' | 'POST' | 'DELETE';
+interface EndpointRow {
+  method: string;
   path: string;
   description: string;
-  version: string;
-  p95Ms: number;
-  callsPerHour: number;
-  status: 'success' | 'warning' | 'error';
-  auth: string;
+  status: Status;
+  latencyMs: number | null;
 }
 
-const endpoints: Endpoint[] = [
-  { method: 'GET',  path: '/api/v1/dashboard/summary',          description: 'Executive dashboard KPI tiles',        version: 'v1', p95Ms: 980,  callsPerHour: 1240, status: 'success', auth: 'Bearer JWT' },
-  { method: 'GET',  path: '/api/v1/dashboard/pl',               description: 'Consolidated P&L table',              version: 'v1', p95Ms: 1820, callsPerHour: 890,  status: 'success', auth: 'Bearer JWT' },
-  { method: 'GET',  path: '/api/v1/entities/{id}/trial-balance', description: 'Entity trial balance',               version: 'v1', p95Ms: 1240, callsPerHour: 340,  status: 'success', auth: 'Bearer JWT + entity scope' },
-  { method: 'GET',  path: '/api/v1/close/{period}/status',      description: 'Close cockpit period status',         version: 'v1', p95Ms: 640,  callsPerHour: 210,  status: 'success', auth: 'Bearer JWT' },
-  { method: 'POST', path: '/api/v1/explorer/query',             description: 'Ad-hoc Gold query (GraphQL)',         version: 'v1', p95Ms: 4820, callsPerHour: 180,  status: 'warning', auth: 'Bearer JWT' },
-  { method: 'GET',  path: '/api/v1/pipeline/runs',              description: 'Pipeline run history',               version: 'v1', p95Ms: 420,  callsPerHour: 120,  status: 'success', auth: 'Bearer JWT' },
-  { method: 'POST', path: '/api/v1/pipeline/trigger',           description: 'On-demand pipeline trigger (admin)', version: 'v1', p95Ms: 1100, callsPerHour: 8,    status: 'success', auth: 'Bearer JWT + admin role' },
-  { method: 'GET',  path: '/api/v1/mappings/accounts',          description: 'Account mapping table',              version: 'v1', p95Ms: 380,  callsPerHour: 420,  status: 'success', auth: 'Bearer JWT' },
-  { method: 'POST', path: '/api/v1/mappings/accounts',          description: 'Propose account mapping',            version: 'v1', p95Ms: 290,  callsPerHour: 18,   status: 'success', auth: 'Bearer JWT + finance role' },
-  { method: 'GET',  path: '/api/v1/powerbi/embed-token',        description: 'Fetch Power BI embed token',         version: 'v1', p95Ms: 1800, callsPerHour: 310,  status: 'success', auth: 'Bearer JWT' },
-];
-
-const methodColor: Record<Endpoint['method'], string> = {
-  GET: 'badge-success', POST: 'badge-info', DELETE: 'badge-error',
-};
-
 export default function APIStatus() {
-  const avgP95 = Math.round(endpoints.reduce((s, e) => s + e.p95Ms, 0) / endpoints.length);
-  const totalCalls = endpoints.reduce((s, e) => s + e.callsPerHour, 0);
+  const [health, setHealth] = useState<'ok' | 'error' | 'checking'>('checking');
+  const [kpiData, setKpiData] = useState<{ total_entries: number; entity_count: number } | null>(null);
+  const [endpoints, setEndpoints] = useState<EndpointRow[]>([]);
+
+  useEffect(() => {
+    const BASE = 'http://localhost:8000';
+    const checks: { method: string; path: string; desc: string }[] = [
+      { method: 'GET', path: '/health',                    desc: 'API health check' },
+      { method: 'GET', path: '/api/dashboard/kpis',       desc: 'Dashboard KPIs' },
+      { method: 'GET', path: '/api/dashboard/entities',   desc: 'Entity summary' },
+      { method: 'GET', path: '/api/dashboard/pl-trend',   desc: 'P&L trend' },
+      { method: 'GET', path: '/api/entities/',            desc: 'Entity list' },
+      { method: 'GET', path: '/api/gl/stats',             desc: 'GL statistics' },
+      { method: 'GET', path: '/api/gl/accounts',          desc: 'GL accounts' },
+      { method: 'GET', path: '/api/gl/entries',           desc: 'GL entries (search)' },
+    ];
+
+    Promise.allSettled(
+      checks.map(async (c) => {
+        const start = Date.now();
+        const res = await fetch(`${BASE}${c.path}`);
+        const latency = Date.now() - start;
+        return { ...c, ok: res.ok, latency };
+      })
+    ).then((results) => {
+      const rows: EndpointRow[] = results.map((r, i) => {
+        if (r.status === 'fulfilled') {
+          return {
+            method: checks[i].method,
+            path: checks[i].path,
+            description: checks[i].desc,
+            status: (r.value.ok ? 'success' : 'error') as Status,
+            latencyMs: r.value.latency,
+          };
+        }
+        return {
+          method: checks[i].method,
+          path: checks[i].path,
+          description: checks[i].desc,
+          status: 'error' as Status,
+          latencyMs: null,
+        };
+      });
+      setEndpoints(rows);
+      setHealth(rows.every((r) => r.status === 'success') ? 'ok' : 'error');
+    });
+
+    // Also load KPI for summary
+    api.dashboard.kpis().then((k) => setKpiData(k)).catch(() => null);
+  }, []);
+
+  const successCount = endpoints.filter((e) => e.status === 'success').length;
+  const avgLatency = endpoints.filter((e) => e.latencyMs !== null).reduce((s, e) => s + (e.latencyMs ?? 0), 0) / Math.max(1, endpoints.filter((e) => e.latencyMs !== null).length);
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">API Layer Status</h1>
-        <p className="page-subtitle">
-          Versioned REST + GraphQL API — FastAPI backend, Databricks SQL Warehouse. (F019)
-        </p>
-        <div className="page-actions">
-          <a className="btn btn-secondary" href="/api/v1/docs" target="_blank">OpenAPI Docs ↗</a>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">API Status</h1>
+            <p className="page-subtitle">UFIP FastAPI backend · http://localhost:8000</p>
+          </div>
+          <a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+            Open API Docs ↗
+          </a>
         </div>
       </div>
 
-      <div className="card-grid card-grid-4 mb-24">
-        <div className="kpi-tile"><div className="kpi-label">Endpoints</div><div className="kpi-value">{endpoints.length}</div></div>
-        <div className="kpi-tile"><div className="kpi-label">Avg P95 Latency</div><div className="kpi-value">{avgP95}ms</div><div className="kpi-meta text-muted">Dashboard target &lt; 2500ms</div></div>
-        <div className="kpi-tile"><div className="kpi-label">Calls / Hour</div><div className="kpi-value">{totalCalls.toLocaleString()}</div></div>
-        <div className="kpi-tile"><div className="kpi-label">API Availability</div><div className="kpi-value" style={{ color: 'var(--color-success)' }}>99.97%</div><div className="kpi-meta text-muted">Target 99.9%</div></div>
-      </div>
-
-      {/* Rate limits */}
-      <div className="card mb-16">
-        <div className="card-title">Rate Limits</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-          <div style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 6 }}>
-            <div style={{ fontWeight: 600 }}>Per User</div>
-            <div style={{ color: 'var(--color-text-secondary)' }}>100 requests / minute</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+        <div className="card" style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: health === 'ok' ? 'var(--color-success)' : health === 'error' ? 'var(--color-error)' : 'var(--color-text-muted)' }}>
+            {health === 'checking' ? '…' : health === 'ok' ? 'Healthy' : 'Degraded'}
           </div>
-          <div style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 6 }}>
-            <div style={{ fontWeight: 600 }}>Per Group</div>
-            <div style={{ color: 'var(--color-text-secondary)' }}>1,000 requests / minute</div>
-          </div>
-          <div style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 6 }}>
-            <div style={{ fontWeight: 600 }}>Query Timeout (REST)</div>
-            <div style={{ color: 'var(--color-text-secondary)' }}>30 seconds → HTTP 503 + Retry-After</div>
-          </div>
-          <div style={{ padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: 6 }}>
-            <div style={{ fontWeight: 600 }}>Query Timeout (GraphQL/Explorer)</div>
-            <div style={{ color: 'var(--color-text-secondary)' }}>60 seconds → HTTP 503 + Retry-After</div>
-          </div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Overall Status</div>
+        </div>
+        <div className="card" style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>{endpoints.length > 0 ? `${successCount}/${endpoints.length}` : '…'}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Endpoints OK</div>
+        </div>
+        <div className="card" style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>{avgLatency > 0 ? `${Math.round(avgLatency)}ms` : '…'}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Avg Latency</div>
+        </div>
+        <div className="card" style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>{kpiData ? kpiData.total_entries.toLocaleString() : '…'}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>GL Entries in DB</div>
         </div>
       </div>
 
-      {/* Endpoint table */}
       <div className="card">
-        <div className="card-title">Endpoint Registry — v1</div>
+        <div className="card-title">Endpoint Health</div>
         <div className="table-wrap">
-          <table>
+          <table style={{ fontSize: 13 }}>
             <thead>
-              <tr><th>Method</th><th>Path</th><th>Description</th><th>P95</th><th>Calls/hr</th><th>Auth</th><th>Status</th></tr>
+              <tr>
+                <th>Method</th><th>Endpoint</th><th>Description</th>
+                <th style={{ textAlign: 'right' }}>Latency</th><th>Status</th>
+              </tr>
             </thead>
             <tbody>
-              {endpoints.map((e) => (
+              {endpoints.length === 0 ? (
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-muted)' }}>Checking endpoints…</td></tr>
+              ) : endpoints.map((e) => (
                 <tr key={e.path}>
-                  <td><span className={`badge ${methodColor[e.method]}`}>{e.method}</span></td>
+                  <td><span className="badge badge-info" style={{ fontSize: 10 }}>{e.method}</span></td>
                   <td className="table-mono" style={{ fontSize: 12 }}>{e.path}</td>
-                  <td style={{ fontSize: 12 }}>{e.description}</td>
-                  <td style={{ fontWeight: e.p95Ms > 2500 ? 700 : 400, color: e.p95Ms > 2500 ? 'var(--color-error)' : e.p95Ms > 1500 ? 'var(--color-warning)' : 'inherit' }}>
-                    {e.p95Ms}ms
+                  <td style={{ color: 'var(--color-text-secondary)' }}>{e.description}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: 12 }}>
+                    {e.latencyMs !== null ? `${e.latencyMs}ms` : '—'}
                   </td>
-                  <td>{e.callsPerHour.toLocaleString()}</td>
-                  <td style={{ fontSize: 11 }} className="text-muted">{e.auth}</td>
                   <td><StatusBadge status={e.status} /></td>
                 </tr>
               ))}

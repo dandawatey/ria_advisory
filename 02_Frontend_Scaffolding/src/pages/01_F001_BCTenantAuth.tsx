@@ -1,116 +1,152 @@
 /**
  * F001 — BC Tenant Authentication & Connectivity
  * Admin page: manage Entra ID app registrations and cert-based OAuth per tenant.
+ * Subsidiary list loaded from /api/entities/ (real data).
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
-import type { BCTenant } from '../types';
+import type { Status } from '../types';
+import { api } from '../api/client';
 
-const mockTenants: BCTenant[] = [
-  { subsidiaryCode: 'SUB01', subsidiaryName: 'Apex Capital Advisors LLC',       tenantId: 'a1b2c3d4-...', clientId: 'e5f6g7h8-...', certExpiry: '2025-09-15', authStatus: 'success', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB02', subsidiaryName: 'Blue Ridge Wealth Management',    tenantId: 'b2c3d4e5-...', clientId: 'f6g7h8i9-...', certExpiry: '2025-07-01', authStatus: 'warning', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB03', subsidiaryName: 'Clearwater Financial Group',      tenantId: 'c3d4e5f6-...', clientId: 'g7h8i9j0-...', certExpiry: '2025-11-20', authStatus: 'success', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB04', subsidiaryName: 'Dune Capital Partners',           tenantId: 'd4e5f6g7-...', clientId: 'h8i9j0k1-...', certExpiry: '2026-03-10', authStatus: 'success', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB05', subsidiaryName: 'Evergreen Investment Counsel',    tenantId: 'e5f6g7h8-...', clientId: 'i9j0k1l2-...', certExpiry: '2025-06-05', authStatus: 'error',   lastAuthTest: '2026-04-23 09:15', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB06', subsidiaryName: 'Franklin Street Advisors',        tenantId: 'f6g7h8i9-...', clientId: 'j0k1l2m3-...', certExpiry: '2025-12-30', authStatus: 'success', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB07', subsidiaryName: 'Greenfield Asset Management',     tenantId: 'g7h8i9j0-...', clientId: 'k1l2m3n4-...', certExpiry: '2026-01-15', authStatus: 'success', lastAuthTest: '2026-04-23 14:02', apiVersion: 'v2.0' },
-  { subsidiaryCode: 'SUB08', subsidiaryName: 'Harbor Light Wealth Advisors',    tenantId: 'h8i9j0k1-...', clientId: 'l2m3n4o5-...', certExpiry: '2025-08-22', authStatus: 'pending', lastAuthTest: 'Never',           apiVersion: 'v2.0' },
-];
+interface TenantRow {
+  code: string;
+  name: string;
+  tenantId: string;
+  clientId: string;
+  certExpiry: string;
+  authStatus: Status;
+  lastAuthTest: string;
+  apiVersion: string;
+}
 
-function certDaysRemaining(expiry: string): number {
-  return Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
+// Deterministic mock auth status per code (real auth requires BC API connection)
+function mockAuthStatus(code: string): Status {
+  const s: Record<string, Status> = {
+    IND: 'success', USA: 'success', PHILS: 'success', TUAS: 'success',
+    SYN: 'success', MXN: 'warning', GBP: 'success', ZAF: 'success',
+    CAN: 'success', PTY: 'success', TCAN: 'success', TOFF: 'success',
+    TBID: 'warning', TSUB: 'pending', AGG: 'pending', BOR: 'pending', GUA: 'pending',
+  };
+  return s[code] ?? 'pending';
+}
+
+function mockCertExpiry(code: string) {
+  const expiryMap: Record<string, string> = {
+    IND: '2027-03-15', USA: '2027-03-15', PHILS: '2027-04-01', TUAS: '2027-02-28',
+    SYN: '2027-01-10', MXN: '2026-08-31', GBP: '2027-03-15', ZAF: '2026-11-30',
+    CAN: '2027-03-15', PTY: '2027-02-15', TCAN: '2027-01-31', TOFF: '2026-12-31',
+    TBID: '2026-06-30', TSUB: '2026-06-30', AGG: '2026-09-15', BOR: '2026-09-15', GUA: '2026-09-15',
+  };
+  return expiryMap[code] ?? '2026-12-31';
 }
 
 export default function BCTenantAuth() {
-  const [selected, setSelected] = useState<BCTenant | null>(null);
-  const [testing, setTesting] = useState<string | null>(null);
+  const [tenants, setTenants] = useState<TenantRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
+  const [testingCode, setTestingCode] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    api.entities.list()
+      .then((entities) => {
+        const rows: TenantRow[] = entities.map((e, i) => ({
+          code: e.code,
+          name: e.name,
+          tenantId: `${e.code.toLowerCase()}-tenant-${(0xABCDEF + i * 0x1234).toString(16).slice(0, 8)}`,
+          clientId: `client-${(0xFEDCBA - i * 0x5678).toString(16).slice(0, 8)}`,
+          certExpiry: mockCertExpiry(e.code),
+          authStatus: mockAuthStatus(e.code),
+          lastAuthTest: new Date(Date.now() - i * 3600000).toISOString().slice(0, 16).replace('T', ' '),
+          apiVersion: 'v2.0',
+        }));
+        setTenants(rows);
+      })
+      .catch(() => setApiError(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = search
+    ? tenants.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.code.toLowerCase().includes(search.toLowerCase()))
+    : tenants;
 
   const handleTest = (code: string) => {
-    setTesting(code);
-    setTimeout(() => setTesting(null), 2000);
+    setTestingCode(code);
+    setTimeout(() => setTestingCode(null), 2000);
   };
+
+  const successCount = tenants.filter((t) => t.authStatus === 'success').length;
+  const warnCount    = tenants.filter((t) => t.authStatus === 'warning').length;
+  const pendingCount = tenants.filter((t) => t.authStatus === 'pending').length;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">BC Tenant Authentication</h1>
-        <p className="page-subtitle">
-          Manage Entra ID app registrations and certificate-based OAuth 2.0 connections for all 17 BC tenants. (F001)
-        </p>
-        <div className="page-actions">
-          <button className="btn btn-primary">+ Register Tenant</button>
-          <button className="btn btn-secondary">Rotate All Certs</button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">BC Tenant Authentication</h1>
+            <p className="page-subtitle">
+              Entra ID app registrations · Certificate-based OAuth · {tenants.length} tenants
+              {apiError && <span style={{ color: 'var(--color-warning)', marginLeft: 8 }}>⚠ API offline</span>}
+            </p>
+          </div>
+          <button className="btn btn-primary btn-sm">+ Register New Tenant</button>
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="card-grid card-grid-4 mb-24">
-        <div className="kpi-tile">
-          <div className="kpi-label">Total Tenants</div>
-          <div className="kpi-value">17</div>
-          <div className="kpi-meta text-muted">17 subsidiaries registered</div>
-        </div>
-        <div className="kpi-tile">
-          <div className="kpi-label">Auth Healthy</div>
-          <div className="kpi-value" style={{ color: 'var(--color-success)' }}>14</div>
-          <div className="kpi-meta text-muted">OAuth token valid</div>
-        </div>
-        <div className="kpi-tile">
-          <div className="kpi-label">Cert Expiring &lt;30d</div>
-          <div className="kpi-value" style={{ color: 'var(--color-warning)' }}>3</div>
-          <div className="kpi-meta text-muted">Rotation required</div>
-        </div>
-        <div className="kpi-tile">
-          <div className="kpi-label">Auth Failed</div>
-          <div className="kpi-value" style={{ color: 'var(--color-error)' }}>1</div>
-          <div className="kpi-meta text-muted">SUB05 — cert expired</div>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: 'Connected', count: successCount, color: 'var(--color-success)' },
+          { label: 'Warning',   count: warnCount,    color: 'var(--color-warning)' },
+          { label: 'Pending',   count: pendingCount, color: 'var(--color-text-muted)' },
+        ].map(({ label, count, color }) => (
+          <div key={label} className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color }}>{loading ? '…' : count}</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Tenant table */}
       <div className="card">
-        <div className="card-title">Tenant Registry</div>
+        <div className="flex items-center justify-between mb-16">
+          <div className="card-title" style={{ margin: 0 }}>Tenant Registry</div>
+          <input className="form-input" style={{ width: 220 }} placeholder="Search tenant…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
         <div className="table-wrap">
-          <table>
+          <table style={{ fontSize: 13 }}>
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Subsidiary</th>
-                <th>Tenant ID</th>
-                <th>Client ID</th>
-                <th>Cert Expiry</th>
-                <th>Days Left</th>
-                <th>Auth Status</th>
-                <th>Last Test</th>
-                <th>Actions</th>
+                <th>Code</th><th>Subsidiary</th><th>Tenant ID</th><th>Client ID</th>
+                <th>Cert Expiry</th><th>API Ver</th><th>Last Test</th><th>Status</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {mockTenants.map((t) => {
-                const days = certDaysRemaining(t.certExpiry);
-                const dayColor = days < 14 ? 'var(--color-error)' : days < 30 ? 'var(--color-warning)' : 'var(--color-success)';
+              {loading ? (
+                <tr><td colSpan={9} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+              ) : filtered.map((t) => {
+                const expiringSoon = new Date(t.certExpiry) < new Date(Date.now() + 90 * 86400000);
                 return (
-                  <tr key={t.subsidiaryCode} onClick={() => setSelected(t)} style={{ cursor: 'pointer' }}>
-                    <td><span className="badge badge-muted">{t.subsidiaryCode}</span></td>
-                    <td style={{ fontWeight: 500 }}>{t.subsidiaryName}</td>
-                    <td className="table-mono text-muted">{t.tenantId}</td>
-                    <td className="table-mono text-muted">{t.clientId}</td>
-                    <td className="table-mono">{t.certExpiry}</td>
-                    <td style={{ color: dayColor, fontWeight: 600 }}>{days}d</td>
-                    <td><StatusBadge status={t.authStatus} /></td>
-                    <td className="text-muted" style={{ fontSize: 12 }}>{t.lastAuthTest}</td>
+                  <tr key={t.code}>
+                    <td><span className="badge badge-muted">{t.code}</span></td>
+                    <td style={{ fontWeight: 500 }}>{t.name}</td>
+                    <td className="table-mono" style={{ fontSize: 11 }}>{t.tenantId}</td>
+                    <td className="table-mono" style={{ fontSize: 11 }}>{t.clientId}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={(e) => { e.stopPropagation(); handleTest(t.subsidiaryCode); }}
-                        >
-                          {testing === t.subsidiaryCode ? '…' : 'Test Auth'}
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={(e) => e.stopPropagation()}>
-                          Edit
-                        </button>
-                      </div>
+                      <span style={{ color: expiringSoon ? 'var(--color-warning)' : 'inherit', fontSize: 12 }}>
+                        {t.certExpiry} {expiringSoon && '⚠'}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: 11 }}>{t.apiVersion}</td>
+                    <td style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{t.lastAuthTest}</td>
+                    <td><StatusBadge status={t.authStatus} /></td>
+                    <td>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        disabled={testingCode === t.code}
+                        onClick={() => handleTest(t.code)}
+                      >
+                        {testingCode === t.code ? 'Testing…' : 'Test Auth'}
+                      </button>
                     </td>
                   </tr>
                 );
@@ -119,40 +155,6 @@ export default function BCTenantAuth() {
           </table>
         </div>
       </div>
-
-      {/* Detail panel */}
-      {selected && (
-        <div className="card mt-16">
-          <div className="flex items-center justify-between mb-16">
-            <div className="card-title" style={{ margin: 0 }}>
-              {selected.subsidiaryName} — Auth Detail
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={() => setSelected(null)}>✕ Close</button>
-          </div>
-          <div className="form-row form-row-2">
-            <div className="form-group">
-              <label className="form-label">Tenant ID (Entra ID Directory)</label>
-              <input className="form-input table-mono" readOnly value={selected.tenantId} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Client ID (App Registration)</label>
-              <input className="form-input table-mono" readOnly value={selected.clientId} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Key Vault Secret Reference</label>
-              <input className="form-input table-mono" readOnly value={`kv-ufip-prod/${selected.subsidiaryCode.toLowerCase()}-bc-cert`} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Certificate Expiry</label>
-              <input className="form-input" readOnly value={selected.certExpiry} />
-            </div>
-          </div>
-          <div className="mt-16" style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary btn-sm">Rotate Certificate</button>
-            <button className="btn btn-secondary btn-sm">Download Audit Log</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

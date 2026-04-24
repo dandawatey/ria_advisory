@@ -1,133 +1,139 @@
 /**
- * F007 — Canonical Chart of Accounts Mapping
- * Admin page: CoA hierarchy tree, mapping workbench, unmapped account queue.
+ * F007 — Canonical Chart of Accounts
+ * Shows all GL accounts from the real data, grouped by category.
+ * Source: /api/gl/accounts
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { api } from '../api/client';
 
-interface CoANode {
-  id: string;
-  name: string;
-  type: 'Revenue' | 'Expense' | 'Asset' | 'Liability' | 'Equity';
-  fsLine: 'P&L' | 'Balance Sheet';
-  isIC: boolean;
-  level: number;
-  childCount: number;
+interface AccountRow {
+  gl_account_no: string;
+  gl_account_name: string | null;
+  entity_count: number;
+  total_amount: number;
+  category: string;
 }
 
-const mockCoA: CoANode[] = [
-  { id: '1000', name: 'Revenue',              type: 'Revenue',   fsLine: 'P&L',           isIC: false, level: 1, childCount: 5 },
-  { id: '1100', name: 'Advisory Fees',        type: 'Revenue',   fsLine: 'P&L',           isIC: false, level: 2, childCount: 3 },
-  { id: '1200', name: 'Management Fees',      type: 'Revenue',   fsLine: 'P&L',           isIC: false, level: 2, childCount: 2 },
-  { id: '1900', name: 'IC Management Fees',   type: 'Revenue',   fsLine: 'P&L',           isIC: true,  level: 2, childCount: 0 },
-  { id: '2000', name: 'Operating Expenses',   type: 'Expense',   fsLine: 'P&L',           isIC: false, level: 1, childCount: 8 },
-  { id: '2100', name: 'Compensation',         type: 'Expense',   fsLine: 'P&L',           isIC: false, level: 2, childCount: 4 },
-  { id: '2200', name: 'Technology',           type: 'Expense',   fsLine: 'P&L',           isIC: false, level: 2, childCount: 3 },
-  { id: '3000', name: 'Cash & Equivalents',   type: 'Asset',     fsLine: 'Balance Sheet', isIC: false, level: 1, childCount: 2 },
-  { id: '4000', name: 'Accounts Receivable',  type: 'Asset',     fsLine: 'Balance Sheet', isIC: false, level: 1, childCount: 3 },
-  { id: '5000', name: 'Accounts Payable',     type: 'Liability', fsLine: 'Balance Sheet', isIC: false, level: 1, childCount: 2 },
-  { id: '5900', name: 'IC Payable',           type: 'Liability', fsLine: 'Balance Sheet', isIC: true,  level: 1, childCount: 0 },
-  { id: '6000', name: 'Equity',               type: 'Equity',    fsLine: 'Balance Sheet', isIC: false, level: 1, childCount: 3 },
-];
+function categorize(acct: string): string {
+  if (acct.startsWith('1')) return 'Assets';
+  if (acct.startsWith('2')) return 'Liabilities';
+  if (acct.startsWith('3')) return 'Equity';
+  if (acct.startsWith('4')) return 'Revenue';
+  if (acct.startsWith('5')) return 'Cost of Sales';
+  if (acct.startsWith('6')) return 'Operating Expenses';
+  if (acct.startsWith('7')) return 'Other Income';
+  if (acct.startsWith('8')) return 'Tax';
+  if (acct.startsWith('9')) return 'Suspense / System';
+  return 'Other';
+}
 
-const unmappedAccounts = [
-  { sub: 'SUB02', localNo: '44020', localName: 'Digital Marketing', mappingSuggestion: '2200 — Technology', glRows: 312 },
-  { sub: 'SUB05', localNo: '91001', localName: 'Interco Loan Recv', mappingSuggestion: '4000 — Accounts Receivable', glRows: 8 },
-  { sub: 'SUB08', localNo: '10500', localName: 'Petty Cash Reserve', mappingSuggestion: '3000 — Cash & Equivalents', glRows: 2 },
-];
+function fmtUSD(n: number) {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000)     return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+  return `${sign}$${abs.toFixed(0)}`;
+}
 
-const typeColor: Record<CoANode['type'], string> = {
-  Revenue: 'badge-success', Expense: 'badge-error', Asset: 'badge-info', Liability: 'badge-warning', Equity: 'badge-muted',
-};
+const CATEGORIES = ['Assets', 'Liabilities', 'Equity', 'Revenue', 'Cost of Sales', 'Operating Expenses', 'Other Income', 'Tax', 'Suspense / System', 'Other'];
 
 export default function CanonicalCoA() {
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
   const [search, setSearch] = useState('');
-  const filtered = mockCoA.filter((n) =>
-    n.name.toLowerCase().includes(search.toLowerCase()) || n.id.includes(search)
-  );
+  const [catFilter, setCatFilter] = useState('All');
+
+  useEffect(() => {
+    api.gl.accounts()
+      .then((rows) => setAccounts(rows.map((r) => ({ ...r, category: categorize(r.gl_account_no) }))))
+      .catch(() => setApiError(true))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = accounts.filter((a) => {
+    const matchCat = catFilter === 'All' || a.category === catFilter;
+    const matchSearch = !search ||
+      a.gl_account_no.includes(search) ||
+      (a.gl_account_name ?? '').toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const byCategory = CATEGORIES.reduce<Record<string, number>>((acc, cat) => {
+    acc[cat] = accounts.filter((a) => a.category === cat).length;
+    return acc;
+  }, {});
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Canonical Chart of Accounts</h1>
-        <p className="page-subtitle">
-          Group-level canonical CoA hierarchy and subsidiary account mapping workbench. (F007)
-        </p>
-        <div className="page-actions">
-          <button className="btn btn-primary">+ Add Canonical Account</button>
-          <button className="btn btn-secondary">Export CoA</button>
-          <button className="btn btn-secondary">Import Mappings CSV</button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Chart of Accounts</h1>
+            <p className="page-subtitle">
+              {accounts.length} distinct GL accounts across all 17 subsidiaries
+              {apiError && <span style={{ color: 'var(--color-warning)', marginLeft: 8 }}>⚠ API offline</span>}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="form-input" style={{ width: 200 }} placeholder="Search account…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select className="form-select" style={{ width: 180 }} value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+              <option value="All">All categories</option>
+              {CATEGORIES.filter((c) => (byCategory[c] ?? 0) > 0).map((c) => (
+                <option key={c} value={c}>{c} ({byCategory[c]})</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {unmappedAccounts.length > 0 && (
-        <div className="alert alert-warning mb-24">
-          ⚠ <strong>{unmappedAccounts.length} unmapped accounts</strong> are blocking Gold promotion for their subsidiaries.
-          Assign canonical mappings below or in the mapping workbench.
-        </div>
-      )}
+      {/* Category summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>
+        {['Assets', 'Liabilities', 'Revenue', 'Operating Expenses', 'Cost of Sales'].map((cat) => (
+          <div
+            key={cat}
+            className="card"
+            style={{ padding: '10px 14px', cursor: 'pointer', border: catFilter === cat ? '2px solid var(--color-primary)' : '1px solid var(--color-border)' }}
+            onClick={() => setCatFilter(catFilter === cat ? 'All' : cat)}
+          >
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{loading ? '…' : byCategory[cat] ?? 0}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{cat}</div>
+          </div>
+        ))}
+      </div>
 
-      <div className="card-grid card-grid-2">
-        {/* CoA hierarchy */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-16">
-            <div className="card-title" style={{ margin: 0 }}>Canonical CoA ({mockCoA.length} nodes)</div>
-            <input className="form-input" placeholder="Search…" style={{ width: 180 }} value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="card">
+        <div className="flex items-center justify-between mb-12">
+          <div className="card-title" style={{ margin: 0 }}>
+            GL Accounts {catFilter !== 'All' ? `— ${catFilter}` : ''} ({filtered.length})
           </div>
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr><th>ID</th><th>Account Name</th><th>Type</th><th>F/S</th><th>IC</th></tr>
-              </thead>
-              <tbody>
-                {filtered.map((n) => (
-                  <tr key={n.id}>
-                    <td className="table-mono">{n.id}</td>
-                    <td style={{ paddingLeft: n.level === 2 ? 24 : 0, fontWeight: n.level === 1 ? 700 : 400 }}>
-                      {n.level === 2 && <span style={{ color: 'var(--color-text-muted)' }}>└ </span>}
-                      {n.name}
-                    </td>
-                    <td><span className={`badge ${typeColor[n.type]}`}>{n.type}</span></td>
-                    <td><span className="badge badge-muted">{n.fsLine}</span></td>
-                    <td>{n.isIC && <span className="badge badge-warning">IC</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {catFilter !== 'All' && <button className="btn btn-secondary btn-sm" onClick={() => setCatFilter('All')}>Clear filter</button>}
         </div>
-
-        {/* Unmapped queue */}
-        <div className="card">
-          <div className="card-title">
-            Unmapped Accounts Queue
-            <span className="badge badge-error" style={{ marginLeft: 8 }}>{unmappedAccounts.length}</span>
-          </div>
-          {unmappedAccounts.map((u) => (
-            <div key={`${u.sub}-${u.localNo}`} style={{ padding: '12px', border: '1px solid var(--color-border)', borderRadius: 6, marginBottom: 10 }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="badge badge-muted">{u.sub}</span>
-                  <span className="table-mono" style={{ marginLeft: 8, fontWeight: 600 }}>{u.localNo}</span>
-                  <span style={{ marginLeft: 8, fontSize: 13 }}>{u.localName}</span>
-                </div>
-                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{u.glRows} GL rows affected</span>
-              </div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select className="form-select" style={{ flex: 1, fontSize: 12 }}>
-                  <option>— Select canonical account —</option>
-                  {mockCoA.map((n) => (
-                    <option key={n.id} value={n.id} selected={`${n.id} — ${n.name}` === u.mappingSuggestion}>
-                      {n.id} — {n.name}
-                    </option>
-                  ))}
-                </select>
-                <button className="btn btn-primary btn-sm">Propose Mapping</button>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
-                Suggested: <strong>{u.mappingSuggestion}</strong>
-              </div>
-            </div>
-          ))}
+        <div className="table-wrap" style={{ maxHeight: 560, overflowY: 'auto' }}>
+          <table style={{ fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th>Account No</th><th>Account Name</th><th>Category</th>
+                <th style={{ textAlign: 'right' }}>Entities</th>
+                <th style={{ textAlign: 'right' }}>Net Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+              ) : filtered.map((a) => (
+                <tr key={a.gl_account_no}>
+                  <td className="table-mono" style={{ fontWeight: 600 }}>{a.gl_account_no}</td>
+                  <td>{a.gl_account_name ?? <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
+                  <td><span className="badge badge-muted" style={{ fontSize: 10 }}>{a.category}</span></td>
+                  <td style={{ textAlign: 'right' }}>{a.entity_count}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 500, color: a.total_amount < 0 ? 'var(--color-error)' : 'inherit' }}>
+                    {fmtUSD(a.total_amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -20,11 +20,11 @@ def entity_summary(code: str):
     rows = query("""
         SELECT
             subsidiary_code AS code, subsidiary_name AS name,
-            SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)  AS revenue,
-            SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END)  AS cogs,
-            SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END)  AS opex,
-            SUM(CASE WHEN gl_account_no LIKE '1%%' THEN amount ELSE 0 END)  AS total_assets,
-            SUM(CASE WHEN gl_account_no LIKE '2%%' THEN amount ELSE 0 END)  AS total_liabilities,
+            -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END)  AS opex,
+             SUM(CASE WHEN gl_account_no LIKE '1%%' THEN amount ELSE 0 END)  AS total_assets,
+            -SUM(CASE WHEN gl_account_no LIKE '2%%' THEN amount ELSE 0 END)  AS total_liabilities,
             COUNT(*)                                                           AS entry_count,
             MIN(posting_date)                                                  AS earliest_date,
             MAX(posting_date)                                                  AS latest_date
@@ -43,14 +43,14 @@ def entity_trial_balance(code: str):
     return query("""
         SELECT
             gl_account_no,
-            gl_account_name,
+            MAX(gl_account_name) AS gl_account_name,
             SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END)  AS debit,
             SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END)  AS credit,
             SUM(amount)                                         AS net_balance
         FROM gl_unified
         WHERE subsidiary_code = %s
           AND gl_account_no NOT IN ('999999')
-        GROUP BY gl_account_no, gl_account_name
+        GROUP BY gl_account_no
         ORDER BY gl_account_no
     """, (code.upper(),))
 
@@ -73,17 +73,25 @@ def entity_gl_entries(code: str, limit: int = 500, offset: int = 0):
 
 @router.get("/{code}/pl-by-account")
 def entity_pl_by_account(code: str):
-    """P&L grouped by account for the entity."""
     return query("""
         SELECT
+            CASE
+                WHEN gl_account_no LIKE '4%%' THEN 'Revenue'
+                WHEN gl_account_no LIKE '5%%' THEN 'COGS'
+                WHEN gl_account_no LIKE '6%%' THEN 'Operating Expenses'
+                WHEN gl_account_no LIKE '7%%' THEN 'Other Income'
+                WHEN gl_account_no LIKE '8%%' THEN 'Tax'
+                ELSE 'Other'
+            END                       AS account_category,
             gl_account_no,
-            gl_account_name,
+            MAX(gl_account_name)      AS gl_account_name,
             department_code,
-            SUM(amount)  AS total_amount,
-            COUNT(*)     AS entry_count
+            SUM(amount)               AS total_amount,
+            COUNT(*)                  AS entry_count
         FROM gl_unified
         WHERE subsidiary_code = %s
           AND gl_account_no NOT IN ('999999')
-        GROUP BY gl_account_no, gl_account_name, department_code
-        ORDER BY gl_account_no
+          AND gl_account_no ~ '^[4-8]'
+        GROUP BY account_category, gl_account_no, department_code
+        ORDER BY account_category, gl_account_no
     """, (code.upper(),))
