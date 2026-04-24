@@ -138,6 +138,21 @@ export interface AccountSummaryRow {
   category: string; account_count: number; entry_count: number;
   raw_sum: number; display_amount: number;
 }
+export interface CompletenessSummary {
+  total_entries: number; unnamed_account_entries: number;
+  no_dept_entries: number; no_vertical_entries: number;
+  suspense_entries: number; suspense_net: number;
+}
+export interface EntityCoverageRow {
+  subsidiary_code: string; subsidiary_name: string;
+  months_present: number; from_date: string; to_date: string;
+  total_entries: number; coverage_pct: number;
+}
+export interface MonthlyVolumeRow { month: string; entry_count: number; }
+export interface ExpenseAccountRow {
+  gl_account_no: string; gl_account_name: string | null;
+  total_amount: number; entry_count: number; entity_count: number;
+}
 
 // ── API calls ─────────────────────────────────────────────────────────────────
 
@@ -199,6 +214,11 @@ export const api = {
       get<VerticalPLRow[]>(`/api/analytics/vertical-pl${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
     accountSummary: (subsidiary?: string) =>
       get<AccountSummaryRow[]>(`/api/analytics/account-summary${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
+    completenessSummary: () => get<CompletenessSummary>('/api/analytics/completeness-summary'),
+    entityCoverage: () => get<EntityCoverageRow[]>('/api/analytics/entity-coverage'),
+    monthlyVolume: () => get<MonthlyVolumeRow[]>('/api/analytics/monthly-volume'),
+    expenseAccounts: (subsidiary?: string) =>
+      get<ExpenseAccountRow[]>(`/api/analytics/expense-accounts${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
   },
   gl: {
     entries: (params: Record<string, string | number>) => {

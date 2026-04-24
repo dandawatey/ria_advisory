@@ -345,3 +345,87 @@ def account_summary(subsidiary: Optional[str] = None):
         GROUP BY category
         ORDER BY ABS(SUM(amount)) DESC
     """, params)
+
+
+# ── 11. Completeness Summary ──────────────────────────────────────────────────
+
+@router.get("/completeness-summary")
+def completeness_summary():
+    """Single-row completeness scorecard across all GL entries."""
+    rows = query("""
+        SELECT
+            COUNT(*)                                                                     AS total_entries,
+            COUNT(*) FILTER (WHERE gl_account_name IS NULL)                             AS unnamed_account_entries,
+            COUNT(*) FILTER (WHERE department_code IS NULL OR department_code = '')     AS no_dept_entries,
+            COUNT(*) FILTER (WHERE vertical_code IS NULL OR vertical_code = '')         AS no_vertical_entries,
+            COUNT(*) FILTER (WHERE gl_account_no = '999999')                            AS suspense_entries,
+            SUM(CASE WHEN gl_account_no = '999999' THEN amount ELSE 0 END)              AS suspense_net
+        FROM gl_unified
+    """)
+    return rows[0] if rows else {}
+
+
+# ── 12. Entity Coverage (months present per subsidiary) ───────────────────────
+
+@router.get("/entity-coverage")
+def entity_coverage():
+    """Per-subsidiary month coverage — how many of 12 possible months have data."""
+    return query("""
+        SELECT
+            subsidiary_code,
+            subsidiary_name,
+            COUNT(DISTINCT DATE_TRUNC('month', posting_date)) AS months_present,
+            MIN(posting_date)                                  AS from_date,
+            MAX(posting_date)                                  AS to_date,
+            COUNT(*)                                           AS total_entries,
+            ROUND(100.0 * COUNT(DISTINCT DATE_TRUNC('month', posting_date)) / 12.0, 2) AS coverage_pct
+        FROM gl_unified
+        WHERE posting_date IS NOT NULL
+        GROUP BY subsidiary_code, subsidiary_name
+        ORDER BY months_present DESC, subsidiary_code
+    """)
+
+
+# ── 13. Monthly Entry Volume ───────────────────────────────────────────────────
+
+@router.get("/monthly-volume")
+def monthly_volume():
+    """Entry count per month — used to highlight partial/open months."""
+    return query("""
+        SELECT
+            TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS month,
+            COUNT(*) AS entry_count
+        FROM gl_unified
+        WHERE posting_date IS NOT NULL
+        GROUP BY DATE_TRUNC('month', posting_date)
+        ORDER BY DATE_TRUNC('month', posting_date)
+    """)
+
+
+# ── 14. Expense Accounts (top 30 COGS + OpEx by absolute value) ───────────────
+
+@router.get("/expense-accounts")
+def expense_accounts(subsidiary: Optional[str] = None):
+    """Top 30 GL accounts in 5xx/6xx by absolute spend magnitude."""
+    filters = [
+        "(gl_account_no LIKE '5%%' OR gl_account_no LIKE '6%%')",
+        "gl_account_no NOT IN ('999999')",
+    ]
+    params: list = []
+    if subsidiary:
+        filters.append("subsidiary_code = %s")
+        params.append(subsidiary.upper())
+    where = " AND ".join(filters)
+    return query(f"""
+        SELECT
+            gl_account_no,
+            MAX(gl_account_name)            AS gl_account_name,
+            SUM(amount)                     AS total_amount,
+            COUNT(*)                        AS entry_count,
+            COUNT(DISTINCT subsidiary_code) AS entity_count
+        FROM gl_unified
+        WHERE {where}
+        GROUP BY gl_account_no
+        ORDER BY ABS(SUM(amount)) DESC
+        LIMIT 30
+    """, params)

@@ -18,9 +18,18 @@ const nav: NavSection[] = [
     items: [
       { label: 'Executive Dashboard', path: '/dashboard',   icon: '▦' },
       { label: 'Close Cockpit',       path: '/close',       icon: '✓' },
-      { label: 'GL Explorer',         path: '/explorer',    icon: '◈' },
-      { label: 'Analytics',            path: '/analytics',   icon: '◉' },
+      { label: 'Analytics',           path: '/analytics',   icon: '◉' },
       { label: 'Annotations / NLQ',   path: '/annotations', icon: '◎' },
+    ],
+  },
+  {
+    label: 'GL',
+    items: [
+      { label: 'GL Explorer',         path: '/explorer',    icon: '◈' },
+      { label: 'GL Insights',         path: '/gl-insights', icon: '◑' },
+      { label: 'Canonical CoA',       path: '/admin/coa',   icon: '≡' },
+      { label: 'Data Quality',        path: '/admin/dq',    icon: '◎' },
+      { label: 'IC Elimination',      path: '/admin/ic-elimination', icon: '⇌' },
     ],
   },
   {
@@ -29,14 +38,6 @@ const nav: NavSection[] = [
       { label: 'Mapping Console',   path: '/admin/mappings',        icon: '⇄' },
       { label: 'Pipeline Health',   path: '/admin/pipeline-health', icon: '⚡' },
       { label: 'BC Tenants',        path: '/admin/bc-tenants',      icon: '⊞' },
-    ],
-  },
-  {
-    label: 'GL Data',
-    items: [
-      { label: 'Canonical CoA',     path: '/admin/coa',            icon: '≡' },
-      { label: 'Data Quality',      path: '/admin/dq',             icon: '◎' },
-      { label: 'IC Elimination',    path: '/admin/ic-elimination', icon: '⇌' },
     ],
   },
   {

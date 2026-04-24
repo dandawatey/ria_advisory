@@ -16,6 +16,7 @@ import APIStatus          from './pages/19_F019_APIStatus';
 import MappingConsole     from './pages/21_F021_MappingConsole';
 import PipelineHealth     from './pages/23_F023_PipelineHealth';
 import Analytics          from './pages/25_F025_Analytics';
+import DataInsights       from './pages/26_F026_DataInsights';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           {/* Finance */}
           <Route path="/dashboard"      element={<ExecutiveDashboard />} />
           <Route path="/analytics"      element={<Analytics />} />
+          <Route path="/gl-insights"    element={<DataInsights />} />
           <Route path="/close"          element={<CloseCockpit />} />
           <Route path="/entities/:id"   element={<EntityDetail />} />
           <Route path="/explorer"       element={<Explorer />} />
