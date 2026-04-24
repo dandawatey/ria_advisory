@@ -90,6 +90,55 @@ export interface GLStats {
   net_amount: number;
 }
 
+// ── Analytics types ───────────────────────────────────────────────────────────
+
+export interface PLWaterfallRow {
+  month: string; revenue: number; cogs: number; opex: number;
+  other_income: number; tax: number; net_income: number;
+}
+export interface EntityContributionRow {
+  subsidiary_code: string; subsidiary_name: string;
+  revenue: number; cogs: number; opex: number;
+  gross_margin_pct: number | null; revenue_share_pct: number;
+}
+export interface RollingTrendRow {
+  subsidiary_code: string; subsidiary_name: string;
+  month: string; revenue: number; expenses: number;
+}
+export interface DeptHeatmapRow {
+  department_code: string; vertical_code: string | null;
+  month: string; cogs: number; opex: number;
+  total_spend: number; entry_count: number;
+}
+export interface TopAccountRow {
+  gl_account_no: string; gl_account_name: string | null;
+  display_amount: number; abs_amount: number;
+  entry_count: number; entity_count: number;
+}
+export interface DocTypeMixRow {
+  document_type: string; entry_count: number;
+  total_absolute_value: number; pct_of_entries: number;
+}
+export interface SuspenseRow {
+  subsidiary_code: string; subsidiary_name: string;
+  entry_count: number; net_balance: number;
+  earliest: string; latest: string;
+}
+export interface MoMChangeRow {
+  subsidiary_code: string; subsidiary_name: string;
+  current_revenue: number; prior_revenue: number;
+  revenue_delta: number; revenue_delta_pct: number | null;
+  current_opex: number; prior_opex: number; opex_delta: number;
+}
+export interface VerticalPLRow {
+  vertical_code: string; revenue: number; cogs: number;
+  opex: number; entry_count: number; entity_count: number;
+}
+export interface AccountSummaryRow {
+  category: string; account_count: number; entry_count: number;
+  raw_sum: number; display_amount: number;
+}
+
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -109,6 +158,47 @@ export const api = {
       get<{ gl_account_no: string; gl_account_name: string; department_code: string; total_amount: number }[]>(
         `/api/entities/${code}/pl-by-account`
       ),
+  },
+  analytics: {
+    plWaterfall: (subsidiary?: string) =>
+      get<PLWaterfallRow[]>(`/api/analytics/pl-waterfall${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
+    entityContribution: () => get<EntityContributionRow[]>('/api/analytics/entity-contribution'),
+    rollingTrend: (subsidiary?: string) =>
+      get<RollingTrendRow[]>(`/api/analytics/rolling-trend${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
+    deptHeatmap: (subsidiary?: string, month?: string) => {
+      const qs = new URLSearchParams();
+      if (subsidiary) qs.set('subsidiary', subsidiary);
+      if (month) qs.set('month', month);
+      const s = qs.toString();
+      return get<DeptHeatmapRow[]>(`/api/analytics/department-heatmap${s ? `?${s}` : ''}`);
+    },
+    topAccounts: (params: { account_prefix?: string; subsidiary?: string; month?: string; limit?: number }) => {
+      const qs = new URLSearchParams();
+      if (params.account_prefix !== undefined) qs.set('account_prefix', params.account_prefix);
+      if (params.subsidiary) qs.set('subsidiary', params.subsidiary);
+      if (params.month) qs.set('month', params.month);
+      if (params.limit) qs.set('limit', String(params.limit));
+      return get<TopAccountRow[]>(`/api/analytics/top-accounts?${qs}`);
+    },
+    docTypeMix: (subsidiary?: string, month?: string) => {
+      const qs = new URLSearchParams();
+      if (subsidiary) qs.set('subsidiary', subsidiary);
+      if (month) qs.set('month', month);
+      const s = qs.toString();
+      return get<DocTypeMixRow[]>(`/api/analytics/doc-type-mix${s ? `?${s}` : ''}`);
+    },
+    suspenseMonitor: () => get<SuspenseRow[]>('/api/analytics/suspense-monitor'),
+    momChange: (currentMonth?: string, priorMonth?: string) => {
+      const qs = new URLSearchParams();
+      if (currentMonth) qs.set('current_month', currentMonth);
+      if (priorMonth) qs.set('prior_month', priorMonth);
+      const s = qs.toString();
+      return get<MoMChangeRow[]>(`/api/analytics/mom-change${s ? `?${s}` : ''}`);
+    },
+    verticalPL: (subsidiary?: string) =>
+      get<VerticalPLRow[]>(`/api/analytics/vertical-pl${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
+    accountSummary: (subsidiary?: string) =>
+      get<AccountSummaryRow[]>(`/api/analytics/account-summary${subsidiary ? `?subsidiary=${subsidiary}` : ''}`),
   },
   gl: {
     entries: (params: Record<string, string | number>) => {

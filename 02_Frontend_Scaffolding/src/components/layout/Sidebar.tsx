@@ -19,6 +19,7 @@ const nav: NavSection[] = [
       { label: 'Executive Dashboard', path: '/dashboard',   icon: '▦' },
       { label: 'Close Cockpit',       path: '/close',       icon: '✓' },
       { label: 'GL Explorer',         path: '/explorer',    icon: '◈' },
+      { label: 'Analytics',            path: '/analytics',   icon: '◉' },
       { label: 'Annotations / NLQ',   path: '/annotations', icon: '◎' },
     ],
   },
