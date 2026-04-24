@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS gl_unified (
     shortcut_dim_7_code     VARCHAR(120),
     shortcut_dim_8_code     VARCHAR(120),
 
+    source_file             VARCHAR(200),           -- original Excel file name
     loaded_at               TIMESTAMP DEFAULT NOW()
 );
 

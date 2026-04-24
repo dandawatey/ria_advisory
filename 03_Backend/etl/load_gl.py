@@ -92,7 +92,7 @@ COL_MAP = {
 }
 
 DB_COLS = [
-    "subsidiary_name", "subsidiary_code",
+    "subsidiary_name", "subsidiary_code", "source_file",
     "posting_date", "document_type", "document_no",
     "gl_account_no", "gl_account_name", "description", "customer_or_vendor_name",
     "project_no", "billable_non_billable", "department_code", "vertical_code",
@@ -142,7 +142,7 @@ def clean_int(val) -> Optional[int]:
     return int(v) if v is not None else None
 
 
-def load_file(conn, xlsx_path: Path, subsidiary_name: str, subsidiary_code: str) -> int:
+def load_file(conn, xlsx_path: Path, subsidiary_name: str, subsidiary_code: str, source_file: str) -> int:
     df = pd.read_excel(xlsx_path, sheet_name="General Ledger Entries", dtype=str)
 
     # Rename columns using the map (ignore columns not in map)
@@ -156,6 +156,7 @@ def load_file(conn, xlsx_path: Path, subsidiary_name: str, subsidiary_code: str)
         record = (
             subsidiary_name,
             subsidiary_code,
+            source_file,
             pd.to_datetime(g("posting_date"), errors="coerce").date() if g("posting_date") else None,
             clean_str(g("document_type")),
             clean_str(g("document_no")),
@@ -222,7 +223,7 @@ def main():
             log.warning("File not found: %s", path)
             continue
         try:
-            n = load_file(conn, path, sub_name, sub_code)
+            n = load_file(conn, path, sub_name, sub_code, fname)
             log.info("  %-45s → %d rows", fname, n)
             total += n
         except Exception as exc:
