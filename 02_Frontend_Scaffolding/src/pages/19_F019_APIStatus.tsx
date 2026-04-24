@@ -2,7 +2,6 @@
  * F019 — API Layer Status
  * Admin page: endpoint registry, health, rate limits, API version status.
  */
-import React from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 
 interface Endpoint {

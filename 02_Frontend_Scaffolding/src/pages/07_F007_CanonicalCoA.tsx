@@ -2,7 +2,7 @@
  * F007 — Canonical Chart of Accounts Mapping
  * Admin page: CoA hierarchy tree, mapping workbench, unmapped account queue.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 interface CoANode {
   id: string;

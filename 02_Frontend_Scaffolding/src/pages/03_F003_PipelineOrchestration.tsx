@@ -4,6 +4,7 @@
  */
 import React, { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import type { Status } from '../types';
 
 interface Schedule {
   id: string;
@@ -23,7 +24,7 @@ const mockSchedules: Schedule[] = [
   { id: 'sched-004', name: 'Weekend Reconciliation', cron: '0 8 * * 6',    description: 'Full reload for reconciliation',            lastRun: '2026-04-19 08:00 ET', nextRun: '2026-04-26 08:00 ET', status: 'success', entityScope: 'ALL' },
 ];
 
-const stages = [
+const stages: { id: number; name: string; status: Status; duration: string; entities: number; rows: number }[] = [
   { id: 1, name: 'Extract → Bronze',     status: 'success', duration: '4m 32s',  entities: 12, rows: 74_231 },
   { id: 2, name: 'Bronze → Silver',      status: 'success', duration: '6m 18s',  entities: 12, rows: 73_892 },
   { id: 3, name: 'DQ Check',             status: 'warning', duration: '1m 45s',  entities: 12, rows: 73_892 },

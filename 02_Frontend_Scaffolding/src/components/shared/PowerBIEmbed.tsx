@@ -5,8 +5,8 @@
  * For the scaffold, a placeholder is shown when no config is provided.
  */
 import React from 'react';
-// NOTE: Uncomment when powerbi-client-react is installed:
-// import { PowerBIEmbed as PBIEmbed } from '@microsoft/powerbi-client-react';
+// NOTE: Uncomment when ready to wire up real Power BI tokens:
+// import { PowerBIEmbed as PBIEmbed } from 'powerbi-client-react';
 // import { models } from 'powerbi-client';
 import type { PowerBIConfig } from '../../types';
 

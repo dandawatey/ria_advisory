@@ -2,7 +2,7 @@
  * F008 — Canonical Dimension Framework
  * Admin page: dimension value mapping, coverage stats.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const dimensions = ['Entity', 'Region', 'Client Segment', 'Service Line'];
 

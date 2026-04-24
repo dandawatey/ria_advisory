@@ -2,7 +2,7 @@
  * F002 — BC Data Extraction Engine
  * Admin page: entity catalog, extraction config, watermark status.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 
 interface EntityConfig {

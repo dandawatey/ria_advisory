@@ -2,7 +2,7 @@
  * F022 — Subsidiary Onboarding Wizard
  * Admin page: 7-step guided onboarding for new BC tenant.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 
 const STEPS = [

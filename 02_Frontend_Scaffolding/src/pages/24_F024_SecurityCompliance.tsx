@@ -2,24 +2,26 @@
  * F024 — Security, Privacy & Compliance Controls
  * Admin/compliance page: security posture, audit log, access review.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AuditLogEntry } from '../types';
 
-const securityControls = [
-  { category: 'Encryption',         control: 'Data at rest — CMK (Key Vault)',        status: 'pass' as const, detail: 'All ADLS, SQL Warehouse encrypted with CMK' },
-  { category: 'Encryption',         control: 'Data in transit — TLS 1.2+',             status: 'pass' as const, detail: 'TLS 1.0/1.1 disabled at Front Door and API layer' },
-  { category: 'Network',            control: 'No public storage access',               status: 'pass' as const, detail: 'Private Endpoints only — ADLS, Databricks, API' },
-  { category: 'Network',            control: 'WAF policy on Azure Front Door',         status: 'pass' as const, detail: 'OWASP CRS enabled, custom rules active' },
-  { category: 'Access Control',     control: 'Row-level security (SQL Warehouse)',     status: 'pass' as const, detail: 'Unity Catalog dynamic views enforce entity scoping' },
-  { category: 'Access Control',     control: 'Column-level masking (PII fields)',      status: 'pass' as const, detail: 'customer.id, bank_account_no masked for non-steward roles' },
-  { category: 'Access Control',     control: 'Managed identity — Azure-to-Azure',     status: 'pass' as const, detail: 'No storage keys in code or config' },
-  { category: 'Immutability',       control: 'WORM policy (Bronze, 7yr)',              status: 'pass' as const, detail: 'Immutable blob policy locked on Bronze container' },
-  { category: 'Immutability',       control: 'Audit log WORM retention (7yr)',         status: 'pass' as const, detail: 'Log Analytics + cold storage, WORM-locked' },
-  { category: 'Vulnerability Mgmt', control: 'SAST in CI/CD',                         status: 'pass' as const, detail: 'Semgrep + dependency scan on every PR build' },
-  { category: 'Vulnerability Mgmt', control: 'Secrets scanning',                       status: 'pass' as const, detail: 'gitleaks pre-commit hook + CI check' },
-  { category: 'Compliance',         control: 'Data residency (US Azure only)',         status: 'pass' as const, detail: 'East US + West US (DR). No cross-border transfer.' },
-  { category: 'Compliance',         control: 'SOC 2 Type II readiness',               status: 'warning' as const, detail: 'Readiness assessment in progress (Year 1). Full audit Year 2.' },
-  { category: 'Compliance',         control: 'Annual penetration test',               status: 'pass' as const, detail: 'Last test: 2026-01-15. Next: 2027-01-15.' },
+type ControlStatus = 'pass' | 'warning' | 'fail';
+
+const securityControls: { category: string; control: string; status: ControlStatus; detail: string }[] = [
+  { category: 'Encryption',         control: 'Data at rest — CMK (Key Vault)',        status: 'pass', detail: 'All ADLS, SQL Warehouse encrypted with CMK' },
+  { category: 'Encryption',         control: 'Data in transit — TLS 1.2+',             status: 'pass', detail: 'TLS 1.0/1.1 disabled at Front Door and API layer' },
+  { category: 'Network',            control: 'No public storage access',               status: 'pass', detail: 'Private Endpoints only — ADLS, Databricks, API' },
+  { category: 'Network',            control: 'WAF policy on Azure Front Door',         status: 'pass', detail: 'OWASP CRS enabled, custom rules active' },
+  { category: 'Access Control',     control: 'Row-level security (SQL Warehouse)',     status: 'pass', detail: 'Unity Catalog dynamic views enforce entity scoping' },
+  { category: 'Access Control',     control: 'Column-level masking (PII fields)',      status: 'pass', detail: 'customer.id, bank_account_no masked for non-steward roles' },
+  { category: 'Access Control',     control: 'Managed identity — Azure-to-Azure',     status: 'pass', detail: 'No storage keys in code or config' },
+  { category: 'Immutability',       control: 'WORM policy (Bronze, 7yr)',              status: 'pass', detail: 'Immutable blob policy locked on Bronze container' },
+  { category: 'Immutability',       control: 'Audit log WORM retention (7yr)',         status: 'pass', detail: 'Log Analytics + cold storage, WORM-locked' },
+  { category: 'Vulnerability Mgmt', control: 'SAST in CI/CD',                         status: 'pass', detail: 'Semgrep + dependency scan on every PR build' },
+  { category: 'Vulnerability Mgmt', control: 'Secrets scanning',                       status: 'pass', detail: 'gitleaks pre-commit hook + CI check' },
+  { category: 'Compliance',         control: 'Data residency (US Azure only)',         status: 'pass', detail: 'East US + West US (DR). No cross-border transfer.' },
+  { category: 'Compliance',         control: 'SOC 2 Type II readiness',               status: 'warning', detail: 'Readiness assessment in progress (Year 1). Full audit Year 2.' },
+  { category: 'Compliance',         control: 'Annual penetration test',               status: 'pass', detail: 'Last test: 2026-01-15. Next: 2027-01-15.' },
 ];
 
 const mockAuditLog: AuditLogEntry[] = [

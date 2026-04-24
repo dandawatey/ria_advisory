@@ -2,7 +2,7 @@
  * F016 — Close Cockpit
  * Finance ops page: close status board, IC review, sign-off workflow.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { ClosePeriodStatus } from '../types';
 

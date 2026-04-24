@@ -2,7 +2,7 @@
  * F012 — Data Quality Framework
  * Ops page: DQ rule suite, pass rates, exception queue.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { DQException } from '../types';
 

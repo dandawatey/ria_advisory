@@ -2,7 +2,7 @@
  * F005 — Bronze Zone Data Landing
  * Ops page: storage stats, partition browser, WORM/immutability status.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const storageStats = {
   totalSizeGB: 2847,

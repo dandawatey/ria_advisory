@@ -2,7 +2,6 @@
  * F004 — Ingestion Resilience, Error Handling & Fallback
  * Admin page: circuit breaker status, retry config, SFTP fallback management.
  */
-import React from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { CircuitBreaker } from '../types';
 

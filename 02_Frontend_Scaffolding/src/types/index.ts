@@ -80,9 +80,9 @@ export interface AccountMapping {
 export interface KPIMetric {
   label: string;
   value: number;
-  previousValue: number;
+  previousValue?: number;
   unit: 'usd' | 'pct' | 'days' | 'count';
-  trend: 'up' | 'down' | 'flat';
+  trend: 'up' | 'down' | 'flat' | 'neutral';
   positiveDirection: 'up' | 'down'; // which direction is good
 }
 

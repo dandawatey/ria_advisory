@@ -2,7 +2,7 @@
  * F021 — Mapping Management Console & Approval Workflow
  * Admin page: account/dimension mapping workbench, pending approval queue.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const pendingChanges = [
   { id: 'chg-001', type: 'Account Mapping', subsidiary: 'SUB03', localCode: 'EAST', canonical: 'NORTHEAST', proposedBy: 'Priya Nair', proposedAt: '2026-04-22 14:30', entity: 'Clearwater Financial', oldValue: null, newValue: '1100 — NORTHEAST' },

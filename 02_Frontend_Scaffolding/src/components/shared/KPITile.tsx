@@ -1,4 +1,3 @@
-import React from 'react';
 import type { KPIMetric } from '../../types';
 
 interface KPITileProps {
@@ -25,15 +24,16 @@ function formatValue(value: number, unit: KPIMetric['unit']): string {
   }
 }
 
-export const KPITile: React.FC<KPITileProps> = ({ metric, onClick }) => {
-  const delta = metric.value - metric.previousValue;
-  const deltaPct = metric.previousValue !== 0
-    ? ((delta / Math.abs(metric.previousValue)) * 100).toFixed(1)
-    : '–';
+export function KPITile({ metric, onClick }: KPITileProps) {
+  const hasPrev = metric.previousValue !== undefined;
+  const delta = hasPrev ? metric.value - metric.previousValue! : 0;
+  const deltaPct = hasPrev && metric.previousValue !== 0
+    ? ((delta / Math.abs(metric.previousValue!)) * 100).toFixed(1)
+    : null;
 
   const isPositive = delta >= 0;
   const isGood = metric.positiveDirection === 'up' ? isPositive : !isPositive;
-  const deltaClass = delta === 0 ? '' : isGood ? 'kpi-delta-up' : 'kpi-delta-down';
+  const deltaClass = !hasPrev || delta === 0 ? '' : isGood ? 'kpi-delta-up' : 'kpi-delta-down';
   const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
 
   return (
@@ -45,9 +45,11 @@ export const KPITile: React.FC<KPITileProps> = ({ metric, onClick }) => {
       <div className="kpi-label">{metric.label}</div>
       <div className="kpi-value">{formatValue(metric.value, metric.unit)}</div>
       <div className={`kpi-meta ${deltaClass}`}>
-        {delta !== 0 && <span>{arrow} {Math.abs(Number(deltaPct))}% vs prior period</span>}
-        {delta === 0 && <span className="text-muted">No change vs prior period</span>}
+        {hasPrev && deltaPct && delta !== 0
+          ? <span>{arrow} {Math.abs(Number(deltaPct))}% vs prior period</span>
+          : <span className="text-muted">—</span>
+        }
       </div>
     </div>
   );
-};
+}

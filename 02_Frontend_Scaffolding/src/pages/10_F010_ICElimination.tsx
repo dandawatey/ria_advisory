@@ -2,7 +2,7 @@
  * F010 — Inter-Company Elimination Engine
  * Finance admin page: elimination rules, results, unmatched entries.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ICEntry } from '../types';
 
 const mockICEntries: ICEntry[] = [

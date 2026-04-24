@@ -2,7 +2,7 @@
  * F011 — FX Translation Engine
  * Admin page: rate table, translation policy config, missing rate exceptions.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { FXRate } from '../types';
 
 const mockRates: FXRate[] = [

@@ -2,7 +2,7 @@
  * F006 — Silver Layer Transformation
  * Ops page: transform job status, SCD-2 history, schema viewer.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 
 interface SilverJob {

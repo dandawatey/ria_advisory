@@ -2,7 +2,7 @@
  * F014 — React Application Foundation & Authentication
  * Login page: Entra ID SSO via MSAL.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);

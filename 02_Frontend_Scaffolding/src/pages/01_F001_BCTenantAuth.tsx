@@ -2,7 +2,7 @@
  * F001 — BC Tenant Authentication & Connectivity
  * Admin page: manage Entra ID app registrations and cert-based OAuth per tenant.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { BCTenant } from '../types';
 

@@ -3,7 +3,7 @@
  * Overlay components: annotation thread panel + NLQ pane.
  * This page demonstrates both as standalone review screens.
  */
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 interface Annotation {
   id: string;

@@ -2,8 +2,7 @@
  * F009 — Gold Layer Conformed Data Model
  * Ops page: Gold table browser, row counts, Z-order config, DQ gate status.
  */
-import React, { useState } from 'react';
-import { StatusBadge } from '../components/shared/StatusBadge';
+import { useState } from 'react';
 
 interface GoldTable {
   name: string;
