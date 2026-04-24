@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import riaLogo from '../../assets/ria-advisory-logo.svg';
 
 interface NavItem {
   label: string;
@@ -54,9 +55,9 @@ export function Sidebar() {
 
   return (
     <aside className="app-sidebar">
-      <div className="sidebar-logo">
-        UFIP
-        <span>Unified Financial Intelligence</span>
+      <div className="sidebar-logo" style={{ padding: '16px 12px 12px' }}>
+        <img src={riaLogo} alt="RIA Advisory" style={{ width: '100%', maxWidth: 160, display: 'block', marginBottom: 4 }} />
+        <span style={{ fontSize: 10 }}>Unified Financial Intelligence</span>
       </div>
 
       {nav.map((section) => (
