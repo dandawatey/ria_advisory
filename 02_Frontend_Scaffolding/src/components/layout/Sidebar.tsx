@@ -24,10 +24,19 @@ const nav: NavSection[] = [
     ],
   },
   {
+    label: 'Insights',
+    items: [
+      { label: 'GL Insights',             path: '/insights/gl',           icon: '◑' },
+      { label: 'Chart of Accounts',       path: '/insights/coa',          icon: '≡' },
+      { label: 'By Customer',             path: '/insights/customer',     icon: '◎' },
+      { label: 'By Posted Sales',         path: '/insights/posted-sales', icon: '◈' },
+      { label: 'By Invoices',             path: '/insights/invoices',     icon: '⊟' },
+    ],
+  },
+  {
     label: 'GL',
     items: [
       { label: 'GL Explorer',         path: '/explorer',    icon: '◈' },
-      { label: 'GL Insights',         path: '/gl-insights', icon: '◑' },
       { label: 'Canonical CoA',       path: '/admin/coa',   icon: '≡' },
       { label: 'Data Quality',        path: '/admin/dq',    icon: '◎' },
       { label: 'IC Elimination',      path: '/admin/ic-elimination', icon: '⇌' },

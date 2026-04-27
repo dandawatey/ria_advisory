@@ -1,0 +1,13 @@
+[build]
+  base    = "02_Frontend_Scaffolding"
+  command = "npm run build"
+  publish = "02_Frontend_Scaffolding/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — all routes served by index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

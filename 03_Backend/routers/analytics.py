@@ -1,431 +1,492 @@
 """
-Analytics & Insights endpoints.
-All revenue (4xx) sums are negated at SQL layer → frontend always receives positive revenue.
-Expenses (5xx/6xx) remain positive.
-"""
+Analytics & Insights — Star Schema Edition
+Revenue (4xx) negated → frontend receives positive revenue. Expenses (5xx/6xx) positive.
 
+Filter params (shared across endpoints):
+  company_id  : List[int]  — supports multi-company (omit = all)
+  year        : int        — calendar year (omit = all years)
+  month_from  : str        — 'YYYY-MM' inclusive start
+  month_to    : str        — 'YYYY-MM' inclusive end
+"""
 from fastapi import APIRouter, Query
-from typing import Optional
+from typing import Optional, List
 from database import query
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
+# ── Base JOIN snippet reused by most queries ──────────────────────────────────
+_BASE = """
+    FROM fact_gl_entries g
+    JOIN dim_date    d  ON d.date_id     = g.date_id
+    JOIN dim_account ac ON ac.account_no = g.account_no
+    JOIN dim_company co ON co.company_id = g.company_id
+"""
+
+def _where(company_ids=None, year=None, month_from=None, month_to=None, extra=None):
+    """Build WHERE + params for the standard GL query pattern."""
+    clauses = ["ac.account_no != '999999'"]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"g.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        y, m = month_from.split("-")
+        clauses.append("(d.year * 100 + d.month) >= %s")
+        params.append(int(y) * 100 + int(m))
+    if month_to:
+        y, m = month_to.split("-")
+        clauses.append("(d.year * 100 + d.month) <= %s")
+        params.append(int(y) * 100 + int(m))
+    if extra:
+        clauses.append(extra)
+    return "WHERE " + " AND ".join(clauses), params
+
+
+# ── 0. Filter options (dropdown data for the filter panel) ────────────────────
+@router.get("/filters")
+def get_filters():
+    companies = query("SELECT company_id, company_name FROM dim_company ORDER BY company_name")
+    periods   = query("""
+        SELECT DISTINCT d.year,
+               d.month,
+               TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS month_key,
+               d.month_name
+        FROM dim_date d
+        JOIN fact_gl_entries g ON g.date_id = d.date_id
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """)
+    years = sorted({p["year"] for p in periods}, reverse=True)
+    currencies = query("SELECT currency_code, currency_name FROM dim_currency ORDER BY currency_code")
+    return {"companies": companies, "years": years, "months": periods, "currencies": currencies}
+
+
+# ── 0b. KPI summary tiles ─────────────────────────────────────────────────────
+@router.get("/kpi-summary")
+def kpi_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR ac.account_no LIKE '6%%'
+                          OR ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                    AS net_income,
+            COUNT(*)                                                             AS entry_count,
+            COUNT(DISTINCT g.company_id)                                        AS entity_count
+        {_BASE} {wh}
+    """, params)
+    return rows[0] if rows else {}
+
 
 # ── 1. Monthly P&L Waterfall ──────────────────────────────────────────────────
-
 @router.get("/pl-waterfall")
-def pl_waterfall(subsidiary: Optional[str] = None):
-    """Monthly Revenue / COGS / OpEx / Net Income — all entities or one."""
-    filters = ["gl_account_no NOT IN ('999999')", "posting_date IS NOT NULL"]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    where = " AND ".join(filters)
+def pl_waterfall(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(company_id, year, month_from, month_to)
     return query(f"""
         SELECT
-            TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS month,
-            -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) AS revenue,
-             SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END) AS cogs,
-             SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END) AS opex,
-            -SUM(CASE WHEN gl_account_no LIKE '7%%' THEN amount ELSE 0 END) AS other_income,
-             SUM(CASE WHEN gl_account_no LIKE '8%%' THEN amount ELSE 0 END) AS tax,
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM')                                AS month,
+            d.month_name,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            -SUM(CASE WHEN ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)  AS other_income,
+             SUM(CASE WHEN ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)  AS tax,
             (
-              -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)
-              -SUM(CASE WHEN gl_account_no LIKE '7%%' THEN amount ELSE 0 END)
-            )
-            - SUM(CASE WHEN gl_account_no LIKE '5%%'
-                        OR gl_account_no LIKE '6%%'
-                        OR gl_account_no LIKE '8%%' THEN amount ELSE 0 END) AS net_income
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY DATE_TRUNC('month', posting_date)
-        ORDER BY DATE_TRUNC('month', posting_date)
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR ac.account_no LIKE '6%%'
+                          OR ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                    AS net_income
+        {_BASE} {wh}
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
     """, params)
 
 
-# ── 2. Entity Contribution (revenue ranking + gross margin) ───────────────────
-
+# ── 2. Entity Contribution ────────────────────────────────────────────────────
 @router.get("/entity-contribution")
-def entity_contribution():
-    return query("""
+def entity_contribution(
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(year=year, month_from=month_from, month_to=month_to)
+    return query(f"""
         SELECT
-            subsidiary_code,
-            subsidiary_name,
-            -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)  AS revenue,
-             SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END)  AS cogs,
-             SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END)  AS opex,
+            co.company_id,
+            co.company_name,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)   AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)   AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)   AS opex,
             CASE
-                WHEN SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) = 0 THEN NULL
-                ELSE ROUND(
-                    100.0
-                    * (-SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)
-                        - SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END))
-                    / NULLIF(-SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END), 0),
+                WHEN SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) = 0 THEN NULL
+                ELSE ROUND(100.0 *
+                    ( -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)
+                      - SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END) )
+                    / NULLIF(-SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END), 0),
                 2)
             END AS gross_margin_pct,
-            ROUND(
-                100.0
-                * (-SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END))
-                / NULLIF(SUM(SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END))
-                         OVER (), 0),
+            ROUND(100.0 *
+                ( -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) )
+                / NULLIF(SUM(SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)) OVER (), 0),
             2) AS revenue_share_pct
-        FROM gl_unified
-        WHERE gl_account_no NOT IN ('999999')
-        GROUP BY subsidiary_code, subsidiary_name
+        {_BASE} {wh}
+        GROUP BY co.company_id, co.company_name
         ORDER BY revenue DESC
-    """)
+    """, params)
 
 
 # ── 3. Department Spend Heat Map ──────────────────────────────────────────────
-
 @router.get("/department-heatmap")
 def department_heatmap(
-    subsidiary: Optional[str] = None,
-    month: Optional[str] = None,
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
 ):
-    filters = [
-        "gl_account_no NOT IN ('999999')",
-        "department_code IS NOT NULL",
-        "department_code != ''",
-        "posting_date IS NOT NULL",
-    ]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    if month:
-        filters.append("DATE_TRUNC('month', posting_date) = DATE_TRUNC('month', %s::date)")
-        params.append(f"{month}-01")
-    where = " AND ".join(filters)
+    wh, params = _where(company_id, year, month_from, month_to, extra="dp.department_code IS NOT NULL")
     return query(f"""
         SELECT
-            department_code,
-            vertical_code,
-            TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS month,
-            SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END) AS cogs,
-            SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END) AS opex,
-            SUM(CASE WHEN gl_account_no LIKE '5%%'
-                      OR gl_account_no LIKE '6%%' THEN amount ELSE 0 END)  AS total_spend,
+            dp.department_code,
+            dp.vertical_code,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END) AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex,
+             SUM(CASE WHEN ac.account_no LIKE '5%%'
+                        OR ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS total_spend,
             COUNT(*) AS entry_count
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY department_code, vertical_code, DATE_TRUNC('month', posting_date)
-        ORDER BY ABS(SUM(CASE WHEN gl_account_no LIKE '5%%'
-                               OR gl_account_no LIKE '6%%' THEN amount ELSE 0 END)) DESC
-        LIMIT 200
+        {_BASE}
+        JOIN dim_department dp ON dp.department_id = g.department_id
+        {wh}
+        GROUP BY dp.department_code, dp.vertical_code
+        ORDER BY ABS(SUM(CASE WHEN ac.account_no LIKE '5%%'
+                               OR ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)) DESC
+        LIMIT 20
     """, params)
 
 
-# ── 4. Rolling Revenue Trend per Entity ───────────────────────────────────────
-
+# ── 4. Rolling Revenue Trend ──────────────────────────────────────────────────
 @router.get("/rolling-trend")
-def rolling_trend(subsidiary: Optional[str] = None):
-    filters = ["gl_account_no NOT IN ('999999')", "posting_date IS NOT NULL"]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    where = " AND ".join(filters)
+def rolling_trend(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(company_id, year, month_from, month_to)
     return query(f"""
         SELECT
-            subsidiary_code,
-            subsidiary_name,
-            TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM')           AS month,
-            -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) AS revenue,
-             SUM(CASE WHEN gl_account_no LIKE '5%%'
-                       OR gl_account_no LIKE '6%%' THEN amount ELSE 0 END)  AS expenses
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY subsidiary_code, subsidiary_name, DATE_TRUNC('month', posting_date)
-        ORDER BY subsidiary_code, DATE_TRUNC('month', posting_date)
+            co.company_id,
+            co.company_name,
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM')                               AS month,
+            d.month_name,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%'
+                        OR ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS expenses
+        {_BASE} {wh}
+        GROUP BY co.company_id, co.company_name, d.year, d.month, d.month_name
+        ORDER BY co.company_id, d.year, d.month
     """, params)
 
 
-# ── 5. Top GL Accounts by Absolute Movement ───────────────────────────────────
-
+# ── 5. Top GL Accounts ────────────────────────────────────────────────────────
 @router.get("/top-accounts")
 def top_accounts(
-    account_prefix: str = Query(default="", description="e.g. '4', '6', '' for all"),
-    subsidiary: Optional[str] = None,
-    month: Optional[str] = None,
+    account_prefix: str = Query(default=""),
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
     limit: int = Query(default=20, le=50),
 ):
-    filters = ["gl_account_no NOT IN ('999999')"]
-    params: list = []
     prefix = account_prefix.strip()
-    if prefix:
-        filters.append("gl_account_no LIKE %s")
-        params.append(f"{prefix}%")
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    if month:
-        filters.append("DATE_TRUNC('month', posting_date) = DATE_TRUNC('month', %s::date)")
-        params.append(f"{month}-01")
-    where = " AND ".join(filters)
+    extra  = f"ac.account_no LIKE '{prefix}%%'" if prefix else None
+    wh, params = _where(company_id, year, month_from, month_to, extra=extra)
     params.append(limit)
     return query(f"""
         SELECT
-            gl_account_no,
-            MAX(gl_account_name)  AS gl_account_name,
-            CASE WHEN gl_account_no LIKE '4%%' THEN -SUM(amount)
-                 ELSE SUM(amount) END   AS display_amount,
-            ABS(SUM(amount))            AS abs_amount,
-            COUNT(*)                    AS entry_count,
-            COUNT(DISTINCT subsidiary_code) AS entity_count
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY gl_account_no
-        ORDER BY ABS(SUM(amount)) DESC
+            ac.account_no       AS gl_account_no,
+            ac.account_name     AS gl_account_name,
+            ac.account_category,
+            CASE WHEN ac.account_no LIKE '4%%' THEN -SUM(g.amount)
+                 ELSE SUM(g.amount) END              AS display_amount,
+            ABS(SUM(g.amount))                       AS abs_amount,
+            COUNT(*)                                 AS entry_count,
+            COUNT(DISTINCT g.company_id)             AS entity_count
+        {_BASE} {wh}
+        GROUP BY ac.account_no, ac.account_name, ac.account_category
+        ORDER BY ABS(SUM(g.amount)) DESC
         LIMIT %s
     """, params)
 
 
 # ── 6. Document Type Mix ──────────────────────────────────────────────────────
-
 @router.get("/doc-type-mix")
 def doc_type_mix(
-    subsidiary: Optional[str] = None,
-    month: Optional[str] = None,
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
 ):
-    filters = ["gl_account_no NOT IN ('999999')"]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    if month:
-        filters.append("DATE_TRUNC('month', posting_date) = DATE_TRUNC('month', %s::date)")
-        params.append(f"{month}-01")
-    where = " AND ".join(filters)
+    wh, params = _where(company_id, year, month_from, month_to)
     return query(f"""
         SELECT
-            COALESCE(NULLIF(TRIM(document_type), ''), 'Unspecified') AS document_type,
-            COUNT(*)                                                   AS entry_count,
-            SUM(ABS(amount))                                          AS total_absolute_value,
-            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)       AS pct_of_entries
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY COALESCE(NULLIF(TRIM(document_type), ''), 'Unspecified')
+            COALESCE(NULLIF(TRIM(doc.document_type), ''), 'Unspecified') AS document_type,
+            COUNT(*)                                                       AS entry_count,
+            SUM(ABS(g.amount))                                            AS total_absolute_value,
+            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)           AS pct_of_entries
+        {_BASE}
+        JOIN dim_document doc ON doc.document_id = g.document_id
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(doc.document_type), ''), 'Unspecified')
         ORDER BY entry_count DESC
     """, params)
 
 
-# ── 7. Suspense Account Monitor ───────────────────────────────────────────────
-
+# ── 7. Suspense Monitor ───────────────────────────────────────────────────────
 @router.get("/suspense-monitor")
 def suspense_monitor():
     return query("""
         SELECT
-            subsidiary_code,
-            subsidiary_name,
+            co.company_id,
+            co.company_name,
             COUNT(*)          AS entry_count,
-            SUM(amount)       AS net_balance,
-            MIN(posting_date) AS earliest,
-            MAX(posting_date) AS latest
-        FROM gl_unified
-        WHERE gl_account_no = '999999'
-        GROUP BY subsidiary_code, subsidiary_name
-        ORDER BY ABS(SUM(amount)) DESC
+            SUM(g.amount)     AS net_balance,
+            MIN(d.full_date)  AS earliest,
+            MAX(d.full_date)  AS latest
+        FROM fact_gl_entries g
+        JOIN dim_company co ON co.company_id = g.company_id
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        WHERE g.account_no = '999999'
+        GROUP BY co.company_id, co.company_name
+        ORDER BY ABS(SUM(g.amount)) DESC
     """)
 
 
 # ── 8. Month-over-Month Change ────────────────────────────────────────────────
-
 @router.get("/mom-change")
 def mom_change(
     current_month: Optional[str] = None,
     prior_month: Optional[str] = None,
 ):
-    # Default to the two most recent months in the data
     if not current_month or not prior_month:
         recent = query("""
-            SELECT DISTINCT TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS m
-            FROM gl_unified
-            WHERE posting_date IS NOT NULL
-            ORDER BY m DESC LIMIT 2
+            SELECT TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS m,
+                   d.year * 100 + d.month               AS ym
+            FROM dim_date d
+            JOIN fact_gl_entries g ON g.date_id = d.date_id
+            GROUP BY d.year, d.month
+            ORDER BY ym DESC LIMIT 2
         """)
         months = [r["m"] for r in recent]
         current_month = months[0] if months else "2026-03"
         prior_month   = months[1] if len(months) > 1 else "2026-02"
 
+    def _ym(s): y, m = s.split("-"); return int(y) * 100 + int(m)
     return query("""
-        WITH current AS (
-            SELECT subsidiary_code, subsidiary_name,
-                   -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) AS revenue,
-                    SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END) AS opex
-            FROM gl_unified
-            WHERE gl_account_no NOT IN ('999999')
-              AND DATE_TRUNC('month', posting_date) = DATE_TRUNC('month', %s::date)
-            GROUP BY subsidiary_code, subsidiary_name
+        WITH cur AS (
+            SELECT co.company_id, co.company_name,
+                   -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+                    SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex
+            FROM fact_gl_entries g
+            JOIN dim_date    d  ON d.date_id     = g.date_id
+            JOIN dim_account ac ON ac.account_no = g.account_no
+            JOIN dim_company co ON co.company_id = g.company_id
+            WHERE ac.account_no != '999999' AND d.year * 100 + d.month = %s
+            GROUP BY co.company_id, co.company_name
         ),
-        prior AS (
-            SELECT subsidiary_code,
-                   -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) AS revenue,
-                    SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END) AS opex
-            FROM gl_unified
-            WHERE gl_account_no NOT IN ('999999')
-              AND DATE_TRUNC('month', posting_date) = DATE_TRUNC('month', %s::date)
-            GROUP BY subsidiary_code
+        pri AS (
+            SELECT co.company_id,
+                   -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+                    SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex
+            FROM fact_gl_entries g
+            JOIN dim_date    d  ON d.date_id     = g.date_id
+            JOIN dim_account ac ON ac.account_no = g.account_no
+            JOIN dim_company co ON co.company_id = g.company_id
+            WHERE ac.account_no != '999999' AND d.year * 100 + d.month = %s
+            GROUP BY co.company_id
         )
-        SELECT
-            c.subsidiary_code,
-            c.subsidiary_name,
-            c.revenue                            AS current_revenue,
-            COALESCE(p.revenue, 0)               AS prior_revenue,
-            c.revenue - COALESCE(p.revenue, 0)   AS revenue_delta,
-            CASE WHEN COALESCE(p.revenue, 0) = 0 THEN NULL
-                 ELSE ROUND(100.0*(c.revenue - p.revenue)/ABS(p.revenue), 2)
-            END                                  AS revenue_delta_pct,
-            c.opex                               AS current_opex,
-            COALESCE(p.opex, 0)                  AS prior_opex,
-            c.opex - COALESCE(p.opex, 0)         AS opex_delta
-        FROM current c
-        LEFT JOIN prior p USING (subsidiary_code)
+        SELECT c.company_id, c.company_name,
+               c.revenue                            AS current_revenue,
+               COALESCE(p.revenue, 0)               AS prior_revenue,
+               c.revenue - COALESCE(p.revenue, 0)   AS revenue_delta,
+               CASE WHEN COALESCE(p.revenue, 0) = 0 THEN NULL
+                    ELSE ROUND(100.0*(c.revenue - p.revenue)/NULLIF(ABS(p.revenue),0), 2)
+               END                                  AS revenue_delta_pct,
+               c.opex                               AS current_opex,
+               COALESCE(p.opex, 0)                  AS prior_opex,
+               c.opex - COALESCE(p.opex, 0)         AS opex_delta
+        FROM cur c LEFT JOIN pri p USING (company_id)
         ORDER BY revenue_delta DESC
-    """, [f"{current_month}-01", f"{prior_month}-01"])
+    """, [_ym(current_month), _ym(prior_month)])
 
 
-# ── 9. Vertical / Business Unit P&L ──────────────────────────────────────────
-
+# ── 9. Vertical / BU P&L ─────────────────────────────────────────────────────
 @router.get("/vertical-pl")
-def vertical_pl(subsidiary: Optional[str] = None):
-    filters = ["gl_account_no NOT IN ('999999')"]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    where = " AND ".join(filters)
+def vertical_pl(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(company_id, year, month_from, month_to)
     return query(f"""
         SELECT
-            COALESCE(NULLIF(TRIM(vertical_code), ''), 'Unassigned') AS vertical_code,
-            -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END) AS revenue,
-             SUM(CASE WHEN gl_account_no LIKE '5%%' THEN amount ELSE 0 END) AS cogs,
-             SUM(CASE WHEN gl_account_no LIKE '6%%' THEN amount ELSE 0 END) AS opex,
-             COUNT(*)                                                         AS entry_count,
-             COUNT(DISTINCT subsidiary_code)                                  AS entity_count
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY COALESCE(NULLIF(TRIM(vertical_code), ''), 'Unassigned')
+            COALESCE(NULLIF(TRIM(dp.vertical_code), ''), 'Unassigned') AS vertical_code,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END) AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex,
+            COUNT(*)                                                           AS entry_count,
+            COUNT(DISTINCT g.company_id)                                      AS entity_count
+        {_BASE}
+        JOIN dim_department dp ON dp.department_id = g.department_id
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(dp.vertical_code), ''), 'Unassigned')
         ORDER BY revenue DESC
     """, params)
 
 
-# ── 10. Account Category Summary (single-call insight tile data) ──────────────
-
+# ── 10. Account Category Summary ─────────────────────────────────────────────
 @router.get("/account-summary")
-def account_summary(subsidiary: Optional[str] = None):
-    """Aggregated totals per account category — used for insight tiles."""
-    filters = ["gl_account_no NOT IN ('999999')"]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    where = " AND ".join(filters)
+def account_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(company_id, year, month_from, month_to)
     return query(f"""
         SELECT
-            CASE
-                WHEN gl_account_no LIKE '1%%' THEN 'Assets'
-                WHEN gl_account_no LIKE '2%%' THEN 'Liabilities'
-                WHEN gl_account_no LIKE '3%%' THEN 'Equity'
-                WHEN gl_account_no LIKE '4%%' THEN 'Revenue'
-                WHEN gl_account_no LIKE '5%%' THEN 'COGS'
-                WHEN gl_account_no LIKE '6%%' THEN 'OpEx'
-                WHEN gl_account_no LIKE '7%%' THEN 'Other Income'
-                WHEN gl_account_no LIKE '8%%' THEN 'Tax'
-                ELSE 'Other'
-            END                         AS category,
-            COUNT(DISTINCT gl_account_no) AS account_count,
-            COUNT(*)                    AS entry_count,
-            SUM(amount)                 AS raw_sum,
-            CASE WHEN gl_account_no LIKE '4%%' OR gl_account_no LIKE '7%%'
-                 THEN -SUM(amount) ELSE SUM(amount) END AS display_amount
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY category
-        ORDER BY ABS(SUM(amount)) DESC
+            COALESCE(ac.account_category, 'Other')            AS category,
+            COUNT(DISTINCT ac.account_no)                     AS account_count,
+            COUNT(*)                                          AS entry_count,
+            SUM(g.amount)                                     AS raw_sum,
+            SUM(CASE WHEN ac.account_no LIKE '4%%' OR ac.account_no LIKE '7%%'
+                      THEN -g.amount ELSE g.amount END)        AS display_amount
+        {_BASE} {wh}
+        GROUP BY COALESCE(ac.account_category, 'Other')
+        ORDER BY ABS(SUM(g.amount)) DESC
     """, params)
 
 
 # ── 11. Completeness Summary ──────────────────────────────────────────────────
-
 @router.get("/completeness-summary")
 def completeness_summary():
-    """Single-row completeness scorecard across all GL entries."""
     rows = query("""
         SELECT
             COUNT(*)                                                                     AS total_entries,
-            COUNT(*) FILTER (WHERE gl_account_name IS NULL)                             AS unnamed_account_entries,
-            COUNT(*) FILTER (WHERE department_code IS NULL OR department_code = '')     AS no_dept_entries,
-            COUNT(*) FILTER (WHERE vertical_code IS NULL OR vertical_code = '')         AS no_vertical_entries,
-            COUNT(*) FILTER (WHERE gl_account_no = '999999')                            AS suspense_entries,
-            SUM(CASE WHEN gl_account_no = '999999' THEN amount ELSE 0 END)              AS suspense_net
-        FROM gl_unified
+            COUNT(*) FILTER (WHERE g.account_no = '999999')                             AS suspense_entries,
+            SUM(CASE WHEN g.account_no = '999999' THEN g.amount ELSE 0 END)             AS suspense_net,
+            COUNT(*) FILTER (WHERE dp.department_code IS NULL)                          AS no_dept_entries,
+            COUNT(*) FILTER (WHERE dp.vertical_code IS NULL)                            AS no_vertical_entries,
+            COUNT(*) FILTER (WHERE ac.account_name IS NULL OR ac.account_name = '')     AS unnamed_account_entries
+        FROM fact_gl_entries g
+        JOIN dim_account    ac ON ac.account_no    = g.account_no
+        JOIN dim_department dp ON dp.department_id = g.department_id
     """)
     return rows[0] if rows else {}
 
 
-# ── 12. Entity Coverage (months present per subsidiary) ───────────────────────
-
+# ── 12. Entity Coverage ───────────────────────────────────────────────────────
 @router.get("/entity-coverage")
 def entity_coverage():
-    """Per-subsidiary month coverage — how many of 12 possible months have data."""
     return query("""
         SELECT
-            subsidiary_code,
-            subsidiary_name,
-            COUNT(DISTINCT DATE_TRUNC('month', posting_date)) AS months_present,
-            MIN(posting_date)                                  AS from_date,
-            MAX(posting_date)                                  AS to_date,
-            COUNT(*)                                           AS total_entries,
-            ROUND(100.0 * COUNT(DISTINCT DATE_TRUNC('month', posting_date)) / 12.0, 2) AS coverage_pct
-        FROM gl_unified
-        WHERE posting_date IS NOT NULL
-        GROUP BY subsidiary_code, subsidiary_name
-        ORDER BY months_present DESC, subsidiary_code
+            co.company_id,
+            co.company_name,
+            COUNT(DISTINCT (d.year * 100 + d.month))   AS months_present,
+            MIN(d.full_date)                            AS from_date,
+            MAX(d.full_date)                            AS to_date,
+            COUNT(*)                                    AS total_entries,
+            ROUND(100.0 * COUNT(DISTINCT (d.year * 100 + d.month)) / 12.0, 2) AS coverage_pct
+        FROM fact_gl_entries g
+        JOIN dim_company co ON co.company_id = g.company_id
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        GROUP BY co.company_id, co.company_name
+        ORDER BY months_present DESC, co.company_name
     """)
 
 
-# ── 13. Monthly Entry Volume ───────────────────────────────────────────────────
-
+# ── 13. Monthly Entry Volume ──────────────────────────────────────────────────
 @router.get("/monthly-volume")
 def monthly_volume():
-    """Entry count per month — used to highlight partial/open months."""
     return query("""
         SELECT
-            TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS month,
-            COUNT(*) AS entry_count
-        FROM gl_unified
-        WHERE posting_date IS NOT NULL
-        GROUP BY DATE_TRUNC('month', posting_date)
-        ORDER BY DATE_TRUNC('month', posting_date)
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS month,
+            d.year,
+            d.month                               AS month_num,
+            COUNT(*)                              AS entry_count
+        FROM fact_gl_entries g
+        JOIN dim_date d ON d.date_id = g.date_id
+        GROUP BY d.year, d.month
+        ORDER BY d.year, d.month
     """)
 
 
-# ── 14. Expense Accounts (top 30 COGS + OpEx by absolute value) ───────────────
-
+# ── 14. Expense Accounts ──────────────────────────────────────────────────────
 @router.get("/expense-accounts")
-def expense_accounts(subsidiary: Optional[str] = None):
-    """Top 30 GL accounts in 5xx/6xx by absolute spend magnitude."""
-    filters = [
-        "(gl_account_no LIKE '5%%' OR gl_account_no LIKE '6%%')",
-        "gl_account_no NOT IN ('999999')",
-    ]
-    params: list = []
-    if subsidiary:
-        filters.append("subsidiary_code = %s")
-        params.append(subsidiary.upper())
-    where = " AND ".join(filters)
+def expense_accounts(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    extra = "(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"
+    wh, params = _where(company_id, year, month_from, month_to, extra=extra)
     return query(f"""
         SELECT
-            gl_account_no,
-            MAX(gl_account_name)            AS gl_account_name,
-            SUM(amount)                     AS total_amount,
-            COUNT(*)                        AS entry_count,
-            COUNT(DISTINCT subsidiary_code) AS entity_count
-        FROM gl_unified
-        WHERE {where}
-        GROUP BY gl_account_no
-        ORDER BY ABS(SUM(amount)) DESC
+            ac.account_no       AS gl_account_no,
+            ac.account_name     AS gl_account_name,
+            ac.account_subcategory,
+            SUM(g.amount)       AS total_amount,
+            COUNT(*)            AS entry_count,
+            COUNT(DISTINCT g.company_id) AS entity_count
+        {_BASE} {wh}
+        GROUP BY ac.account_no, ac.account_name, ac.account_subcategory
+        ORDER BY ABS(SUM(g.amount)) DESC
         LIMIT 30
+    """, params)
+
+
+# ── 15. Currency Split ────────────────────────────────────────────────────────
+@router.get("/currency-split")
+def currency_split(
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _where(year=year, month_from=month_from, month_to=month_to)
+    return query(f"""
+        SELECT
+            cu.currency_code,
+            cu.currency_name,
+            COUNT(DISTINCT g.company_id)                                       AS entity_count,
+            COUNT(*)                                                            AS entry_count,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+             SUM(ABS(g.amount))                                                AS total_volume
+        {_BASE}
+        JOIN dim_currency cu ON cu.currency_id = g.currency_id
+        {wh}
+        GROUP BY cu.currency_code, cu.currency_name
+        ORDER BY total_volume DESC
     """, params)

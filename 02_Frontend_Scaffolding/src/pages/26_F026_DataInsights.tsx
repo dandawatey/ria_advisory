@@ -212,7 +212,7 @@ export default function DataInsights() {
   const entityPieData = (() => {
     const top10 = entityContrib.slice(0, 10);
     const othersShare = entityContrib.slice(10).reduce((s, r) => s + (r.revenue_share_pct ?? 0), 0);
-    const data = top10.map((r) => ({ name: r.subsidiary_name, value: +(r.revenue_share_pct ?? 0) }));
+    const data = top10.map((r) => ({ name: r.company_name, value: +(r.revenue_share_pct ?? 0) }));
     if (othersShare > 0.01) data.push({ name: 'Others', value: +othersShare.toFixed(2) });
     return data;
   })();
@@ -253,7 +253,7 @@ export default function DataInsights() {
   // Entity entry volume data (for coverage bar)
   const coverageBarData = [...coverage]
     .sort((a, b) => b.total_entries - a.total_entries)
-    .map((r) => ({ name: r.subsidiary_code, entries: r.total_entries, coverage_pct: Number(r.coverage_pct) }));
+    .map((r) => ({ name: r.company_id, entries: r.total_entries, coverage_pct: Number(r.coverage_pct) }));
 
   const TABS: [Tab, string][] = [
     ['overview',     'GL Overview'],
@@ -426,9 +426,9 @@ export default function DataInsights() {
                     {loading.contrib ? (
                       <tr><td colSpan={5} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
                     ) : entityContrib.slice(0, 10).map((r, i) => (
-                      <tr key={r.subsidiary_code}>
+                      <tr key={r.company_id}>
                         <td style={{ color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>{i + 1}</td>
-                        <td>{r.subsidiary_name}</td>
+                        <td>{r.company_name}</td>
                         <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{fmt(r.revenue)}</td>
                         <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{r.revenue_share_pct}%</td>
                         <td style={{ textAlign: 'right' }}>
@@ -556,9 +556,9 @@ export default function DataInsights() {
                     const fillClass = cpct >= 90 ? 'progress-fill-success' : cpct >= 60 ? 'progress-fill-warning' : 'progress-fill-error';
                     const badgeClass = cpct >= 90 ? 'badge-success' : cpct >= 60 ? 'badge-warning' : 'badge-error';
                     return (
-                      <tr key={row.subsidiary_code}>
-                        <td className="table-mono" style={{ fontSize: 11 }}>{row.subsidiary_code}</td>
-                        <td>{row.subsidiary_name}</td>
+                      <tr key={row.company_id}>
+                        <td className="table-mono" style={{ fontSize: 11 }}>{row.company_id}</td>
+                        <td>{row.company_name}</td>
                         <td style={{ textAlign: 'center' }}>
                           <span className={`badge ${badgeClass}`}>{row.months_present} / 12</span>
                         </td>

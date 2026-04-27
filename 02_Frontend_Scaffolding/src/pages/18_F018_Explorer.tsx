@@ -19,6 +19,7 @@ import type {
   PLWaterfallRow, EntityContributionRow,
   ExpenseAccountRow, AccountSummaryRow,
   MonthlyVolumeRow, DocTypeMixRow,
+  FilterOptions,
 } from '../api/client';
 
 // ── colours ───────────────────────────────────────────────────────────────────
@@ -75,26 +76,6 @@ function ChartCard({ title, subtitle, loading, error, height = 280, children }: 
   );
 }
 
-// ── SUBSIDIARIES list ─────────────────────────────────────────────────────────
-const SUBSIDIARIES = [
-  { code: 'PHILS', name: 'RIA Advisory Philippines' },
-  { code: 'MXN',   name: 'RIA Advisory Mexico' },
-  { code: 'AGG',   name: 'RIA Advisory Aggregator LLC' },
-  { code: 'BOR',   name: 'RIA Advisory Borrower LLC' },
-  { code: 'CAN',   name: 'RIA Advisory Canada Ltd' },
-  { code: 'GUA',   name: 'RIA Advisory Guarantor LLC' },
-  { code: 'PTY',   name: 'RIA Advisory Pty Ltd (AUS)' },
-  { code: 'USA',   name: 'RIA Advisory LLC (USA)' },
-  { code: 'IND',   name: 'RIA Advisory LLP India' },
-  { code: 'GBP',   name: 'RIA Advisory Ltd (UK)' },
-  { code: 'ZAF',   name: 'RIA Advisory SA (ZAF)' },
-  { code: 'SYN',   name: 'Synersys Global Inc' },
-  { code: 'TBID',  name: 'TMG Bidco Inc' },
-  { code: 'TSUB',  name: 'TMG Bidco Sub Inc' },
-  { code: 'TCAN',  name: 'TMG Consulting Canada Inc' },
-  { code: 'TOFF',  name: 'TMG Offshore Synersys Global' },
-  { code: 'TUAS',  name: 'TMG Utility Advisory Services' },
-];
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Main component
@@ -142,8 +123,14 @@ export default function Explorer() {
       .finally(() => setCLoading((l) => ({ ...l, doc: false })));
   }, []);
 
+  // ── company list for search filter ─────────────────────────────────────────
+  const [companies, setCompanies] = useState<FilterOptions['companies']>([]);
+  useEffect(() => {
+    api.analytics.filters().then((f) => setCompanies(f.companies)).catch(() => {});
+  }, []);
+
   // ── search state ────────────────────────────────────────────────────────────
-  const [subsidiary, setSubsidiary] = useState('');
+  const [companyId,  setCompanyId]  = useState<number | ''>('');
   const [accountNo,  setAccountNo]  = useState('');
   const [department, setDepartment] = useState('');
   const [dateFrom,   setDateFrom]   = useState('');
@@ -157,7 +144,7 @@ export default function Explorer() {
   const handleSearch = useCallback(() => {
     setSearching(true); setApiError(false);
     const params: Record<string, string | number> = { limit: 300 };
-    if (subsidiary) params.subsidiary = subsidiary;
+    if (companyId)  params.company_id = companyId;
     if (accountNo)  params.account_no = accountNo;
     if (department) params.department = department;
     if (dateFrom)   params.date_from  = dateFrom;
@@ -165,7 +152,7 @@ export default function Explorer() {
     api.gl.entries(params)
       .then(setRows).catch(() => setApiError(true))
       .finally(() => { setSearching(false); setSearched(true); });
-  }, [subsidiary, accountNo, department, dateFrom, dateTo]);
+  }, [companyId, accountNo, department, dateFrom, dateTo]);
 
   const handleLoadStats = useCallback(() => {
     setSearching(true); setApiError(false);
@@ -187,7 +174,7 @@ export default function Explorer() {
     .filter((r) => r.revenue > 0)
     .slice(0, 12)
     .map((r) => ({
-      name: r.subsidiary_code,
+      name: r.company_id,
       revenue: r.revenue,
       cogs: r.cogs,
       gross_margin_pct: r.gross_margin_pct ?? 0,
@@ -214,8 +201,8 @@ export default function Explorer() {
           <div>
             <h1 className="page-title">GL Explorer</h1>
             <p className="page-subtitle">
-              gl_unified · 188,380 entries · 17 subsidiaries · May 2025 – Apr 2026
-              {apiError && <span style={{ color: 'var(--color-warning)', marginLeft: 8 }}>⚠ API offline</span>}
+              Star schema · 188,380 entries · 17 entities · May 2025 – Apr 2026
+              {apiError && <span style={{ color: 'var(--color-warning)', marginLeft: 8 }}>⚠ API error</span>}
             </p>
           </div>
         </div>
@@ -393,7 +380,7 @@ export default function Explorer() {
                 margin={{ top: 8, right: 20, bottom: 40, left: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="subsidiary_code" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" />
+                <XAxis dataKey="company_name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" />
                 <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10 }} domain={['auto','auto']} />
                 <Tooltip formatter={(v) => [`${v}%`, 'Gross Margin']} />
                 <ReferenceLine y={0} stroke="var(--color-error)" strokeDasharray="3 3" />
@@ -428,9 +415,9 @@ export default function Explorer() {
                   {cLoading.entity ? (
                     <tr><td colSpan={7} style={{ textAlign: 'center', padding: '24px 0', color: 'var(--color-text-muted)' }}>Loading…</td></tr>
                   ) : entityData.map((r) => (
-                    <tr key={r.subsidiary_code}>
-                      <td><span className="badge badge-muted" style={{ fontSize: 10 }}>{r.subsidiary_code}</span></td>
-                      <td style={{ fontWeight: 500 }}>{r.subsidiary_name}</td>
+                    <tr key={r.company_id}>
+                      <td><span className="badge badge-muted" style={{ fontSize: 10 }}>{r.company_id}</span></td>
+                      <td style={{ fontWeight: 500 }}>{r.company_name}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-success)' }}>{fmt(r.revenue)}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-warning)' }}>{fmt(r.cogs)}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-warning)' }}>{fmt(r.opex)}</td>
@@ -461,10 +448,10 @@ export default function Explorer() {
           <div className="card" style={{ alignSelf: 'start' }}>
             <div className="card-title">Filters</div>
             <div className="form-group mb-12">
-              <label className="form-label">Subsidiary</label>
-              <select className="form-select" value={subsidiary} onChange={(e) => setSubsidiary(e.target.value)}>
-                <option value="">All subsidiaries</option>
-                {SUBSIDIARIES.map((s) => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+              <label className="form-label">Entity</label>
+              <select className="form-select" value={companyId} onChange={(e) => setCompanyId(e.target.value ? Number(e.target.value) : '')}>
+                <option value="">All entities</option>
+                {companies.map((c) => <option key={c.company_id} value={c.company_id}>{c.company_name}</option>)}
               </select>
             </div>
             <div className="form-group mb-12">
@@ -491,7 +478,7 @@ export default function Explorer() {
           <div className="card">
             {!searched && !searching && (
               <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--color-text-muted)' }}>
-                Set filters and click Search GL to query gl_unified.
+                Set filters and click Search GL to query the database.
               </div>
             )}
             {searching && <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--color-text-muted)' }}>Querying…</div>}

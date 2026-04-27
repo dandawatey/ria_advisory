@@ -17,6 +17,11 @@ import MappingConsole     from './pages/21_F021_MappingConsole';
 import PipelineHealth     from './pages/23_F023_PipelineHealth';
 import Analytics          from './pages/25_F025_Analytics';
 import DataInsights       from './pages/26_F026_DataInsights';
+import GLInsights         from './pages/27_F027_GLInsights';
+import CoAInsights        from './pages/28_F028_CoAInsights';
+import CustomerInsights   from './pages/29_F029_CustomerInsights';
+import PostedSalesInsights from './pages/30_F030_PostedSalesInsights';
+import InvoiceInsights    from './pages/31_F031_InvoiceInsights';
 
 export default function App() {
   return (
@@ -35,6 +40,13 @@ export default function App() {
           <Route path="/entities/:id"   element={<EntityDetail />} />
           <Route path="/explorer"       element={<Explorer />} />
           <Route path="/annotations"    element={<AnnotationsNLQ />} />
+
+          {/* Insights */}
+          <Route path="/insights/gl"           element={<GLInsights />} />
+          <Route path="/insights/coa"          element={<CoAInsights />} />
+          <Route path="/insights/customer"     element={<CustomerInsights />} />
+          <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
+          <Route path="/insights/invoices"     element={<InvoiceInsights />} />
 
           {/* Administration */}
           <Route path="/admin/mappings"        element={<MappingConsole />} />

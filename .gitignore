@@ -8,3 +8,22 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+
+# Input data files (Excel source files, DB, large binaries)
+00_InputSample/
+*.xlsx
+*.xls
+*.db
+*.sqlite
+*.sqlite3
+
+# Claude Code local config
+.claude/
+
+# Playwright test output
+02_Frontend_Scaffolding/test-results/
+02_Frontend_Scaffolding/playwright-report/
+
+# Python data artifacts
+03_Backend/*.db
+03_Backend/*.sqlite
