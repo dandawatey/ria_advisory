@@ -195,6 +195,26 @@ export interface CurrencySplitRow {
   revenue: number; total_volume: number;
 }
 
+// Ageing
+export interface AgeingSummary {
+  invoice_count: number; entity_count: number; customer_count: number;
+  total_outstanding: number;
+  bucket_0_30: number; bucket_31_60: number; bucket_61_90: number;
+  bucket_91_120: number; bucket_120_plus: number;
+}
+export interface AgeingCustomerRow {
+  customer_name: string; invoice_count: number; entity_count: number;
+  total_outstanding: number;
+  bucket_0_30: number; bucket_31_60: number; bucket_61_90: number;
+  bucket_91_120: number; bucket_120_plus: number;
+}
+export interface AgeingEntityRow {
+  company_name: string; invoice_count: number; customer_count: number;
+  total_outstanding: number;
+  bucket_0_30: number; bucket_31_60: number; bucket_61_90: number;
+  bucket_91_120: number; bucket_120_plus: number;
+}
+
 // ── Insights types ────────────────────────────────────────────────────────────
 
 export interface CoASummary {
@@ -347,6 +367,14 @@ export const api = {
       get<IncomeAccountRow[]>(`/api/insights/income/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
     byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
       get<IncomeEntityRow[]>(`/api/insights/income/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+  },
+  ageing: {
+    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<AgeingSummary>(`/api/insights/ageing/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25) =>
+      get<AgeingCustomerRow[]>(`/api/insights/ageing/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), limit })}`),
+    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<AgeingEntityRow[]>(`/api/insights/ageing/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
   },
   insights: {
     coa: {

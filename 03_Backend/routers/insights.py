@@ -776,3 +776,130 @@ def income_by_entity(
         GROUP BY co.company_name
         ORDER BY ABS(SUM(g.amount)) DESC
     """, params)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# AGEING ENDPOINTS  (Invoice ageing buckets from fact_posted_sales)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _age_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
+    clauses = ["TRIM(doc.document_type) = 'Invoice'"]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"ps.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        y, m = month_from.split("-")
+        clauses.append("(d.year * 100 + d.month) >= %s")
+        params.append(int(y) * 100 + int(m))
+    if month_to:
+        y, m = month_to.split("-")
+        clauses.append("(d.year * 100 + d.month) <= %s")
+        params.append(int(y) * 100 + int(m))
+    return "WHERE " + " AND ".join(clauses), params
+
+
+@router.get("/ageing/summary")
+def ageing_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _age_filters(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            COUNT(*)                                                       AS invoice_count,
+            COUNT(DISTINCT ps.company_id)                                  AS entity_count,
+            COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))      AS customer_count,
+            COALESCE(-SUM(ps.amount), 0)                                   AS total_outstanding,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) <= 30
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_0_30,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 31 AND 60
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_31_60,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 61 AND 90
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_61_90,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 91 AND 120
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_91_120,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) > 120
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_120_plus
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {wh}
+    """, params)
+    return rows[0] if rows else {}
+
+
+@router.get("/ageing/by-customer")
+def ageing_by_customer(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    limit: int = Query(default=25, le=100),
+):
+    wh, params = _age_filters(company_id, year, month_from, month_to)
+    params.append(limit)
+    return query(f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), '(unknown)') AS customer_name,
+            COUNT(*)                                                           AS invoice_count,
+            COUNT(DISTINCT ps.company_id)                                      AS entity_count,
+            COALESCE(-SUM(ps.amount), 0)                                       AS total_outstanding,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) <= 30
+                               THEN ps.amount ELSE 0 END), 0)                  AS bucket_0_30,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 31 AND 60
+                               THEN ps.amount ELSE 0 END), 0)                  AS bucket_31_60,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 61 AND 90
+                               THEN ps.amount ELSE 0 END), 0)                  AS bucket_61_90,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 91 AND 120
+                               THEN ps.amount ELSE 0 END), 0)                  AS bucket_91_120,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) > 120
+                               THEN ps.amount ELSE 0 END), 0)                  AS bucket_120_plus
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), '(unknown)')
+        ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
+        LIMIT %s
+    """, params)
+
+
+@router.get("/ageing/by-entity")
+def ageing_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _age_filters(company_id, year, month_from, month_to)
+    return query(f"""
+        SELECT
+            co.company_name,
+            COUNT(*)                                                       AS invoice_count,
+            COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))      AS customer_count,
+            COALESCE(-SUM(ps.amount), 0)                                   AS total_outstanding,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) <= 30
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_0_30,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 31 AND 60
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_31_60,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 61 AND 90
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_61_90,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) BETWEEN 91 AND 120
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_91_120,
+            COALESCE(-SUM(CASE WHEN (CURRENT_DATE - d.full_date) > 120
+                               THEN ps.amount ELSE 0 END), 0)              AS bucket_120_plus
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        LEFT JOIN dim_company  co  ON co.company_id   = ps.company_id
+        {wh}
+        GROUP BY co.company_name
+        ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
+    """, params)

@@ -25,6 +25,7 @@ import InvoiceInsights    from './pages/31_F031_InvoiceInsights';
 import PLAnalytics        from './pages/32_F032_PLAnalytics';
 import Collections        from './pages/33_F033_Collections';
 import MonthlyIncome      from './pages/34_F034_MonthlyIncome';
+import Ageing            from './pages/35_F035_Ageing';
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/pl"             element={<PLAnalytics />} />
           <Route path="/collections"    element={<Collections />} />
           <Route path="/income"         element={<MonthlyIncome />} />
+          <Route path="/ageing"         element={<Ageing />} />
           <Route path="/gl-insights"    element={<DataInsights />} />
           <Route path="/close"          element={<CloseCockpit />} />
           <Route path="/entities/:id"   element={<EntityDetail />} />
