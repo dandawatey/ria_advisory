@@ -465,3 +465,314 @@ def invoices_by_entity(
         GROUP BY co.company_name
         ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
     """, params)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# COLLECTIONS ENDPOINTS  (Invoice vs Payment matching from fact_posted_sales)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _col_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
+    clauses = ["1=1"]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"ps.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        y, m = month_from.split("-")
+        clauses.append("(d.year * 100 + d.month) >= %s")
+        params.append(int(y) * 100 + int(m))
+    if month_to:
+        y, m = month_to.split("-")
+        clauses.append("(d.year * 100 + d.month) <= %s")
+        params.append(int(y) * 100 + int(m))
+    return "WHERE " + " AND ".join(clauses), params
+
+
+@router.get("/collections/summary")
+def collections_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _col_filters(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                               THEN ps.amount ELSE 0 END), 0)          AS total_invoiced,
+            COALESCE( SUM(CASE WHEN TRIM(doc.document_type) = 'Payment'
+                               THEN ps.amount ELSE 0 END), 0)          AS total_collected,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Refund'
+                               THEN ps.amount ELSE 0 END), 0)          AS total_refunded,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Invoice') AS invoice_count,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Payment') AS payment_count,
+            COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))   AS customer_count,
+            COUNT(DISTINCT ps.company_id)                               AS entity_count
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {wh}
+    """, params)
+    row = rows[0] if rows else {}
+    inv  = float(row.get("total_invoiced",  0) or 0)
+    coll = float(row.get("total_collected", 0) or 0)
+    row["outstanding"]      = round(inv - coll, 4)
+    row["collection_rate"]  = round((coll / inv * 100) if inv > 0 else 0, 2)
+    return row
+
+
+@router.get("/collections/monthly")
+def collections_monthly(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _col_filters(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM')                               AS month,
+            d.month_name,
+            d.year,
+            d.quarter,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                               THEN ps.amount ELSE 0 END), 0)                  AS invoiced,
+            COALESCE( SUM(CASE WHEN TRIM(doc.document_type) = 'Payment'
+                               THEN ps.amount ELSE 0 END), 0)                  AS collected,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Refund'
+                               THEN ps.amount ELSE 0 END), 0)                  AS refunded,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Invoice')        AS invoice_count,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Payment')        AS payment_count,
+            COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))          AS active_customers
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {wh}
+        GROUP BY d.year, d.quarter, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, params)
+    for r in rows:
+        inv  = float(r.get("invoiced",   0) or 0)
+        coll = float(r.get("collected",  0) or 0)
+        r["outstanding"]     = round(inv - coll, 4)
+        r["collection_rate"] = round((coll / inv * 100) if inv > 0 else 0, 2)
+    return rows
+
+
+@router.get("/collections/by-customer")
+def collections_by_customer(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    limit: int = Query(default=25, le=100),
+):
+    wh, params = _col_filters(company_id, year, month_from, month_to)
+    params.append(limit)
+    rows = query(f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), '(unknown)') AS customer_name,
+            COUNT(DISTINCT ps.company_id)                                      AS entity_count,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Invoice')       AS invoice_count,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                               THEN ps.amount ELSE 0 END), 0)                  AS invoiced,
+            COALESCE( SUM(CASE WHEN TRIM(doc.document_type) = 'Payment'
+                               THEN ps.amount ELSE 0 END), 0)                  AS collected,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Refund'
+                               THEN ps.amount ELSE 0 END), 0)                  AS refunded
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), '(unknown)')
+        ORDER BY ABS(COALESCE(SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                                       THEN ps.amount ELSE 0 END), 0)) DESC
+        LIMIT %s
+    """, params)
+    for r in rows:
+        inv  = float(r.get("invoiced",  0) or 0)
+        coll = float(r.get("collected", 0) or 0)
+        r["outstanding"]     = round(inv - coll, 4)
+        r["collection_rate"] = round((coll / inv * 100) if inv > 0 else 0, 2)
+    return rows
+
+
+@router.get("/collections/by-entity")
+def collections_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _col_filters(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            COUNT(*) FILTER (WHERE TRIM(doc.document_type) = 'Invoice')  AS invoice_count,
+            COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                               THEN ps.amount ELSE 0 END), 0)             AS invoiced,
+            COALESCE( SUM(CASE WHEN TRIM(doc.document_type) = 'Payment'
+                               THEN ps.amount ELSE 0 END), 0)             AS collected,
+            COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))     AS customer_count
+        FROM fact_posted_sales ps
+        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
+        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        LEFT JOIN dim_company  co  ON co.company_id   = ps.company_id
+        {wh}
+        GROUP BY co.company_name
+        ORDER BY ABS(COALESCE(SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
+                                       THEN ps.amount ELSE 0 END), 0)) DESC
+    """, params)
+    for r in rows:
+        inv  = float(r.get("invoiced",  0) or 0)
+        coll = float(r.get("collected", 0) or 0)
+        r["outstanding"]     = round(inv - coll, 4)
+        r["collection_rate"] = round((coll / inv * 100) if inv > 0 else 0, 2)
+    return rows
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# MONTHLY INCOME ENDPOINTS  (GL income accounts: 4xx revenue, 7xx other income)
+# ═════════════════════════════════════════════════════════════════════════════
+
+def _inc_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
+    clauses = [
+        "ac.account_no != '999999'",
+        "(ac.account_no LIKE '4%%' OR ac.account_no LIKE '7%%')",
+    ]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"g.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        y, m = month_from.split("-")
+        clauses.append("(d.year * 100 + d.month) >= %s")
+        params.append(int(y) * 100 + int(m))
+    if month_to:
+        y, m = month_to.split("-")
+        clauses.append("(d.year * 100 + d.month) <= %s")
+        params.append(int(y) * 100 + int(m))
+    return "WHERE " + " AND ".join(clauses), params
+
+
+@router.get("/income/summary")
+def income_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            -SUM(g.amount)                                            AS total_income,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                      THEN g.amount ELSE 0 END)                       AS revenue,
+            -SUM(CASE WHEN ac.account_no LIKE '7%%'
+                      THEN g.amount ELSE 0 END)                       AS other_income,
+            COUNT(DISTINCT d.year * 100 + d.month)                   AS months_count,
+            COUNT(DISTINCT g.company_id)                              AS entity_count,
+            COUNT(*)                                                   AS entry_count
+        FROM fact_gl_entries g
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        JOIN dim_account ac ON ac.account_no = g.account_no
+        {wh}
+    """, params)
+    row = rows[0] if rows else {}
+    months = int(row.get("months_count") or 1)
+    total  = float(row.get("total_income") or 0)
+    row["avg_monthly_income"] = round(total / months, 4) if months > 0 else 0
+    return row
+
+
+@router.get("/income/monthly")
+def income_monthly(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    return query(f"""
+        SELECT
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM')                      AS month,
+            d.month_name,
+            d.year,
+            d.quarter,
+            -SUM(g.amount)                                             AS total_income,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                      THEN g.amount ELSE 0 END)                        AS revenue,
+            -SUM(CASE WHEN ac.account_no LIKE '7%%'
+                      THEN g.amount ELSE 0 END)                        AS other_income,
+            COUNT(DISTINCT g.company_id)                               AS entity_count,
+            COUNT(*)                                                    AS entry_count
+        FROM fact_gl_entries g
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        JOIN dim_account ac ON ac.account_no = g.account_no
+        {wh}
+        GROUP BY d.year, d.quarter, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, params)
+
+
+@router.get("/income/by-account")
+def income_by_account(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    return query(f"""
+        SELECT
+            ac.account_no,
+            ac.account_name,
+            COALESCE(ac.account_category,    'Uncategorized') AS account_category,
+            COALESCE(ac.account_subcategory, 'Uncategorized') AS account_subcategory,
+            -SUM(g.amount)                                     AS total_income,
+            COUNT(DISTINCT g.company_id)                       AS entity_count,
+            COUNT(*)                                            AS entry_count
+        FROM fact_gl_entries g
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        JOIN dim_account ac ON ac.account_no = g.account_no
+        {wh}
+        GROUP BY ac.account_no, ac.account_name, ac.account_category, ac.account_subcategory
+        ORDER BY ABS(SUM(g.amount)) DESC
+        LIMIT 50
+    """, params)
+
+
+@router.get("/income/by-entity")
+def income_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    return query(f"""
+        SELECT
+            co.company_name,
+            -SUM(g.amount)                                             AS total_income,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                      THEN g.amount ELSE 0 END)                        AS revenue,
+            -SUM(CASE WHEN ac.account_no LIKE '7%%'
+                      THEN g.amount ELSE 0 END)                        AS other_income,
+            COUNT(DISTINCT d.year * 100 + d.month)                    AS months_active,
+            COUNT(*)                                                    AS entry_count
+        FROM fact_gl_entries g
+        JOIN dim_date    d  ON d.date_id     = g.date_id
+        JOIN dim_account ac ON ac.account_no = g.account_no
+        JOIN dim_company co ON co.company_id = g.company_id
+        {wh}
+        GROUP BY co.company_name
+        ORDER BY ABS(SUM(g.amount)) DESC
+    """, params)

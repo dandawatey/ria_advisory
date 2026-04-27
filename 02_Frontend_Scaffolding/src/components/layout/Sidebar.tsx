@@ -20,7 +20,10 @@ const nav: NavSection[] = [
       { label: 'Executive Dashboard', path: '/dashboard',   icon: '▦' },
       { label: 'Close Cockpit',       path: '/close',       icon: '✓' },
       { label: 'Analytics',           path: '/analytics',   icon: '◉' },
-      { label: 'Annotations / NLQ',   path: '/annotations', icon: '◎' },
+      { label: 'P&L Analytics',        path: '/pl',           icon: '₱' },
+      { label: 'Monthly Collection',   path: '/collections',  icon: '◷' },
+      { label: 'Monthly Income',       path: '/income',       icon: '↑' },
+      { label: 'Annotations / NLQ',   path: '/annotations',  icon: '◎' },
     ],
   },
   {

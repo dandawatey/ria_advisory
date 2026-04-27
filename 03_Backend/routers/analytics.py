@@ -469,6 +469,34 @@ def expense_accounts(
 
 
 # ── 15. Currency Split ────────────────────────────────────────────────────────
+@router.get("/pl-yoy")
+def pl_yoy(
+    company_id: Optional[List[int]] = Query(default=None),
+):
+    """Year-over-Year P&L summary — one row per calendar year."""
+    wh, params = _where(company_id)
+    return query(f"""
+        SELECT
+            d.year,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)   AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)   AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)   AS opex,
+            -SUM(CASE WHEN ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)   AS other_income,
+             SUM(CASE WHEN ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)   AS tax,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            ) AS net_income,
+            COUNT(*) AS entry_count
+        {_BASE} {wh}
+        GROUP BY d.year
+        ORDER BY d.year
+    """, params)
+
+
 @router.get("/currency-split")
 def currency_split(
     year: Optional[int] = None,

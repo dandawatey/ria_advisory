@@ -22,6 +22,9 @@ import CoAInsights        from './pages/28_F028_CoAInsights';
 import CustomerInsights   from './pages/29_F029_CustomerInsights';
 import PostedSalesInsights from './pages/30_F030_PostedSalesInsights';
 import InvoiceInsights    from './pages/31_F031_InvoiceInsights';
+import PLAnalytics        from './pages/32_F032_PLAnalytics';
+import Collections        from './pages/33_F033_Collections';
+import MonthlyIncome      from './pages/34_F034_MonthlyIncome';
 
 export default function App() {
   return (
@@ -35,6 +38,9 @@ export default function App() {
           {/* Finance */}
           <Route path="/dashboard"      element={<ExecutiveDashboard />} />
           <Route path="/analytics"      element={<Analytics />} />
+          <Route path="/pl"             element={<PLAnalytics />} />
+          <Route path="/collections"    element={<Collections />} />
+          <Route path="/income"         element={<MonthlyIncome />} />
           <Route path="/gl-insights"    element={<DataInsights />} />
           <Route path="/close"          element={<CloseCockpit />} />
           <Route path="/entities/:id"   element={<EntityDetail />} />

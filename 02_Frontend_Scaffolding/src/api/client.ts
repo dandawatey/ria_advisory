@@ -130,6 +130,54 @@ export interface CompletenessSummary {
   no_dept_entries: number; no_vertical_entries: number;
   suspense_entries: number; suspense_net: number;
 }
+export interface PLYoYRow {
+  year: number; revenue: number; cogs: number; opex: number;
+  other_income: number; tax: number; net_income: number; entry_count: number;
+}
+
+// Collections
+export interface CollectionSummary {
+  total_invoiced: number; total_collected: number; total_refunded: number;
+  outstanding: number; collection_rate: number;
+  invoice_count: number; payment_count: number;
+  customer_count: number; entity_count: number;
+}
+export interface CollectionMonthRow {
+  month: string; month_name: string; year: number; quarter: number;
+  invoiced: number; collected: number; refunded: number;
+  outstanding: number; collection_rate: number;
+  invoice_count: number; payment_count: number; active_customers: number;
+}
+export interface CollectionCustomerRow {
+  customer_name: string; entity_count: number; invoice_count: number;
+  invoiced: number; collected: number; refunded: number;
+  outstanding: number; collection_rate: number;
+}
+export interface CollectionEntityRow {
+  company_name: string; invoice_count: number; customer_count: number;
+  invoiced: number; collected: number; outstanding: number; collection_rate: number;
+}
+
+// Monthly Income
+export interface IncomeSummary {
+  total_income: number; revenue: number; other_income: number;
+  months_count: number; avg_monthly_income: number;
+  entity_count: number; entry_count: number;
+}
+export interface IncomeMonthRow {
+  month: string; month_name: string; year: number; quarter: number;
+  total_income: number; revenue: number; other_income: number;
+  entity_count: number; entry_count: number;
+}
+export interface IncomeAccountRow {
+  account_no: string; account_name: string;
+  account_category: string; account_subcategory: string;
+  total_income: number; entity_count: number; entry_count: number;
+}
+export interface IncomeEntityRow {
+  company_name: string; total_income: number; revenue: number;
+  other_income: number; months_active: number; entry_count: number;
+}
 export interface EntityCoverageRow {
   company_id: number; company_name: string;
   months_present: number; from_date: string; to_date: string;
@@ -275,6 +323,30 @@ export const api = {
     monthlyVolume:   () => get<MonthlyVolumeRow[]>('/api/analytics/monthly-volume'),
     expenseAccounts: (f?: GLFilters) => get<ExpenseAccountRow[]>(`/api/analytics/expense-accounts${buildFilterQS(f)}`),
     currencySplit:   (f?: GLFilters) => get<CurrencySplitRow[]>(`/api/analytics/currency-split${buildFilterQS(f)}`),
+    plYoY:           (ids?: number[]) => {
+      const qs = (ids ?? []).map((id) => `company_id=${id}`).join('&');
+      return get<PLYoYRow[]>(`/api/analytics/pl-yoy${qs ? `?${qs}` : ''}`);
+    },
+  },
+  collections: {
+    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<CollectionSummary>(`/api/insights/collections/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    monthly:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<CollectionMonthRow[]>(`/api/insights/collections/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25) =>
+      get<CollectionCustomerRow[]>(`/api/insights/collections/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), limit })}`),
+    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<CollectionEntityRow[]>(`/api/insights/collections/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+  },
+  income: {
+    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<IncomeSummary>(`/api/insights/income/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    monthly:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<IncomeMonthRow[]>(`/api/insights/income/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<IncomeAccountRow[]>(`/api/insights/income/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<IncomeEntityRow[]>(`/api/insights/income/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
   },
   insights: {
     coa: {
