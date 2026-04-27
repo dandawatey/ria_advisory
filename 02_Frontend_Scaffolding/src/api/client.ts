@@ -355,38 +355,35 @@ export const api = {
     monthlyVolume:   () => get<MonthlyVolumeRow[]>('/api/analytics/monthly-volume'),
     expenseAccounts: (f?: GLFilters) => get<ExpenseAccountRow[]>(`/api/analytics/expense-accounts${buildFilterQS(f)}`),
     currencySplit:   (f?: GLFilters) => get<CurrencySplitRow[]>(`/api/analytics/currency-split${buildFilterQS(f)}`),
-    plYoY:           (ids?: number[]) => {
-      const qs = (ids ?? []).map((id) => `company_id=${id}`).join('&');
-      return get<PLYoYRow[]>(`/api/analytics/pl-yoy${qs ? `?${qs}` : ''}`);
-    },
+    plYoY:           (f?: GLFilters) => get<PLYoYRow[]>(`/api/analytics/pl-yoy${buildFilterQS(f)}`),
   },
   collections: {
-    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<CollectionSummary>(`/api/insights/collections/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    monthly:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<CollectionMonthRow[]>(`/api/insights/collections/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25) =>
-      get<CollectionCustomerRow[]>(`/api/insights/collections/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), limit })}`),
-    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<CollectionEntityRow[]>(`/api/insights/collections/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string, gpt?: string) =>
+      get<CollectionSummary>(`/api/insights/collections/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}) }, ap)}`),
+    monthly:    (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string, gpt?: string) =>
+      get<CollectionMonthRow[]>(`/api/insights/collections/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}) }, ap)}`),
+    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25, ap?: string, gpt?: string) =>
+      get<CollectionCustomerRow[]>(`/api/insights/collections/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}), limit }, ap)}`),
+    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string, gpt?: string) =>
+      get<CollectionEntityRow[]>(`/api/insights/collections/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}) }, ap)}`),
   },
   income: {
-    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<IncomeSummary>(`/api/insights/income/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    monthly:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<IncomeMonthRow[]>(`/api/insights/income/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<IncomeAccountRow[]>(`/api/insights/income/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<IncomeEntityRow[]>(`/api/insights/income/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string) =>
+      get<IncomeSummary>(`/api/insights/income/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) }, ap)}`),
+    monthly:   (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string) =>
+      get<IncomeMonthRow[]>(`/api/insights/income/monthly${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) }, ap)}`),
+    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string) =>
+      get<IncomeAccountRow[]>(`/api/insights/income/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) }, ap)}`),
+    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string, ap?: string) =>
+      get<IncomeEntityRow[]>(`/api/insights/income/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) }, ap)}`),
   },
   ageing: {
-    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<AgeingSummary>(`/api/insights/ageing/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
-    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25) =>
-      get<AgeingCustomerRow[]>(`/api/insights/ageing/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), limit })}`),
-    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
-      get<AgeingEntityRow[]>(`/api/insights/ageing/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    summary:    (ids: number[], yr: number | null, mf?: string, mt?: string, gpt?: string) =>
+      get<AgeingSummary>(`/api/insights/ageing/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}) })}`),
+    byCustomer: (ids: number[], yr: number | null, mf?: string, mt?: string, limit = 25, gpt?: string) =>
+      get<AgeingCustomerRow[]>(`/api/insights/ageing/by-customer${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}), limit })}`),
+    byEntity:   (ids: number[], yr: number | null, mf?: string, mt?: string, gpt?: string) =>
+      get<AgeingEntityRow[]>(`/api/insights/ageing/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}), ...(gpt ? { doc_type: gpt } : {}) })}`),
   },
   insights: {
     coa: {

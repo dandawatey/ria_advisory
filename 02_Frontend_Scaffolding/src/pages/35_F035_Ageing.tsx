@@ -124,13 +124,15 @@ export default function Ageing() {
   const mt   = monthTo   || undefined;
 
   // ── Load summary + KPIs ───────────────────────────────────────────────────────
+  const gpt = genPostType || undefined;
+
   const loadSummary = useCallback(() => {
     setLoading(true); setError(false);
-    api.ageing.summary(ids, yr, mf, mt)
+    api.ageing.summary(ids, yr, mf, mt, gpt)
       .then(setSummary)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -138,21 +140,21 @@ export default function Ageing() {
   useEffect(() => {
     if (tab !== 'customer') return;
     setLoadingCustomers(true);
-    api.ageing.byCustomer(ids, yr, mf, mt)
+    api.ageing.byCustomer(ids, yr, mf, mt, 25, gpt)
       .then(setCustomers)
       .catch(() => {})
       .finally(() => setLoadingCustomers(false));
-  }, [tab, ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load by-entity ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (tab !== 'entity') return;
     setLoadingEntities(true);
-    api.ageing.byEntity(ids, yr, mf, mt)
+    api.ageing.byEntity(ids, yr, mf, mt, gpt)
       .then(setEntities)
       .catch(() => {})
       .finally(() => setLoadingEntities(false));
-  }, [tab, ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bucket chart data ─────────────────────────────────────────────────────────
   const bucketData = summary

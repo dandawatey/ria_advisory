@@ -58,10 +58,15 @@ def coa_summary():
 def coa_by_category(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    account_prefix: Optional[str] = None,
 ):
     params: list = []
     company_clause = _company_filter(company_id, params, alias="g")
     year_clause    = _year_filter(year, params, alias="d")
+    prefix_clause  = "1=1"
+    if account_prefix:
+        params.append(f"{account_prefix}%")
+        prefix_clause = "ac.account_no LIKE %s"
 
     return query(f"""
         SELECT
@@ -77,6 +82,7 @@ def coa_by_category(
         WHERE 1=1
           AND {company_clause}
           AND {year_clause}
+          AND {prefix_clause}
         GROUP BY COALESCE(ac.account_category, 'Uncategorized')
         ORDER BY ABS(COALESCE(SUM(cb.balance), 0)) DESC
     """, params)
@@ -86,6 +92,7 @@ def coa_by_category(
 def coa_accounts(
     company_id: Optional[List[int]] = Query(default=None),
     category: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
     params: list = []
     company_clause = _company_filter(company_id, params, alias="g")
@@ -94,6 +101,11 @@ def coa_accounts(
     if category:
         params.append(category)
         cat_clause = "ac.account_category = %s"
+
+    prefix_clause = "1=1"
+    if account_prefix:
+        params.append(f"{account_prefix}%")
+        prefix_clause = "ac.account_no LIKE %s"
 
     return query(f"""
         SELECT
@@ -111,6 +123,7 @@ def coa_accounts(
         WHERE 1=1
           AND {company_clause}
           AND {cat_clause}
+          AND {prefix_clause}
         GROUP BY ac.account_no, ac.account_name, ac.account_category, ac.account_subcategory
         ORDER BY ABS(COALESCE(SUM(cb.balance), 0)) DESC
         LIMIT 50
@@ -501,8 +514,9 @@ def collections_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _col_filters(company_id, year, month_from, month_to)
+    wh, params = _col_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     rows = query(f"""
         SELECT
             COALESCE(-SUM(CASE WHEN TRIM(doc.document_type) = 'Invoice'
@@ -534,8 +548,9 @@ def collections_monthly(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _col_filters(company_id, year, month_from, month_to)
+    wh, params = _col_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     rows = query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')                               AS month,
@@ -573,8 +588,9 @@ def collections_by_customer(
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
     limit: int = Query(default=25, le=100),
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _col_filters(company_id, year, month_from, month_to)
+    wh, params = _col_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     params.append(limit)
     rows = query(f"""
         SELECT
@@ -610,8 +626,9 @@ def collections_by_entity(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _col_filters(company_id, year, month_from, month_to)
+    wh, params = _col_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     rows = query(f"""
         SELECT
             co.company_name,
@@ -675,8 +692,9 @@ def income_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
-    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    wh, params = _inc_filters(company_id, year, month_from, month_to, account_prefix=account_prefix)
     rows = query(f"""
         SELECT
             -SUM(g.amount)                                            AS total_income,
@@ -705,8 +723,9 @@ def income_monthly(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
-    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    wh, params = _inc_filters(company_id, year, month_from, month_to, account_prefix=account_prefix)
     return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')                      AS month,
@@ -735,8 +754,9 @@ def income_by_account(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
-    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    wh, params = _inc_filters(company_id, year, month_from, month_to, account_prefix=account_prefix)
     return query(f"""
         SELECT
             ac.account_no,
@@ -762,8 +782,9 @@ def income_by_entity(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
-    wh, params = _inc_filters(company_id, year, month_from, month_to)
+    wh, params = _inc_filters(company_id, year, month_from, month_to, account_prefix=account_prefix)
     return query(f"""
         SELECT
             co.company_name,
@@ -816,8 +837,9 @@ def ageing_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _age_filters(company_id, year, month_from, month_to)
+    wh, params = _age_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     rows = query(f"""
         SELECT
             COUNT(*)                                                       AS invoice_count,
@@ -849,8 +871,9 @@ def ageing_by_customer(
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
     limit: int = Query(default=25, le=100),
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _age_filters(company_id, year, month_from, month_to)
+    wh, params = _age_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     params.append(limit)
     return query(f"""
         SELECT
@@ -884,8 +907,9 @@ def ageing_by_entity(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _age_filters(company_id, year, month_from, month_to)
+    wh, params = _age_filters(company_id, year, month_from, month_to, doc_type=doc_type)
     return query(f"""
         SELECT
             co.company_name,

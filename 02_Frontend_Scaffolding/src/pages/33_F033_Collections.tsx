@@ -190,11 +190,11 @@ export default function Collections() {
     setLoadSummary(true);
     setErrSummary(false);
     api.collections
-      .summary(selectedCompanies, year, mf(), mt())
+      .summary(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
       .then(setSummary)
       .catch(() => setErrSummary(true))
       .finally(() => setLoadSummary(false));
-  }, [selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Monthly tab data
   useEffect(() => {
@@ -202,11 +202,11 @@ export default function Collections() {
     setLoadMonthly(true);
     setErrMonthly(false);
     api.collections
-      .monthly(selectedCompanies, year, mf(), mt())
+      .monthly(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
       .then(setMonthly)
       .catch(() => setErrMonthly(true))
       .finally(() => setLoadMonthly(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Customer tab data
   useEffect(() => {
@@ -216,11 +216,11 @@ export default function Collections() {
     const customerMonthFrom = drill?.type === 'month' ? drill.value : (monthFrom || undefined);
     const customerMonthTo = drill?.type === 'month' ? drill.value : (monthTo || undefined);
     api.collections
-      .byCustomer(selectedCompanies, year, customerMonthFrom, customerMonthTo, 25)
+      .byCustomer(selectedCompanies, year, customerMonthFrom, customerMonthTo, 25, accountPrefix || undefined, genPostType || undefined)
       .then(setCustomers)
       .catch(() => setErrCustomers(true))
       .finally(() => setLoadCustomers(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Entity tab data
   useEffect(() => {
@@ -228,11 +228,11 @@ export default function Collections() {
     setLoadEntities(true);
     setErrEntities(false);
     api.collections
-      .byEntity(selectedCompanies, year, mf(), mt())
+      .byEntity(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
       .then(setEntities)
       .catch(() => setErrEntities(true))
       .finally(() => setLoadEntities(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleCompany = (id: number) => {
     setSelectedCompanies((prev) =>

@@ -195,34 +195,36 @@ export default function CoAInsights() {
       .finally(() => L('summary', false));
   }, []);
 
-  // ── By-category: refresh when company or year changes ─────────────────────
+  // ── By-category: refresh when company, year, or GL filters change ────────
   useEffect(() => {
     L('cat', true);
     const qs = new URLSearchParams();
-    if (selectedCompany != null) qs.set('company_id', String(selectedCompany));
-    if (selectedYear    != null) qs.set('year',       String(selectedYear));
+    if (selectedCompany  != null) qs.set('company_id',    String(selectedCompany));
+    if (selectedYear     != null) qs.set('year',          String(selectedYear));
+    if (accountPrefix)            qs.set('account_prefix', accountPrefix);
     const q = qs.toString() ? `?${qs.toString()}` : '';
     fetch(`${BASE}/api/insights/coa/by-category${q}`)
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((d: CoACategoryRow[]) => setCategories(d))
       .catch(() => E('cat', true))
       .finally(() => L('cat', false));
-  }, [selectedCompany, selectedYear]);
+  }, [selectedCompany, selectedYear, accountPrefix]);
 
-  // ── Accounts: load when tab=detail, or when drillCat/company changes ──────
+  // ── Accounts: load when tab=detail, or when drillCat/company/GL filter changes
   useEffect(() => {
     if (tab !== 'detail') return;
     L('accounts', true);
     const qs = new URLSearchParams();
-    if (selectedCompany != null) qs.set('company_id', String(selectedCompany));
-    if (drillCat)                qs.set('category',   drillCat);
+    if (selectedCompany != null) qs.set('company_id',    String(selectedCompany));
+    if (drillCat)                qs.set('category',      drillCat);
+    if (accountPrefix)           qs.set('account_prefix', accountPrefix);
     const q = qs.toString() ? `?${qs.toString()}` : '';
     fetch(`${BASE}/api/insights/coa/accounts${q}`)
       .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((d: CoAAccountRow[]) => { setAccounts(d); setPage(1); })
       .catch(() => E('accounts', true))
       .finally(() => L('accounts', false));
-  }, [tab, selectedCompany, drillCat]);
+  }, [tab, selectedCompany, drillCat, accountPrefix]);
 
   // ── Coverage: load once when tab becomes active ────────────────────────────
   useEffect(() => {

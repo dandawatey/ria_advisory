@@ -201,7 +201,7 @@ export default function PLAnalytics() {
   useEffect(() => {
     if (tab !== 'yoy') return;
     setLoadYoy(true); setErrYoy(false);
-    api.analytics.plYoY(filters.company_ids)
+    api.analytics.plYoY(filters)
       .then(setYoy).catch(() => setErrYoy(true)).finally(() => setLoadYoy(false));
   }, [tab, filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
