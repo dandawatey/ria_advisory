@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from 'recharts';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -123,6 +124,8 @@ export default function InvoiceInsights() {
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [year, setYear] = useState<number | null>(null);
   const [drill, setDrill] = useState<{ label: string; filter: Record<string, string> } | null>(null);
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   const [summary, setSummary] = useState<InvoiceSummary | null>(null);
   const [periodData, setPeriodData] = useState<PeriodRow[]>([]);
@@ -155,8 +158,10 @@ export default function InvoiceInsights() {
     const qs = new URLSearchParams();
     selectedCompanies.forEach((id) => qs.append('company_id', String(id)));
     if (year) qs.set('year', String(year));
+    if (accountPrefix) qs.set('account_prefix', accountPrefix);
+    if (genPostType)   qs.set('doc_type', genPostType);
     return qs;
-  }, [selectedCompanies, year]);
+  }, [selectedCompanies, year, accountPrefix, genPostType]);
 
   // Summary
   useEffect(() => {
@@ -291,6 +296,15 @@ export default function InvoiceInsights() {
                 >×</button>
               </div>
             )}
+
+            <div style={{ marginTop: 14 }}>
+              <GLFilterBar
+                accountPrefix={accountPrefix}
+                onAccountPrefix={setAccountPrefix}
+                genPostType={genPostType}
+                onGenPostType={setGenPostType}
+              />
+            </div>
           </div>
         </div>
 

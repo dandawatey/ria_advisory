@@ -14,6 +14,7 @@ import {
   type AgeingCustomerRow,
   type AgeingEntityRow,
 } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
@@ -99,6 +100,8 @@ export default function Ageing() {
   const [monthFrom, setMonthFrom]           = useState('');
   const [monthTo, setMonthTo]               = useState('');
   const [tab, setTab]                       = useState<Tab>('buckets');
+  const [accountPrefix, setAccountPrefix]   = useState('');
+  const [genPostType, setGenPostType]       = useState('');
 
   // ── Data state ───────────────────────────────────────────────────────────────
   const [summary, setSummary]         = useState<AgeingSummary | null>(null);
@@ -250,6 +253,16 @@ export default function Ageing() {
               </div>
             </div>
           )}
+
+          {/* GL Account + Gen Post Type */}
+          <div style={{ paddingTop: 8 }}>
+            <GLFilterBar
+              accountPrefix={accountPrefix}
+              onAccountPrefix={setAccountPrefix}
+              genPostType={genPostType}
+              onGenPostType={setGenPostType}
+            />
+          </div>
         </div>
       </div>
 

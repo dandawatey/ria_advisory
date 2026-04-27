@@ -17,13 +17,20 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 # ── Base JOIN snippet reused by most queries ──────────────────────────────────
 _BASE = """
     FROM fact_gl_entries g
-    JOIN dim_date    d  ON d.date_id     = g.date_id
-    JOIN dim_account ac ON ac.account_no = g.account_no
-    JOIN dim_company co ON co.company_id = g.company_id
+    JOIN dim_date      d   ON d.date_id      = g.date_id
+    JOIN dim_account   ac  ON ac.account_no  = g.account_no
+    JOIN dim_company   co  ON co.company_id  = g.company_id
+    LEFT JOIN dim_document doc ON doc.document_id = g.document_id
 """
 
-def _where(company_ids=None, year=None, month_from=None, month_to=None, extra=None):
-    """Build WHERE + params for the standard GL query pattern."""
+def _where(company_ids=None, year=None, month_from=None, month_to=None,
+           extra=None, account_prefix=None, doc_type=None):
+    """Build WHERE + params for the standard GL query pattern.
+
+    New params:
+      account_prefix : str  — e.g. '4' → ac.account_no LIKE '4%'
+      doc_type       : str  — e.g. 'Invoice' → dim_document.document_type match
+    """
     clauses = ["ac.account_no != '999999'"]
     params: list = []
     if company_ids:
@@ -41,6 +48,12 @@ def _where(company_ids=None, year=None, month_from=None, month_to=None, extra=No
         y, m = month_to.split("-")
         clauses.append("(d.year * 100 + d.month) <= %s")
         params.append(int(y) * 100 + int(m))
+    if account_prefix:
+        clauses.append("ac.account_no LIKE %s")
+        params.append(f"{account_prefix}%")
+    if doc_type:
+        clauses.append("TRIM(COALESCE(doc.document_type, '')) = %s")
+        params.append(doc_type)
     if extra:
         clauses.append(extra)
     return "WHERE " + " AND ".join(clauses), params
@@ -72,8 +85,10 @@ def kpi_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
     rows = query(f"""
         SELECT
             -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
@@ -100,8 +115,10 @@ def pl_waterfall(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')                                AS month,
@@ -127,11 +144,14 @@ def pl_waterfall(
 # ── 2. Entity Contribution ────────────────────────────────────────────────────
 @router.get("/entity-contribution")
 def entity_contribution(
+    company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(year=year, month_from=month_from, month_to=month_to)
+    wh, params = _where(company_id, year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             co.company_id,
@@ -164,8 +184,10 @@ def department_heatmap(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to, extra="dp.department_code IS NOT NULL")
+    wh, params = _where(company_id, year, month_from, month_to, extra="dp.department_code IS NOT NULL", account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             dp.department_code,
@@ -192,8 +214,10 @@ def rolling_trend(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             co.company_id,
@@ -247,8 +271,9 @@ def doc_type_mix(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix)
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(doc.document_type), ''), 'Unspecified') AS document_type,
@@ -256,7 +281,6 @@ def doc_type_mix(
             SUM(ABS(g.amount))                                            AS total_absolute_value,
             ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2)           AS pct_of_entries
         {_BASE}
-        JOIN dim_document doc ON doc.document_id = g.document_id
         {wh}
         GROUP BY COALESCE(NULLIF(TRIM(doc.document_type), ''), 'Unspecified')
         ORDER BY entry_count DESC
@@ -348,8 +372,10 @@ def vertical_pl(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(dp.vertical_code), ''), 'Unassigned') AS vertical_code,
@@ -373,8 +399,10 @@ def account_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(company_id, year, month_from, month_to)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             COALESCE(ac.account_category, 'Other')            AS category,
@@ -450,9 +478,11 @@ def expense_accounts(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
     extra = "(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"
-    wh, params = _where(company_id, year, month_from, month_to, extra=extra)
+    wh, params = _where(company_id, year, month_from, month_to, extra=extra, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             ac.account_no       AS gl_account_no,
@@ -472,9 +502,11 @@ def expense_accounts(
 @router.get("/pl-yoy")
 def pl_yoy(
     company_id: Optional[List[int]] = Query(default=None),
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
     """Year-over-Year P&L summary — one row per calendar year."""
-    wh, params = _where(company_id)
+    wh, params = _where(company_id, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             d.year,
@@ -502,8 +534,10 @@ def currency_split(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    account_prefix: Optional[str] = None,
+    doc_type: Optional[str] = None,
 ):
-    wh, params = _where(year=year, month_from=month_from, month_to=month_to)
+    wh, params = _where(year=year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type)
     return query(f"""
         SELECT
             cu.currency_code,

@@ -18,14 +18,18 @@ export interface GLFilters {
   year?: number;            // undefined = all years
   month_from?: string;      // 'YYYY-MM'
   month_to?: string;        // 'YYYY-MM'
+  account_prefix?: string;  // e.g. '4' → 4xx accounts only
+  gen_post_type?: string;   // document_type e.g. 'Invoice'
 }
 
 export function buildFilterQS(f?: GLFilters, extra?: Record<string, string | number>): string {
   const qs = new URLSearchParams();
   (f?.company_ids ?? []).forEach((id) => qs.append('company_id', String(id)));
-  if (f?.year)        qs.set('year',        String(f.year));
-  if (f?.month_from)  qs.set('month_from',  f.month_from);
-  if (f?.month_to)    qs.set('month_to',    f.month_to);
+  if (f?.year)            qs.set('year',           String(f.year));
+  if (f?.month_from)      qs.set('month_from',     f.month_from);
+  if (f?.month_to)        qs.set('month_to',       f.month_to);
+  if (f?.account_prefix)  qs.set('account_prefix', f.account_prefix);
+  if (f?.gen_post_type)   qs.set('doc_type',       f.gen_post_type);
   if (extra) Object.entries(extra).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
   const s = qs.toString();
   return s ? `?${s}` : '';
@@ -289,10 +293,18 @@ export interface InvoiceEntityRow {
 }
 
 // helper — build QS for insights endpoints (supports repeated company_id)
-export function buildInsightsQS(companyIds: number[], year: number | null, extra?: Record<string, string | number>): string {
+export function buildInsightsQS(
+  companyIds: number[],
+  year: number | null,
+  extra?: Record<string, string | number>,
+  accountPrefix?: string,
+  genPostType?: string,
+): string {
   const qs = new URLSearchParams();
   companyIds.forEach((id) => qs.append('company_id', String(id)));
-  if (year) qs.set('year', String(year));
+  if (year)           qs.set('year',           String(year));
+  if (accountPrefix)  qs.set('account_prefix', accountPrefix);
+  if (genPostType)    qs.set('doc_type',        genPostType);
   if (extra) Object.entries(extra).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
   const s = qs.toString();
   return s ? `?${s}` : '';

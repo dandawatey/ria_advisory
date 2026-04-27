@@ -18,6 +18,7 @@ import {
   type MoMChangeRow,
   type PLYoYRow,
 } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined, compact = false): string {
@@ -136,6 +137,8 @@ export default function PLAnalytics() {
   const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
   const [filters, setFilters] = useState<GLFilters>({});
   const [drill, setDrill] = useState<{ label: string; id?: number } | null>(null);
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   const [kpi,      setKpi]      = useState<KPISummary | null>(null);
   const [waterfall, setWaterfall] = useState<PLWaterfallRow[]>([]);
@@ -158,6 +161,15 @@ export default function PLAnalytics() {
     if (drill?.id) return { ...filters, company_ids: [drill.id] };
     return filters;
   }, [filters, drill]);
+
+  // Sync GLFilterBar → filters
+  useEffect(() => {
+    setFilters((f) => ({
+      ...f,
+      account_prefix: accountPrefix || undefined,
+      gen_post_type: genPostType || undefined,
+    }));
+  }, [accountPrefix, genPostType]);
 
   // Filter options once
   useEffect(() => { api.analytics.filters().then(setFilterOpts).catch(() => null); }, []);
@@ -306,6 +318,15 @@ export default function PLAnalytics() {
                 <button onClick={() => setDrill(null)} style={{ float: 'right', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', fontWeight: 700 }}>×</button>
               </div>
             )}
+
+            <div style={{ marginTop: 14 }}>
+              <GLFilterBar
+                accountPrefix={accountPrefix}
+                onAccountPrefix={setAccountPrefix}
+                genPostType={genPostType}
+                onGenPostType={setGenPostType}
+              />
+            </div>
           </div>
         </div>
 

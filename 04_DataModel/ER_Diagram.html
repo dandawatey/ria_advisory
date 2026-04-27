@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RIA Advisory — Star Schema ER Diagram</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Segoe UI',system-ui,sans-serif; background:#0d1117; color:#c9d1d9; }
+
+header { text-align:center; padding:22px 0 14px; border-bottom:1px solid #21262d; }
+header h1 { font-size:21px; color:#58a6ff; margin-bottom:8px; letter-spacing:.3px; }
+.badges { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.badge {
+  padding:3px 11px; border-radius:20px; font-size:10.5px; font-weight:600;
+  border:1px solid; letter-spacing:.2px;
+}
+.b-gl  { color:#58a6ff; border-color:#1f6feb; background:#0d1f3c; }
+.b-coa { color:#e3b341; border-color:#d29922; background:#1c1400; }
+.b-ps  { color:#bc8cff; border-color:#8957e5; background:#1a0d2e; }
+.b-dim { color:#3fb950; border-color:#238636; background:#0d200d; }
+.b-neu { color:#8b949e; border-color:#30363d; background:#161b22; }
+
+#canvas { overflow-x:auto; padding:24px 20px 16px; }
+svg { display:block; margin:0 auto; }
+
+/* ── TABLE STYLES ─────────────────────────── */
+.fact-gl   { fill:#091d3a; stroke:#1f6feb; stroke-width:2.5; }
+.fact-coa  { fill:#1a1200; stroke:#d29922; stroke-width:2.5; }
+.fact-ps   { fill:#14082e; stroke:#8957e5; stroke-width:2.5; }
+.dim-box   { fill:#091a09; stroke:#238636; stroke-width:1.8; }
+.dim-cust  { fill:#0f1a2e; stroke:#0ea5e9; stroke-width:2; }
+
+.hdr-gl    { fill:#1f6feb; } .hdr-coa { fill:#c59000; }
+.hdr-ps    { fill:#7c3aed; } .hdr-dim { fill:#196127; }
+.hdr-cust  { fill:#0369a1; }
+
+.tname  { font-size:11.5px; font-weight:700; fill:#ffffff; }
+.tsub   { font-size:8.5px;  fill:#6e7681; }
+.divl   { stroke:#1e2a1e; stroke-width:1; }
+.divl-f { stroke:#1a2535; stroke-width:1; }
+
+.f    { font-size:9.5px; fill:#8b949e; }
+.pk   { fill:#e3b341; font-weight:700; }
+.fk   { fill:#bc8cff; }
+.meas { fill:#3fb950; }
+.note { font-size:8px; fill:#484f58; font-style:italic; }
+
+/* ── CONNECTOR LINES ──────────────────────── */
+.c-gl   { stroke:#1f6feb44; stroke-width:1.5; fill:none; }
+.c-coa  { stroke:#d2992255; stroke-width:1.5; fill:none; }
+.c-ps   { stroke:#8957e555; stroke-width:1.5; fill:none; }
+.c-cust { stroke:#0ea5e966; stroke-width:1.8; fill:none; }
+.c-dim  { stroke:#30363d; stroke-width:1; fill:none; }
+.c-dash { stroke:#30363d99; stroke-width:1; fill:none; stroke-dasharray:5 3; }
+.c-bridge { stroke:#8957e5; stroke-width:1.8; fill:none; stroke-dasharray:7 3; opacity:.6; }
+
+.lbl      { font-size:8px; fill:#484f58; }
+.lbl-cust { font-size:8px; fill:#0ea5e9; font-weight:600; }
+.lbl-ps   { font-size:8px; fill:#8957e5; }
+
+/* ── SECTION BANDS ────────────────────────── */
+.section-band { fill:#ffffff06; rx:8; }
+.section-lbl  { font-size:10px; fill:#30363d; font-weight:700; letter-spacing:1px; }
+
+/* ── LEGEND ───────────────────────────────── */
+.leg-bg  { fill:#161b22; stroke:#30363d; stroke-width:1; }
+.lt      { font-size:9.5px; fill:#8b949e; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RIA Advisory Group — Star Schema ER Diagram</h1>
+  <div class="badges">
+    <span class="badge b-gl">fact_gl_entries · 188,380 rows</span>
+    <span class="badge b-coa">fact_coa_balances · 7,892 rows</span>
+    <span class="badge b-ps">fact_posted_sales · 3,094 rows</span>
+    <span class="badge b-dim">13 Dimension Tables</span>
+    <span class="badge b-neu">17 Companies · 8 Currencies · May 2025 – Apr 2026</span>
+  </div>
+  <p style="font-size:10px;color:#30363d;margin-top:4px">Source: Microsoft Business Central GL Export</p>
+</header>
+
+<div id="canvas">
+<svg viewBox="0 0 2000 1320" width="2000" xmlns="http://www.w3.org/2000/svg">
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION BACKGROUNDS
+═══════════════════════════════════════════════════════════ -->
+<!-- Facts zone -->
+<rect class="section-band" x="10" y="10" width="1980" height="28" rx="4"/>
+<text class="section-lbl" x="20" y="27">FACT TABLES</text>
+<!-- Dims zone label -->
+<rect class="section-band" x="10" y="680" width="1980" height="28" rx="4"/>
+<text class="section-lbl" x="20" y="697">DIMENSION TABLES</text>
+
+<!-- ═══════════════════════════════════════════════════════════
+     RELATIONSHIP LINES  (drawn first, under boxes)
+═══════════════════════════════════════════════════════════ -->
+
+<!-- ── fact_gl_entries → dimensions ──────────── -->
+<!-- → dim_company -->
+<path class="c-gl" d="M 290 360 H 120 V 760"/>
+<text class="lbl" x="128" y="630">company_id</text>
+<!-- → dim_account -->
+<path class="c-gl" d="M 350 200 V 130 H 640 V 720"/>
+<text class="lbl" x="648" y="500">account_no</text>
+<!-- → dim_date -->
+<path class="c-gl" d="M 490 200 V 110 H 920 V 720"/>
+<text class="lbl" x="928" y="470">date_id</text>
+<!-- → dim_currency -->
+<path class="c-gl" d="M 560 200 V 100 H 1220 V 720"/>
+<text class="lbl" x="1228" y="450">currency_id</text>
+<!-- → dim_document -->
+<path class="c-gl" d="M 660 260 H 1400 V 720"/>
+<!-- → dim_posting_group -->
+<path class="c-gl" d="M 660 310 H 1560 V 720"/>
+<!-- → dim_department -->
+<path class="c-gl" d="M 660 360 H 1700 V 720"/>
+<!-- → dim_counterparty -->
+<path class="c-gl" d="M 660 400 H 1840 V 960 H 1820"/>
+<!-- → dim_bal_account -->
+<path class="c-gl" d="M 490 500 V 540 H 380 V 960 H 400"/>
+<text class="lbl" x="388" y="820">bal_account_id</text>
+<!-- → dim_project (nullable) -->
+<path class="c-dash" d="M 430 500 V 560 H 190 V 1120 H 220"/>
+<text class="lbl" x="200" y="960">project_id</text>
+<!-- → dim_project_code (nullable) -->
+<path class="c-dash" d="M 470 500 V 570 H 700 V 1120 H 700"/>
+<text class="lbl" x="708" y="980">project_code_id</text>
+<!-- → dim_geo (nullable) -->
+<path class="c-dash" d="M 530 500 V 580 H 1100 V 1120 H 1140"/>
+<text class="lbl" x="1050" y="1000">geo_id</text>
+
+<!-- ── fact_coa_balances → dimensions ─────────── -->
+<!-- → dim_company -->
+<path class="c-coa" d="M 870 590 V 620 H 120 V 840"/>
+<text class="lbl" x="128" y="730" fill="#c59000">company_id</text>
+<!-- → dim_account -->
+<path class="c-coa" d="M 970 590 V 630 H 640 V 800"/>
+
+<!-- ── fact_posted_sales → dimensions ─────────── -->
+<!-- → dim_company -->
+<path class="c-ps" d="M 1200 590 V 640 H 120 V 900"/>
+<!-- → dim_account -->
+<path class="c-ps" d="M 1260 590 V 650 H 700 V 820"/>
+<!-- → dim_date -->
+<path class="c-ps" d="M 1320 590 V 660 H 980 V 740"/>
+<!-- → dim_document -->
+<path class="c-ps" d="M 1380 590 V 670 H 1450 V 740"/>
+<!-- → dim_posting_group -->
+<path class="c-ps" d="M 1440 590 V 680 H 1610 V 740"/>
+<!-- → dim_department -->
+<path class="c-ps" d="M 1490 590 V 690 H 1750 V 740"/>
+<!-- → dim_counterparty -->
+<path class="c-ps" d="M 1530 590 V 700 H 1860 V 980"/>
+<!-- → dim_currency -->
+<path class="c-ps" d="M 1560 590 V 710 H 1260 V 740"/>
+
+<!-- fact_posted_sales ↔ fact_gl_entries bridge -->
+<path class="c-bridge" d="M 1260 200 V 140 H 490 V 200"/>
+<text class="lbl-ps" x="640" y="135">entry_no  (fact_posted_sales ⊆ fact_gl_entries)</text>
+
+<!-- ── dim_customer connections ───────────────── -->
+<!-- dim_customer → dim_counterparty (enriches) -->
+<path class="c-cust" d="M 1820 1120 V 1200 H 1880 V 1200 H 1900 V 1060 H 1860"/>
+<text class="lbl-cust" x="1870" y="1150">customer_no = source_no</text>
+<!-- dim_customer → fact_posted_sales (via counterparty) -->
+<path class="c-cust" d="M 1720 1000 V 960 H 1580 V 590"/>
+<text class="lbl-cust" x="1590" y="780">counterparty_id</text>
+<!-- dim_customer → fact_gl_entries (via counterparty) -->
+<path class="c-cust" d="M 1680 1000 V 940 H 700 V 400"/>
+<text class="lbl-cust" x="706" y="730">counterparty_id</text>
+
+<!-- dim_company → dim_currency (functional currency) -->
+<path class="c-dim" stroke-dasharray="3 2" d="M 200 840 V 820 H 1240 V 740"/>
+<text class="lbl" x="600" y="816" fill="#30363d">functional currency</text>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FACT: fact_gl_entries  (top-left, primary fact)
+═══════════════════════════════════════════════════════════ -->
+<g transform="translate(290,200)">
+  <rect class="fact-gl" width="370" height="300" rx="8"/>
+  <!-- header -->
+  <rect class="hdr-gl" width="370" height="36" rx="8"/>
+  <rect class="hdr-gl" x="0" y="22" width="370" height="14"/>
+  <text class="tname" x="185" y="23" text-anchor="middle">fact_gl_entries</text>
+  <text class="tsub"  x="185" y="34" text-anchor="middle">188,380 rows · 18 cols</text>
+  <line class="divl-f" x1="0" y1="36" x2="370" y2="36"/>
+  <!-- PK -->
+  <text class="f pk" x="10" y="52">PK  entry_no</text>
+  <line class="divl-f" x1="0" y1="59" x2="370" y2="59"/>
+  <!-- FK two-col -->
+  <text class="f fk" x="10"  y="74">FK  company_id</text>         <text class="f fk" x="195" y="74">FK  project_id ◌</text>
+  <text class="f fk" x="10"  y="89">FK  account_no</text>         <text class="f fk" x="195" y="89">FK  project_code_id ◌</text>
+  <text class="f fk" x="10"  y="104">FK  date_id</text>            <text class="f fk" x="195" y="104">FK  geo_id ◌</text>
+  <text class="f fk" x="10"  y="119">FK  document_id</text>        <text class="f fk" x="195" y="119">FK  currency_id</text>
+  <text class="f fk" x="10"  y="134">FK  posting_group_id</text>
+  <text class="f fk" x="10"  y="149">FK  department_id</text>
+  <text class="f fk" x="10"  y="164">FK  counterparty_id</text>
+  <text class="f fk" x="10"  y="179">FK  bal_account_id</text>
+  <line class="divl-f" x1="0" y1="187" x2="370" y2="187"/>
+  <!-- measures -->
+  <text class="f meas" x="10" y="202">    amount               float</text>
+  <text class="f"      x="10" y="217">    document_no          string</text>
+  <text class="f"      x="10" y="232">    external_document_no string</text>
+  <text class="f"      x="10" y="247">    description          string</text>
+  <text class="f"      x="10" y="262">    billable_flag        string</text>
+  <text class="note"   x="10" y="282">◌ nullable FK</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FACT: fact_coa_balances  (top-center)
+═══════════════════════════════════════════════════════════ -->
+<g transform="translate(820,200)">
+  <rect class="fact-coa" width="310" height="195" rx="8"/>
+  <rect class="hdr-coa" width="310" height="36" rx="8"/>
+  <rect class="hdr-coa" x="0" y="22" width="310" height="14"/>
+  <text class="tname" x="155" y="23" text-anchor="middle">fact_coa_balances</text>
+  <text class="tsub"  x="155" y="34" text-anchor="middle">7,892 rows · 4 cols · Source: Chart of Accounts</text>
+  <line class="divl-f" x1="0" y1="36" x2="310" y2="36"/>
+  <text class="f fk" x="10" y="52">FK  company_id   int</text>
+  <text class="f fk" x="10" y="67">FK  account_no   int</text>
+  <line class="divl-f" x1="0" y1="74" x2="310" y2="74"/>
+  <text class="f meas" x="10" y="90">    net_change   float</text>
+  <text class="f meas" x="10" y="105">    balance      float</text>
+  <line class="divl-f" x1="0" y1="112" x2="310" y2="112"/>
+  <text class="note" x="10" y="128">Composite PK: company_id + account_no</text>
+  <text class="note" x="10" y="143">Period balances as exported from BC</text>
+  <text class="note" x="10" y="158">Links dim_account ↔ dim_company</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FACT: fact_posted_sales  (top-right)
+═══════════════════════════════════════════════════════════ -->
+<g transform="translate(1180,200)">
+  <rect class="fact-ps" width="400" height="255" rx="8"/>
+  <rect class="hdr-ps" width="400" height="36" rx="8"/>
+  <rect class="hdr-ps" x="0" y="22" width="400" height="14"/>
+  <text class="tname" x="200" y="23" text-anchor="middle">fact_posted_sales</text>
+  <text class="tsub"  x="200" y="34" text-anchor="middle">3,094 rows · 13 cols  (2,905 invoices + 189 credit memos)</text>
+  <line class="divl-f" x1="0" y1="36" x2="400" y2="36"/>
+  <text class="f pk" x="10" y="52">PK/FK  entry_no  → fact_gl_entries</text>
+  <line class="divl-f" x1="0" y1="59" x2="400" y2="59"/>
+  <text class="f fk" x="10"  y="74">FK  company_id</text>       <text class="f fk" x="210" y="74">FK  department_id</text>
+  <text class="f fk" x="10"  y="89">FK  account_no</text>       <text class="f fk" x="210" y="89">FK  counterparty_id</text>
+  <text class="f fk" x="10"  y="104">FK  date_id</text>          <text class="f fk" x="210" y="104">FK  currency_id</text>
+  <text class="f fk" x="10"  y="119">FK  document_id</text>
+  <text class="f fk" x="10"  y="134">FK  posting_group_id</text>
+  <line class="divl-f" x1="0" y1="142" x2="400" y2="142"/>
+  <text class="f meas" x="10" y="157">    amount               float</text>
+  <text class="f"      x="10" y="172">    customer_vendor_name string  ← enriched</text>
+  <text class="f"      x="10" y="187">    gl_account_name      string  ← enriched</text>
+  <text class="f"      x="10" y="202">    dimension_set_id     int</text>
+  <line class="divl-f" x1="0" y1="209" x2="400" y2="209"/>
+  <text class="note" x="10" y="224">Source Code = 'SALES' filter applied</text>
+  <text class="note" x="10" y="239">Subset of fact_gl_entries via entry_no</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════════
+     DIMENSION TABLES  (bottom section)
+═══════════════════════════════════════════════════════════ -->
+
+<!-- ── Row 1 of dims: company / account / date / currency / document / posting / department ── -->
+
+<!-- dim_company -->
+<g transform="translate(60,760)">
+  <rect class="dim-box" width="240" height="150" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_company</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">17 rows</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  company_id    int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f"    x="8" y="69">    company_name  string</text>
+  <text class="f fk" x="8" y="84">FK  currency_id   int</text>
+  <line class="divl" x1="0" y1="91" x2="240" y2="91"/>
+  <text class="note" x="8" y="107">17 legal entities across</text>
+  <text class="note" x="8" y="120">8 jurisdictions</text>
+</g>
+
+<!-- dim_account -->
+<g transform="translate(580,720)">
+  <rect class="dim-box" width="240" height="200" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_account</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">474 rows · Source: CoA</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  account_no          int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    account_name         string</text>
+  <text class="f" x="8" y="84">    income_balance       string</text>
+  <text class="f" x="8" y="99">    account_category     string</text>
+  <text class="f" x="8" y="114">    account_subcategory  string</text>
+  <text class="f" x="8" y="129">    account_type         string</text>
+  <text class="f" x="8" y="144">    totaling             string</text>
+  <line class="divl" x1="0" y1="151" x2="240" y2="151"/>
+  <text class="note" x="8" y="167">Hierarchy: income_balance →</text>
+  <text class="note" x="8" y="180">category → subcategory → no</text>
+</g>
+
+<!-- dim_date -->
+<g transform="translate(860,720)">
+  <rect class="dim-box" width="250" height="255" rx="6"/>
+  <rect class="hdr-dim" width="250" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="250" height="12"/>
+  <text class="tname" x="125" y="19" text-anchor="middle">dim_date</text>
+  <text class="tsub"  x="125" y="29" text-anchor="middle">282 rows</text>
+  <line class="divl" x1="0" y1="30" x2="250" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  date_id          int</text>
+  <line class="divl" x1="0" y1="53" x2="250" y2="53"/>
+  <text class="f" x="8" y="69">    full_date        date</text>
+  <text class="f" x="8" y="84">    year             int</text>
+  <text class="f" x="8" y="99">    quarter / quarter_name</text>
+  <text class="f" x="8" y="114">    month / month_name</text>
+  <text class="f" x="8" y="129">    week / day / day_name</text>
+  <text class="f" x="8" y="144">    is_month_end     int</text>
+  <text class="f" x="8" y="159">    fiscal_year      int</text>
+  <text class="f" x="8" y="174">    fiscal_quarter   int</text>
+  <text class="f" x="8" y="189">    fiscal_period    string</text>
+  <line class="divl" x1="0" y1="196" x2="250" y2="196"/>
+  <text class="note" x="8" y="212">Range: May 2025 – Apr 2026</text>
+  <text class="note" x="8" y="225">Fiscal year: Jul–Jun</text>
+</g>
+
+<!-- dim_currency -->
+<g transform="translate(1160,720)">
+  <rect class="dim-box" width="240" height="170" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_currency</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">8 rows</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  currency_id      int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    currency_code    string</text>
+  <text class="f" x="8" y="84">    currency_name    string</text>
+  <text class="f" x="8" y="99">    currency_symbol  string</text>
+  <line class="divl" x1="0" y1="106" x2="240" y2="106"/>
+  <text class="note" x="8" y="122">USD PHP MXN CAD</text>
+  <text class="note" x="8" y="135">INR GBP ZAR AUD</text>
+  <text class="note" x="8" y="150">Linked to dim_company</text>
+</g>
+
+<!-- dim_document -->
+<g transform="translate(1390,720)">
+  <rect class="dim-box" width="240" height="140" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_document</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">36 rows</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  document_id    int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    document_type  string</text>
+  <text class="f" x="8" y="84">    source_code    string</text>
+  <line class="divl" x1="0" y1="91" x2="240" y2="91"/>
+  <text class="note" x="8" y="107">Invoice/CreditMemo/Payment</text>
+  <text class="note" x="8" y="120">× SALES/PURCHASES/GENJNL…</text>
+</g>
+
+<!-- dim_posting_group -->
+<g transform="translate(1550,720)">
+  <rect class="dim-box" width="250" height="150" rx="6"/>
+  <rect class="hdr-dim" width="250" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="250" height="12"/>
+  <text class="tname" x="125" y="19" text-anchor="middle">dim_posting_group</text>
+  <text class="tsub"  x="125" y="29" text-anchor="middle">19 rows</text>
+  <line class="divl" x1="0" y1="30" x2="250" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  posting_group_id        int</text>
+  <line class="divl" x1="0" y1="53" x2="250" y2="53"/>
+  <text class="f" x="8" y="69">    gen_posting_type        string</text>
+  <text class="f" x="8" y="84">    gen_bus_posting_group   string</text>
+  <text class="f" x="8" y="99">    gen_prod_posting_group  string</text>
+  <line class="divl" x1="0" y1="106" x2="250" y2="106"/>
+  <text class="note" x="8" y="122">Sale / Purchase / blank</text>
+</g>
+
+<!-- dim_department -->
+<g transform="translate(1690,720)">
+  <rect class="dim-box" width="250" height="150" rx="6"/>
+  <rect class="hdr-dim" width="250" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="250" height="12"/>
+  <text class="tname" x="125" y="19" text-anchor="middle">dim_department</text>
+  <text class="tsub"  x="125" y="29" text-anchor="middle">32 rows</text>
+  <line class="divl" x1="0" y1="30" x2="250" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  department_id    int</text>
+  <line class="divl" x1="0" y1="53" x2="250" y2="53"/>
+  <text class="f" x="8" y="69">    department_code  string</text>
+  <text class="f" x="8" y="84">    vertical_code    string</text>
+  <line class="divl" x1="0" y1="91" x2="250" y2="91"/>
+  <text class="note" x="8" y="107">ADMIN/DELIVERY/FINANCE…</text>
+  <text class="note" x="8" y="120">× UTILITIES/HEALTHCARE…</text>
+</g>
+
+<!-- ── Row 2 of dims: counterparty / customer / bal_account / project / project_code / geo ── -->
+
+<!-- dim_counterparty -->
+<g transform="translate(1660,960)">
+  <rect class="dim-box" width="250" height="155" rx="6"/>
+  <rect class="hdr-dim" width="250" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="250" height="12"/>
+  <text class="tname" x="125" y="19" text-anchor="middle">dim_counterparty</text>
+  <text class="tsub"  x="125" y="29" text-anchor="middle">967 rows</text>
+  <line class="divl" x1="0" y1="30" x2="250" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  counterparty_id  int</text>
+  <line class="divl" x1="0" y1="53" x2="250" y2="53"/>
+  <text class="f" x="8" y="69">    source_type      string</text>
+  <text class="f" x="8" y="84">    source_no        string</text>
+  <line class="divl" x1="0" y1="91" x2="250" y2="91"/>
+  <text class="note" x="8" y="107">source_type: Customer /</text>
+  <text class="note" x="8" y="120">Vendor / Bank Account</text>
+  <text class="note" x="8" y="133">source_no → dim_customer.customer_no</text>
+</g>
+
+<!-- dim_customer  (NEW — highlighted) -->
+<g transform="translate(1660,1140)">
+  <rect class="dim-cust" width="310" height="230" rx="8"/>
+  <!-- header -->
+  <rect class="hdr-cust" width="310" height="36" rx="8"/>
+  <rect class="hdr-cust" x="0" y="22" width="310" height="14"/>
+  <text class="tname" x="155" y="23" text-anchor="middle">dim_customer  ✦ NEW</text>
+  <text class="tsub"  x="155" y="34" text-anchor="middle">154 rows · Source: Customers Export</text>
+  <line class="divl" x1="0" y1="36" x2="310" y2="36"/>
+  <text class="f pk"  x="8" y="52">PK  customer_id      int</text>
+  <text class="f fk"  x="8" y="67">FK  counterparty_id  int  (129/154)</text>
+  <line class="divl" x1="0" y1="74" x2="310" y2="74"/>
+  <text class="f"  x="8" y="90">    customer_no      string</text>
+  <text class="f"  x="8" y="105">    customer_name    string</text>
+  <text class="f"  x="8" y="120">    company          string</text>
+  <text class="f"  x="8" y="135">    city             string</text>
+  <text class="f"  x="8" y="150">    state            string</text>
+  <text class="f"  x="8" y="165">    contact          string</text>
+  <line class="divl" x1="0" y1="172" x2="310" y2="172"/>
+  <text class="f meas" x="8" y="188">    balance          float</text>
+  <text class="f meas" x="8" y="203">    balance_due      float</text>
+  <text class="f meas" x="8" y="218">    total_sales      float</text>
+</g>
+
+<!-- dim_bal_account -->
+<g transform="translate(340,960)">
+  <rect class="dim-box" width="250" height="140" rx="6"/>
+  <rect class="hdr-dim" width="250" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="250" height="12"/>
+  <text class="tname" x="125" y="19" text-anchor="middle">dim_bal_account</text>
+  <text class="tsub"  x="125" y="29" text-anchor="middle">1,007 rows</text>
+  <line class="divl" x1="0" y1="30" x2="250" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  bal_account_id    int</text>
+  <line class="divl" x1="0" y1="53" x2="250" y2="53"/>
+  <text class="f" x="8" y="69">    bal_account_type  string</text>
+  <text class="f" x="8" y="84">    bal_account_no    string</text>
+  <line class="divl" x1="0" y1="91" x2="250" y2="91"/>
+  <text class="note" x="8" y="107">Customer/Vendor/Bank/</text>
+  <text class="note" x="8" y="120">G/L Account/Fixed Asset</text>
+</g>
+
+<!-- dim_project -->
+<g transform="translate(200,1120)">
+  <rect class="dim-box" width="240" height="120" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_project</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">44 rows · nullable FK</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  project_id    int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    project_no    string</text>
+  <line class="divl" x1="0" y1="76" x2="240" y2="76"/>
+  <text class="note" x="8" y="92">Sparse — only 76/188K</text>
+  <text class="note" x="8" y="105">GL rows have project</text>
+</g>
+
+<!-- dim_project_code -->
+<g transform="translate(620,1120)">
+  <rect class="dim-box" width="240" height="110" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_project_code</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">259 rows · nullable FK</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  project_code_id   int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    project_code      string</text>
+</g>
+
+<!-- dim_geo -->
+<g transform="translate(1100,1120)">
+  <rect class="dim-box" width="240" height="110" rx="6"/>
+  <rect class="hdr-dim" width="240" height="30" rx="6"/>
+  <rect class="hdr-dim" x="0" y="18" width="240" height="12"/>
+  <text class="tname" x="120" y="19" text-anchor="middle">dim_geo</text>
+  <text class="tsub"  x="120" y="29" text-anchor="middle">3 rows · nullable FK</text>
+  <line class="divl" x1="0" y1="30" x2="240" y2="30"/>
+  <text class="f pk" x="8" y="46">PK  geo_id      int</text>
+  <line class="divl" x1="0" y1="53" x2="240" y2="53"/>
+  <text class="f" x="8" y="69">    geo_code    string</text>
+</g>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LEGEND
+═══════════════════════════════════════════════════════════ -->
+<g transform="translate(20,40)">
+  <rect class="leg-bg" width="420" height="270" rx="6"/>
+  <text class="lt" x="12" y="22" font-weight="700" fill="#c9d1d9" font-size="10.5">Table Types</text>
+
+  <rect x="12" y="30" width="14" height="12" fill="#091d3a" stroke="#1f6feb" stroke-width="2" rx="2"/>
+  <text class="lt" x="32" y="41">fact_gl_entries  (all GL transactions)</text>
+
+  <rect x="12" y="50" width="14" height="12" fill="#1a1200" stroke="#d29922" stroke-width="2" rx="2"/>
+  <text class="lt" x="32" y="61">fact_coa_balances  (Chart of Accounts balances)</text>
+
+  <rect x="12" y="70" width="14" height="12" fill="#14082e" stroke="#8957e5" stroke-width="2" rx="2"/>
+  <text class="lt" x="32" y="81">fact_posted_sales  (Sales invoices &amp; credit memos)</text>
+
+  <rect x="12" y="90" width="14" height="12" fill="#091a09" stroke="#238636" stroke-width="1.5" rx="2"/>
+  <text class="lt" x="32" y="101">Dimension Table (standard)</text>
+
+  <rect x="12" y="110" width="14" height="12" fill="#0f1a2e" stroke="#0ea5e9" stroke-width="2" rx="2"/>
+  <text class="lt" x="32" y="121">dim_customer  (NEW — Customers export)</text>
+
+  <text class="lt" x="12" y="145" font-weight="700" fill="#c9d1d9" font-size="10.5">Column Types</text>
+  <circle cx="19" cy="158" r="5" fill="#e3b341"/>
+  <text class="lt" x="32" y="162">PK — Primary Key</text>
+  <circle cx="19" cy="178" r="5" fill="#bc8cff"/>
+  <text class="lt" x="32" y="182">FK — Foreign Key (mandatory)</text>
+  <line x1="10" y1="195" x2="30" y2="195" stroke="#30363d" stroke-width="1" stroke-dasharray="5 3"/>
+  <text class="lt" x="32" y="199">FK — Foreign Key (nullable / sparse)</text>
+  <circle cx="19" cy="215" r="5" fill="#3fb950"/>
+  <text class="lt" x="32" y="219">Measure / financial amount</text>
+
+  <text class="lt" x="12" y="243" font-weight="700" fill="#c9d1d9" font-size="10.5">Connector Colours</text>
+  <line x1="12" y1="255" x2="36" y2="255" stroke="#1f6feb" stroke-width="2"/>  <text class="lt" x="42" y="259">fact_gl_entries</text>
+  <line x1="130" y1="255" x2="154" y2="255" stroke="#d29922" stroke-width="2"/> <text class="lt" x="160" y="259">fact_coa_balances</text>
+  <line x1="270" y1="255" x2="294" y2="255" stroke="#8957e5" stroke-width="2"/> <text class="lt" x="300" y="259">fact_posted_sales</text>
+  <line x1="12" y1="268" x2="36" y2="268" stroke="#0ea5e9" stroke-width="2"/>  <text class="lt" x="42" y="272">dim_customer link</text>
+</g>
+
+<!-- footer -->
+<text x="1000" y="1310" text-anchor="middle" font-size="9" fill="#21262d">
+  RIA Advisory Group · Star Schema v5 · 3 Facts · 13 Dimensions · Generated 2026-04-27
+</text>
+
+</svg>
+</div>
+</body>
+</html>

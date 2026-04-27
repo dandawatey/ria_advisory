@@ -16,6 +16,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { api, type FilterOptions } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 // ── Env ────────────────────────────────────────────────────────────────────────
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
@@ -154,6 +155,8 @@ export default function CoAInsights() {
   const [selectedCompany, setSelectedCompany] = useState<number | null>(null);
   const [selectedYear,    setSelectedYear]    = useState<number | null>(null);
   const [sectionOpen, setSectionOpen] = useState({ companies: true, year: true });
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   // Drill-through
   const [drillCat, setDrillCat] = useState<string | null>(null);
@@ -390,7 +393,7 @@ export default function CoAInsights() {
             </div>
 
             {/* Year chips */}
-            <div>
+            <div style={{ borderBottom: '1px solid var(--color-border)' }}>
               <button style={{ width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12, color: 'var(--color-text)', display: 'flex', justifyContent: 'space-between' }}
                 onClick={() => setSectionOpen((p) => ({ ...p, year: !p.year }))}>
                 Year <span>{sectionOpen.year ? '▲' : '▼'}</span>
@@ -407,6 +410,16 @@ export default function CoAInsights() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* GL Account + Gen Post Type */}
+            <div style={{ padding: '10px 14px' }}>
+              <GLFilterBar
+                accountPrefix={accountPrefix}
+                onAccountPrefix={setAccountPrefix}
+                genPostType={genPostType}
+                onGenPostType={setGenPostType}
+              />
             </div>
           </div>
         </div>

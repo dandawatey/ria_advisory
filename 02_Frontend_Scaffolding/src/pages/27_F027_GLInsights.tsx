@@ -29,6 +29,7 @@ import {
   type DocTypeMixRow,
   type VerticalPLRow,
 } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 // ── Palettes ───────────────────────────────────────────────────────────────────
 const PIE_COLORS = [
@@ -136,6 +137,8 @@ export default function GLInsights() {
   });
   const [filters, setFilters] = useState<GLFilters>({});
   const [sectionOpen, setSectionOpen] = useState({ companies: true, year: true, period: true });
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   // Drill-through
   const [drill, setDrill] = useState<DrillState | null>(null);
@@ -172,6 +175,15 @@ export default function GLInsights() {
     }
     return filters;
   }, [filters, drill]);
+
+  // Sync GLFilterBar → filters
+  useEffect(() => {
+    setFilters((f) => ({
+      ...f,
+      account_prefix: accountPrefix || undefined,
+      gen_post_type: genPostType || undefined,
+    }));
+  }, [accountPrefix, genPostType]);
 
   // Load filter options once
   useEffect(() => {
@@ -405,6 +417,16 @@ export default function GLInsights() {
                   </select>
                 </div>
               )}
+            </div>
+
+            {/* GL Account + Gen Post Type */}
+            <div style={{ borderTop: '1px solid var(--color-border)', padding: '10px 14px' }}>
+              <GLFilterBar
+                accountPrefix={accountPrefix}
+                onAccountPrefix={setAccountPrefix}
+                genPostType={genPostType}
+                onGenPostType={setGenPostType}
+              />
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { api } from '../api/client';
 import type { GLEntry } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 interface Suggestion {
   label: string;
@@ -43,6 +44,8 @@ export default function AnnotationsNLQ() {
   const [searched, setSearched] = useState(false);
   const [apiError, setApiError] = useState(false);
   const [activeLabel, setActiveLabel] = useState('');
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   const runQuery = useCallback((params: Record<string, string | number>, label: string) => {
     setLoading(true);
@@ -70,6 +73,9 @@ export default function AnnotationsNLQ() {
     else if (q.includes('canada') || q.includes('tmg can')) params.subsidiary = 'TCAN';
     if (q.includes('invoice'))                             params.doc_type = 'Invoice';
     else if (q.includes('credit memo'))                    params.doc_type = 'Credit Memo';
+    // Apply GLFilterBar selections (override NLQ where set)
+    if (accountPrefix) params.account_no = accountPrefix;
+    if (genPostType)   params.document_type = genPostType;
     runQuery(params, query);
   };
 
@@ -99,6 +105,14 @@ export default function AnnotationsNLQ() {
           <button className="btn btn-primary" onClick={handleNLQ} disabled={loading || !query}>
             {loading ? 'Querying…' : 'Query'}
           </button>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <GLFilterBar
+            accountPrefix={accountPrefix}
+            onAccountPrefix={setAccountPrefix}
+            genPostType={genPostType}
+            onGenPostType={setGenPostType}
+          />
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {SUGGESTIONS.map((s) => (

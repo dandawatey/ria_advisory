@@ -471,7 +471,7 @@ def invoices_by_entity(
 # COLLECTIONS ENDPOINTS  (Invoice vs Payment matching from fact_posted_sales)
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _col_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
+def _col_filters(company_ids, year, month_from=None, month_to=None, doc_type=None) -> tuple:
     clauses = ["1=1"]
     params: list = []
     if company_ids:
@@ -489,6 +489,9 @@ def _col_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
         y, m = month_to.split("-")
         clauses.append("(d.year * 100 + d.month) <= %s")
         params.append(int(y) * 100 + int(m))
+    if doc_type:
+        clauses.append("TRIM(COALESCE(doc.document_type, '')) = %s")
+        params.append(doc_type)
     return "WHERE " + " AND ".join(clauses), params
 
 
@@ -639,7 +642,7 @@ def collections_by_entity(
 # MONTHLY INCOME ENDPOINTS  (GL income accounts: 4xx revenue, 7xx other income)
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _inc_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
+def _inc_filters(company_ids, year, month_from=None, month_to=None, account_prefix=None) -> tuple:
     clauses = [
         "ac.account_no != '999999'",
         "(ac.account_no LIKE '4%%' OR ac.account_no LIKE '7%%')",
@@ -660,6 +663,9 @@ def _inc_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
         y, m = month_to.split("-")
         clauses.append("(d.year * 100 + d.month) <= %s")
         params.append(int(y) * 100 + int(m))
+    if account_prefix:
+        clauses.append("ac.account_no LIKE %s")
+        params.append(f"{account_prefix}%")
     return "WHERE " + " AND ".join(clauses), params
 
 
@@ -782,8 +788,9 @@ def income_by_entity(
 # AGEING ENDPOINTS  (Invoice ageing buckets from fact_posted_sales)
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _age_filters(company_ids, year, month_from=None, month_to=None) -> tuple:
-    clauses = ["TRIM(doc.document_type) = 'Invoice'"]
+def _age_filters(company_ids, year, month_from=None, month_to=None, doc_type=None) -> tuple:
+    base_doc = doc_type if doc_type else 'Invoice'
+    clauses = [f"TRIM(COALESCE(doc.document_type, '')) = '{base_doc}'"]
     params: list = []
     if company_ids:
         ph = ", ".join(["%s"] * len(company_ids))

@@ -16,6 +16,7 @@ import {
   type CollectionCustomerRow,
   type CollectionEntityRow,
 } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
@@ -149,6 +150,8 @@ export default function Collections() {
   const [monthFrom, setMonthFrom] = useState<string>('');
   const [monthTo, setMonthTo] = useState<string>('');
   const [drill, setDrill] = useState<DrillState | null>(null);
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
 
   // Data state
   const [summary, setSummary] = useState<CollectionSummary | null>(null);
@@ -460,6 +463,15 @@ export default function Collections() {
                 </button>
               </div>
             )}
+
+            <div style={{ marginTop: 14 }}>
+              <GLFilterBar
+                accountPrefix={accountPrefix}
+                onAccountPrefix={setAccountPrefix}
+                genPostType={genPostType}
+                onGenPostType={setGenPostType}
+              />
+            </div>
           </div>
         </div>
 

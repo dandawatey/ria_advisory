@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import type { KPIMetric } from '../types';
 import { api } from '../api/client';
 import type { KPIs, EntitySummary, PLTrend } from '../api/client';
+import { GLFilterBar } from '../components/GLFilterBar';
 
 function fmtUSD(n: number) {
   if (!n) return '$0';
@@ -52,6 +53,8 @@ export default function ExecutiveDashboard() {
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [trend, setTrend] = useState<PLTrend[]>([]);
   const [apiError, setApiError] = useState(false);
+  const [accountPrefix, setAccountPrefix] = useState('');
+  const [genPostType, setGenPostType] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -115,6 +118,16 @@ export default function ExecutiveDashboard() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* GL Filters */}
+      <div className="card mb-24" style={{ padding: '12px 16px' }}>
+        <GLFilterBar
+          accountPrefix={accountPrefix}
+          onAccountPrefix={setAccountPrefix}
+          genPostType={genPostType}
+          onGenPostType={setGenPostType}
+        />
       </div>
 
       {/* KPI tiles */}
