@@ -49,6 +49,7 @@ const nav: NavSection[] = [
       { label: 'Expense Analysis',    path: '/reports/expense',        icon: '↓' },
       { label: 'Department Spend',    path: '/reports/dept-spend',     icon: '⊞' },
       { label: 'Projects',            path: '/reports/projects',       icon: '◫' },
+      { label: 'Verticals',           path: '/reports/verticals',      icon: '⊗' },
       { label: 'Chart of Accounts',   path: '/insights/coa',           icon: '≡' },
     ],
   },

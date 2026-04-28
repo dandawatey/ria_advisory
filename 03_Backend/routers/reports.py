@@ -657,4 +657,108 @@ def project_financials(
         GROUP BY COALESCE(NULLIF(TRIM(p.project_no), ''), '(no project)')
         ORDER BY ABS(SUM(g.amount)) DESC
     """, params)
-    return rows[0] if rows else {}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VERTICAL ANALYTICS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_VERT_BASE = """
+    FROM fact_gl_entries g
+    JOIN dim_date       d  ON d.date_id       = g.date_id
+    JOIN dim_account    ac ON ac.account_no   = g.account_no
+    JOIN dim_company    co ON co.company_id   = g.company_id
+    JOIN dim_department dp ON dp.department_id = g.department_id
+"""
+_VERT_EXCL = "AND dp.vertical_code IS NOT NULL AND dp.vertical_code NOT IN ('OPENBAL', 'PREJUNE2025')"
+
+
+def _vert_where(company_ids=None, year=None):
+    clauses = [f"g.account_no != '999999' {_VERT_EXCL}"]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"g.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    return "WHERE " + " AND ".join(clauses), params
+
+
+@router.get("/vertical-analytics")
+def vertical_analytics(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _vert_where(company_id, year)
+    rows = query(f"""
+        SELECT
+            dp.vertical_code,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                   AS net,
+            COUNT(DISTINCT g.company_id)                                        AS entity_count,
+            COUNT(*)                                                             AS entry_count
+        {_VERT_BASE} {wh}
+        GROUP BY dp.vertical_code
+        ORDER BY revenue DESC
+    """, params)
+
+    result = []
+    for r in rows:
+        rev  = float(r["revenue"] or 0)
+        cogs = float(r["cogs"]    or 0)
+        opex = float(r["opex"]    or 0)
+        net  = float(r["net"]     or 0)
+        result.append({
+            **r,
+            "gross_margin_pct": _safe_pct(rev - cogs, rev),
+            "net_margin_pct":   _safe_pct(net, rev),
+            "opex_ratio_pct":   _safe_pct(opex, rev),
+            "total_spend":      round(cogs + opex, 2),
+        })
+    return result
+
+
+@router.get("/vertical-analytics/departments")
+def vertical_departments(
+    vertical_code: Optional[str] = None,
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _vert_where(company_id, year)
+    if vertical_code:
+        wh += " AND dp.vertical_code = %s"
+        params.append(vertical_code)
+    rows = query(f"""
+        SELECT
+            dp.department_code,
+            dp.vertical_code,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            COUNT(*)                                                             AS entry_count
+        {_VERT_BASE} {wh}
+        GROUP BY dp.department_code, dp.vertical_code
+        ORDER BY revenue DESC
+    """, params)
+
+    result = []
+    for r in rows:
+        rev  = float(r["revenue"] or 0)
+        cogs = float(r["cogs"]    or 0)
+        opex = float(r["opex"]    or 0)
+        result.append({
+            **r,
+            "gross_margin_pct": _safe_pct(rev - cogs, rev),
+            "opex_ratio_pct":   _safe_pct(opex, rev),
+        })
+    return result
