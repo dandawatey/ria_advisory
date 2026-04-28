@@ -30,6 +30,7 @@ import TrialBalance       from './pages/36_F036_TrialBalance';
 import BalanceSheet       from './pages/37_F037_BalanceSheet';
 import ExpenseAnalysis    from './pages/38_F038_ExpenseAnalysis';
 import DeptSpend          from './pages/39_F039_DeptSpend';
+import Settings           from './pages/40_F040_Settings';
 
 export default function App() {
   return (
@@ -65,6 +66,9 @@ export default function App() {
           <Route path="/insights/customer"     element={<CustomerInsights />} />
           <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
           <Route path="/insights/invoices"     element={<InvoiceInsights />} />
+
+          {/* Settings */}
+          <Route path="/settings"              element={<Settings />} />
 
           {/* Administration */}
           <Route path="/admin/mappings"        element={<MappingConsole />} />

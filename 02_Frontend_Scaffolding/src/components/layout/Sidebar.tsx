@@ -53,6 +53,7 @@ const nav: NavSection[] = [
     label: 'Tools',
     items: [
       { label: 'Annotations (NLQ)',   path: '/annotations',            icon: '✦' },
+      { label: 'Settings',            path: '/settings',               icon: '⚙' },
     ],
   },
 ];

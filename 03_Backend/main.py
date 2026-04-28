@@ -7,7 +7,7 @@ Docs at   http://localhost:8000/docs
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import dashboard, entities, gl, analytics, insights, reports
+from routers import dashboard, entities, gl, analytics, insights, reports, settings
 
 app = FastAPI(
     title="UFIP API",
@@ -34,6 +34,7 @@ app.include_router(gl.router)
 app.include_router(analytics.router)
 app.include_router(insights.router)
 app.include_router(reports.router)
+app.include_router(settings.router)
 
 
 @app.get("/health")
