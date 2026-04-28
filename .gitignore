@@ -27,3 +27,6 @@ venv/
 # Python data artifacts
 03_Backend/*.db
 03_Backend/*.sqlite
+
+# Local Netlify folder
+.netlify

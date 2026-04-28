@@ -353,11 +353,22 @@ def posted_sales_by_type(
 
 # ═════════════════════════════════════════════════════════════════════════════
 # INVOICE ENDPOINTS
+# Source: fact_posted_sales WHERE doc_type IN ('Invoice','Credit Memo')
+#         AND gen_posting_type = 'Sale'
+# Reference: Invoice Report Relations.xlsx
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _inv_filters(company_ids, year) -> tuple:
-    """WHERE filters scoped to Invoice document_type."""
-    clauses = ["1=1", "TRIM(doc.document_type) = 'Invoice'"]
+def _inv_filters(
+    company_ids,
+    year,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
+) -> tuple:
+    """WHERE filters: Invoice + Credit Memo, Gen Posting Type = Sale."""
+    clauses = [
+        "TRIM(doc.document_type) IN ('Invoice', 'Credit Memo')",
+        "TRIM(pg.gen_posting_type) = 'Sale'",
+    ]
     params: list = []
     if company_ids:
         ph = ", ".join(["%s"] * len(company_ids))
@@ -366,15 +377,33 @@ def _inv_filters(company_ids, year) -> tuple:
     if year:
         clauses.append("d.year = %s")
         params.append(year)
+    if vertical_code:
+        clauses.append("TRIM(dep.vertical_code) = %s")
+        params.append(vertical_code)
+    if currency_code:
+        clauses.append("TRIM(cur.currency_code) = %s")
+        params.append(currency_code)
     return "WHERE " + " AND ".join(clauses), params
+
+
+# Standard joins needed by all invoice queries
+_INV_JOINS = """
+        LEFT JOIN dim_date          d   ON d.date_id          = ps.date_id
+        LEFT JOIN dim_document      doc ON doc.document_id     = ps.document_id
+        LEFT JOIN dim_posting_group pg  ON pg.posting_group_id = ps.posting_group_id
+        LEFT JOIN dim_department    dep ON dep.department_id   = ps.department_id
+        LEFT JOIN dim_currency      cur ON cur.currency_id     = ps.currency_id
+"""
 
 
 @router.get("/invoices/summary")
 def invoices_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
 ):
-    wh, params = _inv_filters(company_id, year)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
     rows = query(f"""
         SELECT
             COUNT(*)                                                         AS invoice_count,
@@ -383,8 +412,7 @@ def invoices_summary(
             COUNT(DISTINCT ps.company_id)                                    AS entity_count,
             COUNT(DISTINCT NULLIF(TRIM(ps.customer_vendor_name), ''))        AS customer_count
         FROM fact_posted_sales ps
-        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
-        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {_INV_JOINS}
         {wh}
     """, params)
     return rows[0] if rows else {}
@@ -394,8 +422,10 @@ def invoices_summary(
 def invoices_by_period(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
 ):
-    wh, params = _inv_filters(company_id, year)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
     return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')  AS month,
@@ -404,8 +434,7 @@ def invoices_by_period(
             COALESCE(-SUM(ps.amount), 0)          AS invoice_value,
             COALESCE(-AVG(ps.amount), 0)          AS avg_invoice
         FROM fact_posted_sales ps
-        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
-        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {_INV_JOINS}
         {wh}
         GROUP BY d.year, d.month, d.month_name
         ORDER BY d.year, d.month
@@ -416,23 +445,13 @@ def invoices_by_period(
 def invoices_by_customer(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
     limit: int = Query(default=15, le=100),
 ):
-    clauses = [
-        "1=1",
-        "TRIM(doc.document_type) = 'Invoice'",
-        "NULLIF(TRIM(ps.customer_vendor_name), '') IS NOT NULL",
-    ]
-    params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"ps.company_id IN ({ph})")
-        params.extend(company_id)
-    if year:
-        clauses.append("d.year = %s")
-        params.append(year)
-
-    wh = "WHERE " + " AND ".join(clauses)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
+    # exclude blank customer names
+    wh = wh + " AND NULLIF(TRIM(ps.customer_vendor_name), '') IS NOT NULL"
     params.append(limit)
 
     return query(f"""
@@ -443,8 +462,7 @@ def invoices_by_customer(
             COALESCE(-AVG(ps.amount), 0)          AS avg_invoice,
             co.company_name
         FROM fact_posted_sales ps
-        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
-        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {_INV_JOINS}
         LEFT JOIN dim_company  co  ON co.company_id   = ps.company_id
         {wh}
         GROUP BY ps.customer_vendor_name, co.company_name
@@ -455,15 +473,12 @@ def invoices_by_customer(
 
 @router.get("/invoices/by-entity")
 def invoices_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
 ):
-    clauses = ["1=1", "TRIM(doc.document_type) = 'Invoice'"]
-    params: list = []
-    if year:
-        clauses.append("d.year = %s")
-        params.append(year)
-    wh = "WHERE " + " AND ".join(clauses)
-
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
     return query(f"""
         SELECT
             co.company_name,
@@ -471,11 +486,57 @@ def invoices_by_entity(
             COALESCE(-SUM(ps.amount), 0)          AS total_value,
             COALESCE(-AVG(ps.amount), 0)          AS avg_invoice
         FROM fact_posted_sales ps
-        LEFT JOIN dim_date     d   ON d.date_id      = ps.date_id
-        LEFT JOIN dim_document doc ON doc.document_id = ps.document_id
+        {_INV_JOINS}
         LEFT JOIN dim_company  co  ON co.company_id   = ps.company_id
         {wh}
         GROUP BY co.company_name
+        ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
+    """, params)
+
+
+@router.get("/invoices/heatmap")
+def invoices_heatmap(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    vertical_code: Optional[str] = None,
+):
+    """Entity × Month heatmap data — invoice count and value per cell."""
+    wh, params = _inv_filters(company_id, year, vertical_code)
+    return query(f"""
+        SELECT
+            co.company_name,
+            d.month_name,
+            d.month,
+            d.year,
+            COUNT(*)                     AS invoice_count,
+            COALESCE(-SUM(ps.amount), 0) AS invoice_value
+        FROM fact_posted_sales ps
+        {_INV_JOINS}
+        LEFT JOIN dim_company co ON co.company_id = ps.company_id
+        {wh}
+        GROUP BY co.company_name, d.year, d.month, d.month_name
+        ORDER BY d.year, d.month, co.company_name
+    """, params)
+
+
+@router.get("/invoices/by-vertical")
+def invoices_by_vertical(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    currency_code: Optional[str] = None,
+):
+    """Invoice breakdown by Vertical Code (business vertical)."""
+    wh, params = _inv_filters(company_id, year, currency_code=currency_code)
+    return query(f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(dep.vertical_code), ''), '(none)')  AS vertical_code,
+            COUNT(*)                                                   AS invoice_count,
+            COALESCE(-SUM(ps.amount), 0)                              AS total_value,
+            COALESCE(-AVG(ps.amount), 0)                              AS avg_invoice
+        FROM fact_posted_sales ps
+        {_INV_JOINS}
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(dep.vertical_code), ''), '(none)')
         ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
     """, params)
 

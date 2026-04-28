@@ -1,7 +1,8 @@
 /**
  * F031 — Invoice Insights
- * Source: fact_posted_sales WHERE document_type = 'Invoice'
- * Drill: clicking entity → drill to customer-level for that entity.
+ * Source: fact_posted_sales WHERE document_type IN ('Invoice','Credit Memo')
+ *         AND gen_posting_type = 'Sale'
+ * Spec:  Invoice Report Relations.xlsx
  */
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -17,6 +18,8 @@ const PIE_COLORS = [
   '#3b82f6','#22c55e','#f97316','#8b5cf6','#06b6d4',
   '#f59e0b','#ef4444','#ec4899','#84cc16','#0ea5e9',
 ];
+
+const MONTH_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const fmt = (n: number) =>
   Math.abs(n) >= 1e9 ? `$${(n / 1e9).toFixed(2)}B`
@@ -54,6 +57,22 @@ interface CustomerRow {
 
 interface EntityRow {
   company_name: string;
+  invoice_count: number;
+  total_value: number;
+  avg_invoice: number;
+}
+
+interface HeatmapRow {
+  company_name: string;
+  month_name: string;
+  month: number;
+  year: number;
+  invoice_count: number;
+  invoice_value: number;
+}
+
+interface VerticalRow {
+  vertical_code: string;
   invoice_count: number;
   total_value: number;
   avg_invoice: number;
@@ -103,7 +122,7 @@ function MoneyTip({ active, payload, label }: { active?: boolean; payload?: { na
   );
 }
 
-type Tab = 'trend' | 'entity' | 'customer' | 'distribution';
+type Tab = 'trend' | 'entity' | 'customer' | 'distribution' | 'heatmap' | 'vertical';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -113,6 +132,15 @@ function getMagnitudeColor(count: number, max: number): string {
   if (ratio >= 0.7) return '#3b82f6';
   if (ratio >= 0.4) return '#06b6d4';
   return '#94a3b8';
+}
+
+function getHeatColor(count: number, max: number): string {
+  if (max === 0 || count === 0) return 'transparent';
+  const ratio = count / max;
+  if (ratio >= 0.75) return 'rgba(59,130,246,0.85)';
+  if (ratio >= 0.5)  return 'rgba(59,130,246,0.55)';
+  if (ratio >= 0.25) return 'rgba(59,130,246,0.30)';
+  return 'rgba(59,130,246,0.12)';
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
@@ -126,21 +154,28 @@ export default function InvoiceInsights() {
   const [drill, setDrill] = useState<{ label: string; filter: Record<string, string> } | null>(null);
   const [accountPrefix, setAccountPrefix] = useState('');
   const [genPostType, setGenPostType] = useState('');
+  const [verticalCode, setVerticalCode] = useState('');
 
   const [summary, setSummary] = useState<InvoiceSummary | null>(null);
   const [periodData, setPeriodData] = useState<PeriodRow[]>([]);
   const [customerData, setCustomerData] = useState<CustomerRow[]>([]);
   const [entityData, setEntityData] = useState<EntityRow[]>([]);
+  const [heatmapData, setHeatmapData] = useState<HeatmapRow[]>([]);
+  const [verticalData, setVerticalData] = useState<VerticalRow[]>([]);
 
   const [loadFilters, setLoadFilters] = useState(true);
   const [loadSum, setLoadSum] = useState(true);
   const [loadPeriod, setLoadPeriod] = useState(true);
   const [loadCust, setLoadCust] = useState(true);
   const [loadEnt, setLoadEnt] = useState(true);
+  const [loadHeatmap, setLoadHeatmap] = useState(true);
+  const [loadVertical, setLoadVertical] = useState(true);
   const [, setErrSum] = useState(false);
   const [errPeriod, setErrPeriod] = useState(false);
   const [errCust, setErrCust] = useState(false);
   const [errEnt, setErrEnt] = useState(false);
+  const [errHeatmap, setErrHeatmap] = useState(false);
+  const [errVertical, setErrVertical] = useState(false);
 
   // Load filter options once
   useEffect(() => {
@@ -160,30 +195,28 @@ export default function InvoiceInsights() {
     if (year) qs.set('year', String(year));
     if (accountPrefix) qs.set('account_prefix', accountPrefix);
     if (genPostType)   qs.set('doc_type', genPostType);
+    if (verticalCode)  qs.set('vertical_code', verticalCode);
     return qs;
-  }, [selectedCompanies, year, accountPrefix, genPostType]);
+  }, [selectedCompanies, year, accountPrefix, genPostType, verticalCode]);
 
   // Summary
   useEffect(() => {
     setLoadSum(true); setErrSum(false);
-    const qs = buildQS();
-    fetch(`${BASE}/api/insights/invoices/summary?${qs}`)
+    fetch(`${BASE}/api/insights/invoices/summary?${buildQS()}`)
       .then((r) => r.json()).then(setSummary).catch(() => setErrSum(true)).finally(() => setLoadSum(false));
   }, [buildQS]);
 
   // Period
   useEffect(() => {
     setLoadPeriod(true); setErrPeriod(false);
-    const qs = buildQS();
-    fetch(`${BASE}/api/insights/invoices/by-period?${qs}`)
+    fetch(`${BASE}/api/insights/invoices/by-period?${buildQS()}`)
       .then((r) => r.json()).then(setPeriodData).catch(() => setErrPeriod(true)).finally(() => setLoadPeriod(false));
   }, [buildQS]);
 
   // Customer
   useEffect(() => {
     setLoadCust(true); setErrCust(false);
-    const qs = buildQS();
-    qs.set('limit', '15');
+    const qs = buildQS(); qs.set('limit', '15');
     fetch(`${BASE}/api/insights/invoices/by-customer?${qs}`)
       .then((r) => r.json()).then(setCustomerData).catch(() => setErrCust(true)).finally(() => setLoadCust(false));
   }, [buildQS]);
@@ -191,9 +224,22 @@ export default function InvoiceInsights() {
   // Entity
   useEffect(() => {
     setLoadEnt(true); setErrEnt(false);
-    const qs = buildQS();
-    fetch(`${BASE}/api/insights/invoices/by-entity?${qs}`)
+    fetch(`${BASE}/api/insights/invoices/by-entity?${buildQS()}`)
       .then((r) => r.json()).then(setEntityData).catch(() => setErrEnt(true)).finally(() => setLoadEnt(false));
+  }, [buildQS]);
+
+  // Heatmap
+  useEffect(() => {
+    setLoadHeatmap(true); setErrHeatmap(false);
+    fetch(`${BASE}/api/insights/invoices/heatmap?${buildQS()}`)
+      .then((r) => r.json()).then(setHeatmapData).catch(() => setErrHeatmap(true)).finally(() => setLoadHeatmap(false));
+  }, [buildQS]);
+
+  // Vertical
+  useEffect(() => {
+    setLoadVertical(true); setErrVertical(false);
+    fetch(`${BASE}/api/insights/invoices/by-vertical?${buildQS()}`)
+      .then((r) => r.json()).then(setVerticalData).catch(() => setErrVertical(true)).finally(() => setLoadVertical(false));
   }, [buildQS]);
 
   const valuesAvailable = (summary?.total_value ?? 0) !== 0;
@@ -211,11 +257,26 @@ export default function InvoiceInsights() {
     ? customerData.filter((c) => c.company_name === drill.filter.entity)
     : customerData;
 
+  // Build heatmap pivot: company → month_name → {count, value}
+  const heatEntities = Array.from(new Set(heatmapData.map((r) => r.company_name))).sort();
+  const heatMonths = MONTH_ORDER.filter((m) =>
+    heatmapData.some((r) => r.month_name.startsWith(m))
+  );
+  const heatMap = new Map<string, Map<string, HeatmapRow>>();
+  for (const row of heatmapData) {
+    const shortMonth = row.month_name.slice(0, 3);
+    if (!heatMap.has(row.company_name)) heatMap.set(row.company_name, new Map());
+    heatMap.get(row.company_name)!.set(shortMonth, row);
+  }
+  const heatMax = Math.max(...heatmapData.map((r) => r.invoice_count), 1);
+
   const TABS: [Tab, string][] = [
-    ['trend', 'Monthly Trend'],
-    ['entity', 'By Entity'],
-    ['customer', 'By Customer'],
-    ['distribution', 'Invoice Distribution'],
+    ['trend',        'Monthly Trend'],
+    ['entity',       'By Entity'],
+    ['customer',     'By Customer'],
+    ['heatmap',      'Heat Map'],
+    ['vertical',     'By Vertical'],
+    ['distribution', 'Distribution'],
   ];
 
   return (
@@ -223,16 +284,16 @@ export default function InvoiceInsights() {
       <div className="page-header">
         <h1 className="page-title">Invoice Insights</h1>
         <p className="page-subtitle">
-          Invoice-only analysis from fact_posted_sales — document_type = 'Invoice'
+          Invoice &amp; Credit Memo analysis — Gen. Posting Type = Sale
         </p>
       </div>
 
       {/* KPI tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-        <Tile label="Invoice Count" value={loadSum ? '…' : (summary?.invoice_count ?? 0).toLocaleString()} sub="Total invoices" />
-        <Tile label="Total Invoice Value" value={loadSum ? '…' : (valuesAvailable ? fmt(summary?.total_value ?? 0) : '—')} sub={valuesAvailable ? undefined : 'Amounts not loaded'} />
-        <Tile label="Avg Invoice Value" value={loadSum ? '…' : (valuesAvailable ? fmt(summary?.avg_invoice ?? 0) : '—')} sub="Per invoice" />
-        <Tile label="Entities with Invoices" value={loadSum ? '…' : (summary?.entity_count ?? 0).toLocaleString()} sub="Active companies" />
+        <Tile label="Invoice Count" value={loadSum ? '…' : (summary?.invoice_count ?? 0).toLocaleString()} sub="Invoice + Credit Memo" />
+        <Tile label="Total Value" value={loadSum ? '…' : (valuesAvailable ? fmt(summary?.total_value ?? 0) : '—')} sub={valuesAvailable ? undefined : 'Amounts not loaded'} />
+        <Tile label="Avg Invoice Value" value={loadSum ? '…' : (valuesAvailable ? fmt(summary?.avg_invoice ?? 0) : '—')} sub="Per entry" />
+        <Tile label="Entities" value={loadSum ? '…' : (summary?.entity_count ?? 0).toLocaleString()} sub="Active companies" />
         <Tile label="Unique Customers" value={loadSum ? '…' : (summary?.customer_count ?? 0).toLocaleString()} sub="Distinct customers" />
       </div>
 
@@ -284,6 +345,29 @@ export default function InvoiceInsights() {
                   >{y}</button>
                 ))}
               </div>
+            </div>
+
+            {/* Vertical Code filter */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Vertical Code</div>
+              <input
+                type="text"
+                value={verticalCode}
+                onChange={(e) => setVerticalCode(e.target.value)}
+                placeholder="e.g. CONSULT"
+                style={{
+                  width: '100%', fontSize: 11, padding: '4px 8px',
+                  border: '1px solid var(--color-border)', borderRadius: 4,
+                  background: 'var(--color-surface)', color: 'var(--color-text)',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {verticalCode && (
+                <button
+                  onClick={() => setVerticalCode('')}
+                  style={{ fontSize: 10, marginTop: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)' }}
+                >Clear</button>
+              )}
             </div>
 
             {/* Drill indicator */}
@@ -338,7 +422,7 @@ export default function InvoiceInsights() {
             <>
               <ChartCard
                 title="Monthly Invoice Count & Value Trend"
-                subtitle={valuesAvailable ? 'Bar = invoice count (blue), Line = invoice value (green dashed)' : 'Bar = invoice count — value amounts not yet loaded'}
+                subtitle={valuesAvailable ? 'Bar = count (blue), Line = value (green dashed) — Invoice + Credit Memo' : 'Bar = invoice count — value amounts not yet loaded'}
                 loading={loadPeriod}
                 error={errPeriod}
                 height={320}
@@ -383,7 +467,7 @@ export default function InvoiceInsights() {
                     <thead>
                       <tr>
                         <th>Month</th>
-                        <th style={{ textAlign: 'right' }}>Invoice Count</th>
+                        <th style={{ textAlign: 'right' }}>Count</th>
                         {valuesAvailable && <th style={{ textAlign: 'right' }}>Invoice Value</th>}
                         {valuesAvailable && <th style={{ textAlign: 'right' }}>Avg Invoice</th>}
                       </tr>
@@ -474,7 +558,6 @@ export default function InvoiceInsights() {
                 </div>
               </div>
 
-              {/* Drill: show customers for selected entity */}
               {drill?.filter.entity && (
                 <div className="card" style={{ marginTop: 16 }}>
                   <div className="card-title">Customers in {drill.label}</div>
@@ -492,7 +575,7 @@ export default function InvoiceInsights() {
                         {loadCust ? (
                           <tr><td colSpan={4} style={{ textAlign: 'center', padding: 12, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
                         ) : filteredEntityCustomers.length === 0 ? (
-                          <tr><td colSpan={4} style={{ textAlign: 'center', padding: 12, color: 'var(--color-text-muted)' }}>No customers found for this entity</td></tr>
+                          <tr><td colSpan={4} style={{ textAlign: 'center', padding: 12, color: 'var(--color-text-muted)' }}>No customers found</td></tr>
                         ) : filteredEntityCustomers.map((c) => (
                           <tr key={c.customer_vendor_name}>
                             <td>{c.customer_vendor_name}</td>
@@ -582,10 +665,181 @@ export default function InvoiceInsights() {
             </>
           )}
 
+          {/* ── Tab: Heat Map ── */}
+          {tab === 'heatmap' && (
+            <>
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div className="card-title">Invoice Heat Map — Entity × Month</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12, marginTop: -8 }}>
+                  Cell = invoice count. Colour intensity = volume (dark blue = high, light = low).
+                </div>
+                {loadHeatmap ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
+                ) : errHeatmap ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--color-error)' }}>Failed to load</div>
+                ) : heatmapData.length === 0 ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data for selected filters</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ fontSize: 11, borderCollapse: 'separate', borderSpacing: 2, width: '100%' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '4px 8px', fontSize: 11, fontWeight: 600, minWidth: 160 }}>Entity</th>
+                          {heatMonths.map((m) => (
+                            <th key={m} style={{ textAlign: 'center', padding: '4px 6px', fontSize: 10, fontWeight: 600, minWidth: 44 }}>{m}</th>
+                          ))}
+                          <th style={{ textAlign: 'right', padding: '4px 8px', fontSize: 10, fontWeight: 600 }}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {heatEntities.map((entity) => {
+                          const row = heatMap.get(entity);
+                          const entityTotal = row ? Array.from(row.values()).reduce((s, r) => s + r.invoice_count, 0) : 0;
+                          return (
+                            <tr key={entity}>
+                              <td style={{ padding: '3px 8px', fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
+                                {entity.length > 26 ? entity.slice(0, 24) + '…' : entity}
+                              </td>
+                              {heatMonths.map((m) => {
+                                const cell = row?.get(m);
+                                const count = cell?.invoice_count ?? 0;
+                                const bg = getHeatColor(count, heatMax);
+                                const textColor = count / heatMax >= 0.5 ? '#fff' : 'var(--color-text)';
+                                return (
+                                  <td
+                                    key={m}
+                                    title={cell ? `${entity} / ${cell.month_name}: ${count} invoices${valuesAvailable ? ` / ${fmt(cell.invoice_value)}` : ''}` : '—'}
+                                    style={{
+                                      textAlign: 'center', padding: '4px 2px',
+                                      background: bg, borderRadius: 3,
+                                      color: count > 0 ? textColor : 'var(--color-text-muted)',
+                                      fontFamily: 'monospace', fontSize: 11,
+                                      cursor: count > 0 ? 'pointer' : 'default',
+                                    }}
+                                    onClick={() => count > 0 && cell && setDrill({ label: `${entity} / ${cell.month_name}`, filter: { entity } })}
+                                  >
+                                    {count > 0 ? count : '·'}
+                                  </td>
+                                );
+                              })}
+                              <td style={{ textAlign: 'right', padding: '3px 8px', fontFamily: 'monospace', fontSize: 11, fontWeight: 600, color: 'var(--color-primary)' }}>
+                                {entityTotal.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td style={{ padding: '4px 8px', fontWeight: 600, fontSize: 11 }}>Monthly Total</td>
+                          {heatMonths.map((m) => {
+                            const monthTotal = heatmapData
+                              .filter((r) => r.month_name.startsWith(m))
+                              .reduce((s, r) => s + r.invoice_count, 0);
+                            return (
+                              <td key={m} style={{ textAlign: 'center', padding: '4px 2px', fontFamily: 'monospace', fontSize: 10, fontWeight: 600 }}>
+                                {monthTotal > 0 ? monthTotal : '—'}
+                              </td>
+                            );
+                          })}
+                          <td style={{ textAlign: 'right', padding: '4px 8px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: 'var(--color-primary)' }}>
+                            {heatmapData.reduce((s, r) => s + r.invoice_count, 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Legend */}
+              <div className="card">
+                <div className="card-title" style={{ fontSize: 12 }}>Heat Map Legend</div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 11 }}>
+                  {[
+                    { label: 'Very High (≥75%)', color: 'rgba(59,130,246,0.85)', text: '#fff' },
+                    { label: 'High (50–74%)',    color: 'rgba(59,130,246,0.55)', text: 'var(--color-text)' },
+                    { label: 'Medium (25–49%)', color: 'rgba(59,130,246,0.30)', text: 'var(--color-text)' },
+                    { label: 'Low (<25%)',       color: 'rgba(59,130,246,0.12)', text: 'var(--color-text)' },
+                  ].map((l) => (
+                    <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 28, height: 20, background: l.color, borderRadius: 3 }} />
+                      <span style={{ color: 'var(--color-text-muted)' }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Tab: By Vertical ── */}
+          {tab === 'vertical' && (
+            <>
+              <ChartCard title="Invoice Count by Vertical Code" subtitle="Business vertical breakdown — Gen. Posting Type = Sale" loading={loadVertical} error={errVertical} height={320}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={verticalData}
+                    layout="vertical"
+                    margin={{ top: 4, right: 80, bottom: 4, left: 100 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis
+                      type="category"
+                      dataKey="vertical_code"
+                      tick={{ fontSize: 10 }}
+                      width={100}
+                      tickFormatter={(v: string) => v.length > 14 ? v.slice(0, 13) + '…' : v}
+                    />
+                    <Tooltip content={<MoneyTip />} />
+                    <Legend />
+                    <Bar dataKey="invoice_count" name="Invoice Count" radius={[0, 4, 4, 0]}>
+                      {verticalData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Bar>
+                    {valuesAvailable && (
+                      <Bar dataKey="avg_invoice" name="Avg Invoice" fill="#f97316" radius={[0, 4, 4, 0]} />
+                    )}
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <div className="card">
+                <div className="card-title">Vertical Code Detail</div>
+                <div className="table-wrap">
+                  <table style={{ fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th>Vertical Code</th>
+                        <th style={{ textAlign: 'right' }}>Invoice Count</th>
+                        {valuesAvailable && <th style={{ textAlign: 'right' }}>Total Value</th>}
+                        {valuesAvailable && <th style={{ textAlign: 'right' }}>Avg Invoice</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadVertical ? (
+                        <tr><td colSpan={4} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+                      ) : verticalData.length === 0 ? (
+                        <tr><td colSpan={4} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>No vertical data available</td></tr>
+                      ) : verticalData.map((v) => (
+                        <tr key={v.vertical_code}>
+                          <td style={{ fontWeight: 500 }}>{v.vertical_code}</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{v.invoice_count.toLocaleString()}</td>
+                          {valuesAvailable && <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{fmt(v.total_value)}</td>}
+                          {valuesAvailable && <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{fmt(v.avg_invoice)}</td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* ── Tab: Invoice Distribution ── */}
           {tab === 'distribution' && (
             <>
-              {/* Callout cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
                 <div className="card" style={{ padding: '14px 16px', borderTop: '3px solid #3b82f6' }}>
                   <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>Peak Month</div>
@@ -603,15 +857,15 @@ export default function InvoiceInsights() {
                   <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>with invoice data</div>
                 </div>
                 <div className="card" style={{ padding: '14px 16px', borderTop: '3px solid #f97316' }}>
-                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>Avg Monthly Invoices</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>Avg Monthly</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: '#f97316' }}>{avgMonthly}</div>
-                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>per month</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>invoices/month</div>
                 </div>
               </div>
 
               <ChartCard
                 title="Invoice Count per Month — Colored by Magnitude"
-                subtitle="Blue = high volume (≥70% of peak), Cyan = medium (40–69%), Gray = low (<40%)"
+                subtitle="Blue = high (≥70%), Cyan = medium (40–69%), Gray = low (<40%)"
                 loading={loadPeriod}
                 error={errPeriod}
                 height={280}
