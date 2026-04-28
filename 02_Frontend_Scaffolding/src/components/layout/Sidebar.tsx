@@ -20,6 +20,7 @@ const nav: NavSection[] = [
       { label: 'P&L Statement',       path: '/pl',                     icon: '₱' },
       { label: 'Trial Balance',       path: '/reports/trial-balance',  icon: '⇌' },
       { label: 'Balance Sheet',       path: '/reports/balance-sheet',  icon: '⊟' },
+      { label: 'Cash Flow',           path: '/reports/cash-flow',      icon: '⇄' },
       { label: 'KPI Dashboard',       path: '/reports/kpi',            icon: '◈' },
       { label: 'Health Score',        path: '/reports/health-score',   icon: '♥' },
     ],

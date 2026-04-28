@@ -810,3 +810,107 @@ def entity_comparison(
             "total_spend":       round(cogs + opex, 2),
         })
     return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CASH FLOW STATEMENT  (GL-flow indirect method)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _cf_from_rows(rows: list) -> dict:
+    """Convert raw account-class GL flows into a structured CF statement."""
+    f = {r["account_class"]: float(r["net_amount"] or 0) for r in rows}
+
+    # ── Operating activities ────────────────────────────────────────────────
+    revenue       =  f.get("4", 0)          # -SUM(4xx) = inflow
+    cogs          = -f.get("5", 0)          # -SUM(5xx) = outflow (negated back)
+    opex          = -f.get("6", 0)
+    other_income  =  f.get("7", 0)
+    other_expense = -f.get("8", 0)
+    net_income    = revenue - abs(cogs) - abs(opex) + other_income - abs(other_expense)
+    operating_cf  = net_income
+
+    # ── Investing activities ────────────────────────────────────────────────
+    # 1xx asset account movements — net debit = cash spent on assets
+    asset_movement  = f.get("1", 0)         # raw GL sum of 1xx entries
+    investing_cf    = -asset_movement       # asset purchase = cash outflow
+
+    # ── Financing activities ────────────────────────────────────────────────
+    # 2xx liabilities + 3xx equity — new liabilities/equity = cash inflow
+    liab_movement   = f.get("2", 0)
+    equity_movement = f.get("3", 0)
+    financing_cf    = -(liab_movement + equity_movement)
+
+    net_change = operating_cf + investing_cf + financing_cf
+
+    return {
+        "operating": {
+            "revenue_received":    round(revenue, 2),
+            "cogs_paid":           round(cogs, 2),
+            "opex_paid":           round(opex, 2),
+            "other_income":        round(other_income, 2),
+            "other_expense":       round(other_expense, 2),
+            "total":               round(operating_cf, 2),
+        },
+        "investing": {
+            "asset_movements":     round(-asset_movement, 2),
+            "total":               round(investing_cf, 2),
+        },
+        "financing": {
+            "liability_movements": round(-liab_movement, 2),
+            "equity_movements":    round(-equity_movement, 2),
+            "total":               round(financing_cf, 2),
+        },
+        "net_change": round(net_change, 2),
+    }
+
+
+@router.get("/cash-flow")
+def cash_flow(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+    rows = query(f"""
+        SELECT
+            LEFT(g.account_no, 1)         AS account_class,
+            -SUM(g.amount)                AS net_amount
+        {_GL_BASE} {wh}
+        GROUP BY LEFT(g.account_no, 1)
+    """, params)
+    return _cf_from_rows(rows)
+
+
+@router.get("/cash-flow/trend")
+def cash_flow_trend(
+    company_id: Optional[List[int]] = Query(default=None),
+):
+    wh, params = _gl_where(company_id)
+    rows = query(f"""
+        SELECT
+            d.year,
+            LEFT(g.account_no, 1)         AS account_class,
+            -SUM(g.amount)                AS net_amount
+        {_GL_BASE} {wh}
+        GROUP BY d.year, LEFT(g.account_no, 1)
+        ORDER BY d.year
+    """, params)
+
+    # Group by year
+    by_year: dict = {}
+    for r in rows:
+        yr = r["year"]
+        if yr not in by_year:
+            by_year[yr] = []
+        by_year[yr].append(r)
+
+    result = []
+    for yr in sorted(by_year.keys()):
+        cf = _cf_from_rows(by_year[yr])
+        result.append({
+            "year":         yr,
+            "operating_cf": cf["operating"]["total"],
+            "investing_cf": cf["investing"]["total"],
+            "financing_cf": cf["financing"]["total"],
+            "net_change":   cf["net_change"],
+        })
+    return result
