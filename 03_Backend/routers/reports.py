@@ -1,5 +1,6 @@
 """
-Standard Finance Reports — Trial Balance, Balance Sheet, Expense Analysis, Department Spend
+Standard Finance Reports — Trial Balance, Balance Sheet, Expense Analysis, Department Spend,
+KPI Ratios, Financial Health Score, Project Financials
 GET /api/reports/*
 """
 from fastapi import APIRouter, Query
@@ -309,5 +310,351 @@ def dept_spend_summary(
         FROM v_dept_spend ds
         JOIN dim_company co ON co.company_name = ds.company_name
         {wh}
+    """, params)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# KPI RATIO DASHBOARD
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_GL_BASE = """
+    FROM fact_gl_entries g
+    JOIN dim_date    d  ON d.date_id     = g.date_id
+    JOIN dim_account ac ON ac.account_no = g.account_no
+    JOIN dim_company co ON co.company_id = g.company_id
+"""
+
+def _gl_where(company_ids=None, year=None):
+    clauses: list = ["g.account_no != '999999'"]
+    params:  list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"g.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    return "WHERE " + " AND ".join(clauses), params
+
+
+def _safe_pct(num, denom):
+    if not denom: return None
+    return round(float(num) / float(denom) * 100, 2)
+
+def _safe_ratio(num, denom):
+    if not denom: return None
+    return round(float(num) / float(denom), 3)
+
+
+@router.get("/kpi-ratios")
+def kpi_ratios(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+
+    # P&L from fact_gl_entries
+    pl = query(f"""
+        SELECT
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                   AS net_income,
+            COUNT(DISTINCT g.company_id)                                        AS entity_count
+        {_GL_BASE} {wh}
+    """, params)
+    p = pl[0] if pl else {}
+
+    # Balance sheet from fact_coa_balances
+    bs_clauses: list = []
+    bs_params:  list = []
+    if company_id:
+        ph = ", ".join(["%s"] * len(company_id))
+        bs_clauses.append(f"company_id IN ({ph})")
+        bs_params.extend(company_id)
+    bs_wh = ("WHERE " + " AND ".join(bs_clauses)) if bs_clauses else ""
+    bs = query(f"""
+        SELECT
+            SUM(CASE WHEN account_no LIKE '1%%' THEN balance ELSE 0 END) AS assets,
+            SUM(CASE WHEN account_no LIKE '2%%' THEN balance ELSE 0 END) AS liabilities,
+            SUM(CASE WHEN account_no LIKE '3%%' THEN balance ELSE 0 END) AS equity
+        FROM fact_coa_balances {bs_wh}
+    """, bs_params)
+    b = bs[0] if bs else {}
+
+    rev   = float(p.get("revenue")     or 0)
+    cogs  = float(p.get("cogs")        or 0)
+    opex  = float(p.get("opex")        or 0)
+    net   = float(p.get("net_income")  or 0)
+    ent   = int(p.get("entity_count")  or 1)
+    assets = float(b.get("assets")      or 0)
+    liab   = abs(float(b.get("liabilities") or 0))
+    equity = abs(float(b.get("equity")  or 0))
+
+    return {
+        "revenue":             rev,
+        "cogs":                cogs,
+        "opex":                opex,
+        "net_income":          net,
+        "gross_margin_pct":    _safe_pct(rev - cogs, rev),
+        "net_margin_pct":      _safe_pct(net, rev),
+        "ebitda_margin_pct":   _safe_pct(rev - cogs - opex, rev),
+        "opex_ratio_pct":      _safe_pct(opex, rev),
+        "current_ratio":       _safe_ratio(assets, liab),
+        "debt_equity":         _safe_ratio(liab, equity),
+        "revenue_per_entity":  round(rev / ent, 0) if ent else None,
+        "expense_per_entity":  round((cogs + opex) / ent, 0) if ent else None,
+        "entity_count":        ent,
+    }
+
+
+@router.get("/kpi-ratios/trend")
+def kpi_ratios_trend(
+    company_id: Optional[List[int]] = Query(default=None),
+):
+    wh, params = _gl_where(company_id)
+    return query(f"""
+        SELECT
+            d.year,
+            d.month,
+            d.month_name,
+            TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS month_key,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END) AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            ) AS net_income
+        {_GL_BASE} {wh}
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, params)
+
+
+@router.get("/kpi-ratios/by-entity")
+def kpi_ratios_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            ) AS net_income
+        {_GL_BASE} {wh}
+        GROUP BY co.company_name
+        ORDER BY revenue DESC
+    """, params)
+
+    result = []
+    for r in rows:
+        rev  = float(r["revenue"] or 0)
+        cogs = float(r["cogs"]    or 0)
+        opex = float(r["opex"]    or 0)
+        net  = float(r["net_income"] or 0)
+        result.append({
+            **r,
+            "gross_margin_pct": _safe_pct(rev - cogs, rev),
+            "net_margin_pct":   _safe_pct(net, rev),
+            "opex_ratio_pct":   _safe_pct(opex, rev),
+        })
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FINANCIAL HEALTH SCORE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _score_metric(value, green_threshold, amber_threshold, higher_is_better=True):
+    """Return 0–100 score for a single metric."""
+    if value is None:
+        return 50  # neutral when data missing
+    if higher_is_better:
+        if value >= green_threshold:  return 100
+        if value >= amber_threshold:  return int(50 + 50 * (value - amber_threshold) / (green_threshold - amber_threshold))
+        return max(0, int(50 * value / amber_threshold))
+    else:  # lower is better (e.g. D/E ratio, OpEx ratio)
+        if value <= green_threshold:  return 100
+        if value <= amber_threshold:  return int(50 + 50 * (amber_threshold - value) / (amber_threshold - green_threshold))
+        return max(0, int(50 * (1 - (value - amber_threshold) / amber_threshold)))
+
+
+@router.get("/health-score")
+def health_score(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    # Fetch base ratios
+    ratios = kpi_ratios(company_id=company_id, year=year)
+
+    gross_margin = ratios.get("gross_margin_pct") or 0
+    net_margin   = ratios.get("net_margin_pct")   or 0
+    current_r    = ratios.get("current_ratio")    or 0
+    de_ratio     = ratios.get("debt_equity")      or 0
+    opex_ratio   = ratios.get("opex_ratio_pct")   or 0
+
+    # Entity coverage (months present / 12 across companies)
+    cov = query("""
+        SELECT AVG(LEAST(months_present, 12) * 100.0 / 12) AS avg_coverage
+        FROM (
+            SELECT co.company_id, COUNT(DISTINCT d.year * 100 + d.month) AS months_present
+            FROM fact_gl_entries g
+            JOIN dim_company co ON co.company_id = g.company_id
+            JOIN dim_date    d  ON d.date_id     = g.date_id
+            GROUP BY co.company_id
+        ) sub
+    """)
+    coverage_pct = float((cov[0].get("avg_coverage") or 0)) if cov else 50.0
+
+    # Score each category
+    categories = [
+        {
+            "name":          "Profitability",
+            "weight":        25,
+            "metric_label":  "Net Margin",
+            "metric_value":  f"{net_margin:.1f}%",
+            "raw_value":     net_margin,
+            "score":         _score_metric(net_margin, 15, 5, higher_is_better=True),
+            "status":        "green" if net_margin >= 15 else "amber" if net_margin >= 5 else "red",
+        },
+        {
+            "name":          "Gross Efficiency",
+            "weight":        20,
+            "metric_label":  "Gross Margin",
+            "metric_value":  f"{gross_margin:.1f}%",
+            "raw_value":     gross_margin,
+            "score":         _score_metric(gross_margin, 40, 20, higher_is_better=True),
+            "status":        "green" if gross_margin >= 40 else "amber" if gross_margin >= 20 else "red",
+        },
+        {
+            "name":          "Liquidity",
+            "weight":        20,
+            "metric_label":  "Current Ratio",
+            "metric_value":  f"{current_r:.2f}×",
+            "raw_value":     current_r,
+            "score":         _score_metric(current_r, 2.0, 1.0, higher_is_better=True),
+            "status":        "green" if current_r >= 2.0 else "amber" if current_r >= 1.0 else "red",
+        },
+        {
+            "name":          "Leverage",
+            "weight":        15,
+            "metric_label":  "Debt / Equity",
+            "metric_value":  f"{de_ratio:.2f}×" if de_ratio else "N/A",
+            "raw_value":     de_ratio,
+            "score":         _score_metric(de_ratio, 0.5, 2.0, higher_is_better=False),
+            "status":        "green" if de_ratio <= 0.5 else "amber" if de_ratio <= 2.0 else "red",
+        },
+        {
+            "name":          "OpEx Control",
+            "weight":        10,
+            "metric_label":  "OpEx Ratio",
+            "metric_value":  f"{opex_ratio:.1f}%",
+            "raw_value":     opex_ratio,
+            "score":         _score_metric(opex_ratio, 10, 25, higher_is_better=False),
+            "status":        "green" if opex_ratio <= 10 else "amber" if opex_ratio <= 25 else "red",
+        },
+        {
+            "name":          "Data Coverage",
+            "weight":        10,
+            "metric_label":  "Entity Coverage",
+            "metric_value":  f"{coverage_pct:.0f}%",
+            "raw_value":     coverage_pct,
+            "score":         _score_metric(coverage_pct, 80, 50, higher_is_better=True),
+            "status":        "green" if coverage_pct >= 80 else "amber" if coverage_pct >= 50 else "red",
+        },
+    ]
+
+    # Weighted overall score
+    overall = sum(c["score"] * c["weight"] for c in categories) // 100
+
+    # Grade
+    grade = "A" if overall >= 85 else "B" if overall >= 70 else "C" if overall >= 55 else "D" if overall >= 40 else "F"
+
+    # Drivers (positive + negative)
+    drivers = []
+    for c in sorted(categories, key=lambda x: -x["score"])[:3]:
+        drivers.append({"type": "positive", "text": f'{c["name"]}: {c["metric_label"]} {c["metric_value"]} is {"strong" if c["status"] == "green" else "acceptable"}'})
+    for c in sorted(categories, key=lambda x: x["score"])[:2]:
+        if c["status"] != "green":
+            drivers.append({"type": "negative", "text": f'{c["name"]}: {c["metric_label"]} {c["metric_value"]} needs improvement'})
+
+    return {
+        "overall_score": overall,
+        "grade":         grade,
+        "categories":    categories,
+        "drivers":       drivers,
+        "ratios":        ratios,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROJECT-WISE FINANCIALS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/project-financials/summary")
+def project_financials_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+    rows = query(f"""
+        SELECT
+            COUNT(DISTINCT p.project_no)                                        AS project_count,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS total_revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%'
+                        OR  ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS total_spend,
+            COUNT(*)                                                             AS entry_count
+        {_GL_BASE}
+        LEFT JOIN dim_project p ON p.project_id = g.project_id
+        {wh}
+    """, params)
+    return rows[0] if rows else {}
+
+
+@router.get("/project-financials")
+def project_financials(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+    return query(f"""
+        SELECT
+            COALESCE(NULLIF(TRIM(p.project_no), ''), '(no project)') AS project_no,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                   AS net,
+            COUNT(*)                                                             AS entry_count,
+            COUNT(DISTINCT g.company_id)                                        AS entity_count
+        {_GL_BASE}
+        LEFT JOIN dim_project p ON p.project_id = g.project_id
+        {wh}
+        GROUP BY COALESCE(NULLIF(TRIM(p.project_no), ''), '(no project)')
+        ORDER BY ABS(SUM(g.amount)) DESC
     """, params)
     return rows[0] if rows else {}

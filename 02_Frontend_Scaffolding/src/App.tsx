@@ -31,6 +31,9 @@ import BalanceSheet       from './pages/37_F037_BalanceSheet';
 import ExpenseAnalysis    from './pages/38_F038_ExpenseAnalysis';
 import DeptSpend          from './pages/39_F039_DeptSpend';
 import Settings           from './pages/40_F040_Settings';
+import KPIDashboard       from './pages/41_F041_KPIDashboard';
+import HealthScore        from './pages/42_F042_HealthScore';
+import ProjectFinancials  from './pages/43_F043_ProjectFinancials';
 
 export default function App() {
   return (
@@ -59,6 +62,9 @@ export default function App() {
           <Route path="/reports/balance-sheet" element={<BalanceSheet />} />
           <Route path="/reports/expense"       element={<ExpenseAnalysis />} />
           <Route path="/reports/dept-spend"    element={<DeptSpend />} />
+          <Route path="/reports/kpi"           element={<KPIDashboard />} />
+          <Route path="/reports/health-score"  element={<HealthScore />} />
+          <Route path="/reports/projects"      element={<ProjectFinancials />} />
 
           {/* Insights */}
           <Route path="/insights/gl"           element={<GLInsights />} />

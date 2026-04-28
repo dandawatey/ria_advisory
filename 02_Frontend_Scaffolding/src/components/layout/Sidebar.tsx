@@ -20,6 +20,8 @@ const nav: NavSection[] = [
       { label: 'P&L Statement',       path: '/pl',                     icon: '₱' },
       { label: 'Trial Balance',       path: '/reports/trial-balance',  icon: '⇌' },
       { label: 'Balance Sheet',       path: '/reports/balance-sheet',  icon: '⊟' },
+      { label: 'KPI Dashboard',       path: '/reports/kpi',            icon: '◈' },
+      { label: 'Health Score',        path: '/reports/health-score',   icon: '♥' },
     ],
   },
   {
@@ -46,6 +48,7 @@ const nav: NavSection[] = [
       { label: 'GL Insights',         path: '/insights/gl',            icon: '◑' },
       { label: 'Expense Analysis',    path: '/reports/expense',        icon: '↓' },
       { label: 'Department Spend',    path: '/reports/dept-spend',     icon: '⊞' },
+      { label: 'Projects',            path: '/reports/projects',       icon: '◫' },
       { label: 'Chart of Accounts',   path: '/insights/coa',           icon: '≡' },
     ],
   },
