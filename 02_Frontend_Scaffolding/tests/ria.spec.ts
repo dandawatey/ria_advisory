@@ -4,8 +4,16 @@
  */
 import { test, expect, request } from '@playwright/test';
 
-const FRONTEND = 'http://127.0.0.1:4000';
+const FRONTEND = 'http://127.0.0.1:5173';
 const BACKEND  = 'http://127.0.0.1:8000';
+
+async function loginAdmin(page: any) {
+  await page.goto(FRONTEND + '/login');
+  await page.locator('button', { hasText: 'Email & Password' }).click();
+  await page.locator('button', { hasText: /superadmin/i }).click();
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL('**/dashboard', { timeout: 10000 });
+}
 
 // ── 1. Backend API health ─────────────────────────────────────────────────────
 
@@ -61,6 +69,7 @@ test('GL Explorer page loads without errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
 
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
   await expect(page.locator('h1')).toContainText('GL Explorer');
 
@@ -73,12 +82,14 @@ test('GL Explorer page loads without errors', async ({ page }) => {
 });
 
 test('GL Explorer charts tab loads chart data', async ({ page }) => {
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
   // Wait for chart SVG to render (recharts outputs svg)
   await expect(page.locator('svg').first()).toBeVisible({ timeout: 15000 });
 });
 
 test('GL Explorer search tab returns real DB rows', async ({ page }) => {
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
 
   // Click Search tab
@@ -107,6 +118,7 @@ test('GL Explorer search tab returns real DB rows', async ({ page }) => {
 });
 
 test('GL Explorer stats tab loads per-entity stats', async ({ page }) => {
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
   await page.click('button:has-text("Load Stats")');
   // Wait for loading state to clear and all 17 rows to appear
@@ -114,6 +126,7 @@ test('GL Explorer stats tab loads per-entity stats', async ({ page }) => {
 });
 
 test('Analytics page loads with filter panel', async ({ page }) => {
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/analytics`);
   await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
   // Filter panel should have company checkboxes
@@ -121,6 +134,7 @@ test('Analytics page loads with filter panel', async ({ page }) => {
 });
 
 test('Analytics KPI tiles show non-zero values', async ({ page }) => {
+  await loginAdmin(page);
   await page.goto(`${FRONTEND}/analytics`);
   // KPI tiles load from /api/analytics/kpi-summary
   await page.waitForTimeout(4000); // allow API calls to complete

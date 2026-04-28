@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import riaLogo from '../assets/ria-advisory-logo.svg';
 import isourceLogo from '../assets/isource-logo.png';
+import hexPattern from '../assets/pattern-lattice.svg';
 
 const FEATURES = [
   {
@@ -113,7 +114,18 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section style={{
+      <section style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Hexagon pattern background */}
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 0,
+          backgroundImage: `url(${hexPattern})`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '208px 240px',
+          opacity: 0.18,
+          pointerEvents: 'none',
+        }} />
+      <div style={{
+        position: 'relative', zIndex: 1,
         maxWidth: 1100, margin: '0 auto', padding: '96px 40px 80px',
         textAlign: 'center',
       }}>
@@ -169,6 +181,7 @@ export default function Landing() {
             Sign In
           </button>
         </div>
+      </div>
       </section>
 
       {/* ── Stats ── */}
@@ -292,7 +305,7 @@ export default function Landing() {
             fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
             color: 'var(--neutral-400)', marginBottom: 24,
           }}>
-            Developed &amp; powered by
+            Trusted by
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 56, flexWrap: 'wrap' }}>
             <img
