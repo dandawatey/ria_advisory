@@ -15,7 +15,7 @@ test('full login flow — landing → login → dashboard', async ({ page }) => 
   await page.locator('button', { hasText: 'Email & Password' }).click();
 
   // 4. Use dev quick-fill button
-  await page.locator('button', { hasText: /fill admin/i }).click();
+  await page.locator('button', { hasText: /superadmin/i }).click();
   await expect(page.locator('input[type="email"]')).toHaveValue('admin@ria-advisory.com');
 
   // 5. Submit
@@ -35,7 +35,7 @@ test('logout returns to login', async ({ page }) => {
   // Login first
   await page.goto(BASE + '/login');
   await page.locator('button', { hasText: 'Email & Password' }).click();
-  await page.locator('button', { hasText: /fill admin/i }).click();
+  await page.locator('button', { hasText: /superadmin/i }).click();
   await page.locator('button[type="submit"]').click();
   await page.waitForURL('**/dashboard', { timeout: 8000 });
 

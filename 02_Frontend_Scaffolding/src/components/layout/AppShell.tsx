@@ -124,7 +124,7 @@ export function AppShell() {
                       Tenant Management
                     </a>
                   )}
-                  {(user?.role === 'superadmin' || user?.role === 'tenant_admin') && user?.tenant_id && (
+                  {(user?.role === 'superadmin' || user?.role === 'ria_admin' || user?.role === 'isource_admin') && user?.tenant_id && (
                     <a href={`/admin/tenants/${user.tenant_id}/users`} style={{
                       display: 'block', padding: '10px 16px',
                       fontSize: 13, color: 'var(--color-text)',

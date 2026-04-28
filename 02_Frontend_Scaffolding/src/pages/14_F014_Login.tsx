@@ -140,19 +140,27 @@ export default function Login() {
         {tab === 'email' && (
           <form onSubmit={handleEmail}>
             {/* Dev quick-login */}
-            <button
-              type="button"
-              onClick={() => { setEmail('admin@ria-advisory.com'); setPassword('Admin@2026'); }}
-              style={{
-                width: '100%', padding: '8px 0', marginBottom: 16,
-                border: '1px dashed #d1d5db', borderRadius: 8,
-                background: '#f9fafb', color: '#6b7280',
-                fontSize: 12, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              }}
-            >
-              <span style={{ fontSize: 14 }}>⚡</span> Dev: fill admin credentials
-            </button>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+              {[
+                { label: 'Superadmin',    email: 'admin@ria-advisory.com',  color: '#1d4ed8' },
+                { label: 'RIA Admin',     email: 'admin@ria-admin.com',      color: '#065f46' },
+                { label: 'iSource Admin', email: 'admin@isource.com',        color: '#6d28d9' },
+              ].map((u) => (
+                <button
+                  key={u.label}
+                  type="button"
+                  onClick={() => { setEmail(u.email); setPassword('Admin@2026'); }}
+                  style={{
+                    flex: 1, padding: '6px 4px',
+                    border: `1px dashed ${u.color}22`, borderRadius: 8,
+                    background: `${u.color}08`, color: u.color,
+                    fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  ⚡ {u.label}
+                </button>
+              ))}
+            </div>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
                 Email address
