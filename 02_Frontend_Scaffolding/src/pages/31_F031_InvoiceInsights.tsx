@@ -78,6 +78,27 @@ interface VerticalRow {
   avg_invoice: number;
 }
 
+interface DetailRow {
+  entry_no: number;
+  entity: string;
+  posting_month: string;
+  posting_date: string;
+  document_type: string;
+  gl_account_no: string;
+  gl_account_name: string | null;
+  customer_name: string | null;
+  source_no: string | null;
+  gen_bus_posting_group: string | null;
+  gen_prod_posting_group: string | null;
+  currency_code: string | null;
+  amount: number;
+  department_code: string;
+  vertical_code: string;
+  geo_code: string | null;
+  bal_account_type: string | null;
+  bal_account_no: string | null;
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -122,7 +143,12 @@ function MoneyTip({ active, payload, label }: { active?: boolean; payload?: { na
   );
 }
 
-type Tab = 'trend' | 'entity' | 'customer' | 'distribution' | 'heatmap' | 'vertical';
+type Tab = 'summary' | 'report' | 'trend' | 'entity' | 'customer' | 'distribution' | 'heatmap' | 'vertical';
+
+const MONTHS: [number, string][] = [
+  [1,'Jan'],[2,'Feb'],[3,'Mar'],[4,'Apr'],[5,'May'],[6,'Jun'],
+  [7,'Jul'],[8,'Aug'],[9,'Sep'],[10,'Oct'],[11,'Nov'],[12,'Dec'],
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -146,7 +172,7 @@ function getHeatColor(count: number, max: number): string {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function InvoiceInsights() {
-  const [tab, setTab] = useState<Tab>('trend');
+  const [tab, setTab] = useState<Tab>('summary');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [years, setYears] = useState<number[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
@@ -155,6 +181,8 @@ export default function InvoiceInsights() {
   const [accountPrefix, setAccountPrefix] = useState('');
   const [genPostType, setGenPostType] = useState('');
   const [verticalCode, setVerticalCode] = useState('');
+  const [month, setMonth] = useState<number | null>(null);
+  const [client, setClient] = useState('');
 
   const [summary, setSummary] = useState<InvoiceSummary | null>(null);
   const [periodData, setPeriodData] = useState<PeriodRow[]>([]);
@@ -162,6 +190,7 @@ export default function InvoiceInsights() {
   const [entityData, setEntityData] = useState<EntityRow[]>([]);
   const [heatmapData, setHeatmapData] = useState<HeatmapRow[]>([]);
   const [verticalData, setVerticalData] = useState<VerticalRow[]>([]);
+  const [detailData, setDetailData] = useState<DetailRow[]>([]);
 
   const [loadFilters, setLoadFilters] = useState(true);
   const [loadSum, setLoadSum] = useState(true);
@@ -170,12 +199,14 @@ export default function InvoiceInsights() {
   const [loadEnt, setLoadEnt] = useState(true);
   const [loadHeatmap, setLoadHeatmap] = useState(true);
   const [loadVertical, setLoadVertical] = useState(true);
+  const [loadDetail, setLoadDetail] = useState(true);
   const [, setErrSum] = useState(false);
   const [errPeriod, setErrPeriod] = useState(false);
   const [errCust, setErrCust] = useState(false);
   const [errEnt, setErrEnt] = useState(false);
   const [errHeatmap, setErrHeatmap] = useState(false);
   const [errVertical, setErrVertical] = useState(false);
+  const [errDetail, setErrDetail] = useState(false);
 
   // Load filter options once
   useEffect(() => {
@@ -192,12 +223,14 @@ export default function InvoiceInsights() {
   const buildQS = useCallback(() => {
     const qs = new URLSearchParams();
     selectedCompanies.forEach((id) => qs.append('company_id', String(id)));
-    if (year) qs.set('year', String(year));
+    if (year)          qs.set('year',          String(year));
+    if (month)         qs.set('month',         String(month));
+    if (client.trim()) qs.set('client',        client.trim());
     if (accountPrefix) qs.set('account_prefix', accountPrefix);
-    if (genPostType)   qs.set('doc_type', genPostType);
+    if (genPostType)   qs.set('doc_type',      genPostType);
     if (verticalCode)  qs.set('vertical_code', verticalCode);
     return qs;
-  }, [selectedCompanies, year, accountPrefix, genPostType, verticalCode]);
+  }, [selectedCompanies, year, month, client, accountPrefix, genPostType, verticalCode]);
 
   // Summary
   useEffect(() => {
@@ -242,6 +275,14 @@ export default function InvoiceInsights() {
       .then((r) => r.json()).then(setVerticalData).catch(() => setErrVertical(true)).finally(() => setLoadVertical(false));
   }, [buildQS]);
 
+  // Detail report
+  useEffect(() => {
+    setLoadDetail(true); setErrDetail(false);
+    const qs = buildQS(); qs.set('limit', '200');
+    fetch(`${BASE}/api/insights/invoices/detail?${qs}`)
+      .then((r) => r.json()).then(setDetailData).catch(() => setErrDetail(true)).finally(() => setLoadDetail(false));
+  }, [buildQS]);
+
   const valuesAvailable = (summary?.total_value ?? 0) !== 0;
 
   const toggleCompany = (id: number) =>
@@ -271,6 +312,8 @@ export default function InvoiceInsights() {
   const heatMax = Math.max(...heatmapData.map((r) => r.invoice_count), 1);
 
   const TABS: [Tab, string][] = [
+    ['summary',      'Summary Report'],
+    ['report',       'Detail Lines'],
     ['trend',        'Monthly Trend'],
     ['entity',       'By Entity'],
     ['customer',     'By Customer'],
@@ -347,6 +390,49 @@ export default function InvoiceInsights() {
               </div>
             </div>
 
+            {/* Month chips */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Month</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                <button
+                  className={`btn btn-sm ${month === null ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: 10, padding: '2px 6px' }}
+                  onClick={() => setMonth(null)}
+                >All</button>
+                {MONTHS.map(([m, label]) => (
+                  <button
+                    key={m}
+                    className={`btn btn-sm ${month === m ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: 10, padding: '2px 6px' }}
+                    onClick={() => setMonth(month === m ? null : m)}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Client search */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Client</div>
+              <input
+                type="text"
+                value={client}
+                onChange={(e) => setClient(e.target.value)}
+                placeholder="Search customer…"
+                style={{
+                  width: '100%', fontSize: 11, padding: '4px 8px',
+                  border: '1px solid var(--color-border)', borderRadius: 4,
+                  background: 'var(--color-surface)', color: 'var(--color-text)',
+                  boxSizing: 'border-box',
+                }}
+              />
+              {client && (
+                <button
+                  onClick={() => setClient('')}
+                  style={{ fontSize: 10, marginTop: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)' }}
+                >Clear</button>
+              )}
+            </div>
+
             {/* Vertical Code filter */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Vertical Code</div>
@@ -416,6 +502,271 @@ export default function InvoiceInsights() {
               </button>
             ))}
           </div>
+
+          {/* ── Tab: Summary Report (count + amount) ── */}
+          {tab === 'summary' && (
+            <>
+              {/* Combined chart: count bars + amount line by month */}
+              <ChartCard
+                title="Invoice Count vs Amount — by Month"
+                subtitle="Bars = invoice count (left axis) · Line = invoice amount (right axis)"
+                loading={loadPeriod}
+                error={errPeriod}
+                height={300}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={periodData} margin={{ top: 8, right: 70, bottom: 4, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="month_name" tick={{ fontSize: 10 }} />
+                    <YAxis yAxisId="l" tick={{ fontSize: 10 }} label={{ value: 'Count', angle: -90, position: 'insideLeft', fontSize: 10 }} />
+                    <YAxis yAxisId="r" orientation="right" tickFormatter={fmt} tick={{ fontSize: 10 }} label={{ value: 'Amount', angle: 90, position: 'insideRight', fontSize: 10 }} />
+                    <Tooltip content={<MoneyTip />} />
+                    <Legend />
+                    <Bar yAxisId="l" dataKey="invoice_count" name="Invoice Count" fill="#3b82f6" radius={[3,3,0,0]} />
+                    <Line yAxisId="r" dataKey="invoice_value" name="Invoice Amount" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} type="monotone" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              {/* Side-by-side: by entity */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                {/* Count by entity */}
+                <ChartCard title="Invoice Count by Entity" loading={loadEnt} error={errEnt} height={300}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={entityData} layout="vertical" margin={{ top: 4, right: 50, bottom: 4, left: 150 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 9 }} />
+                      <YAxis type="category" dataKey="company_name" tick={{ fontSize: 9 }} width={150}
+                        tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 18) + '…' : v} />
+                      <Tooltip content={<MoneyTip />} />
+                      <Bar dataKey="invoice_count" name="Count" radius={[0,3,3,0]}>
+                        {entityData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+
+                {/* Amount by entity */}
+                <ChartCard title="Invoice Amount by Entity" loading={loadEnt} error={errEnt} height={300}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={entityData} layout="vertical" margin={{ top: 4, right: 50, bottom: 4, left: 150 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                      <XAxis type="number" tickFormatter={fmt} tick={{ fontSize: 9 }} />
+                      <YAxis type="category" dataKey="company_name" tick={{ fontSize: 9 }} width={150}
+                        tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 18) + '…' : v} />
+                      <Tooltip content={<MoneyTip />} />
+                      <Bar dataKey="total_value" name="Amount" radius={[0,3,3,0]}>
+                        {entityData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartCard>
+              </div>
+
+              {/* Summary table: entity × count + amount */}
+              <div className="card">
+                <div className="card-title">Invoice Count &amp; Amount by Entity</div>
+                <div className="table-wrap">
+                  <table style={{ fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th>Entity</th>
+                        <th style={{ textAlign: 'right' }}>Invoice Count</th>
+                        <th style={{ textAlign: 'right' }}>Invoice Amount</th>
+                        <th style={{ textAlign: 'right' }}>Avg per Invoice</th>
+                        <th style={{ textAlign: 'right' }}>% of Total Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadEnt ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+                      ) : entityData.length === 0 ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>No data</td></tr>
+                      ) : (() => {
+                        const grandTotal = entityData.reduce((s, e) => s + (e.total_value ?? 0), 0);
+                        return entityData.map((e) => (
+                          <tr key={e.company_name}>
+                            <td style={{ fontWeight: 500 }}>{e.company_name}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{e.invoice_count.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-primary)', fontWeight: 600 }}>{fmt(e.total_value ?? 0)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{fmt(e.avg_invoice ?? 0)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                              {grandTotal > 0 ? `${((e.total_value ?? 0) / grandTotal * 100).toFixed(1)}%` : '—'}
+                            </td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                    {entityData.length > 0 && (
+                      <tfoot>
+                        <tr style={{ fontWeight: 700, borderTop: '2px solid var(--color-border)' }}>
+                          <td>Total</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                            {entityData.reduce((s, e) => s + e.invoice_count, 0).toLocaleString()}
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-primary)' }}>
+                            {fmt(entityData.reduce((s, e) => s + (e.total_value ?? 0), 0))}
+                          </td>
+                          <td colSpan={2} />
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+
+              {/* Monthly count + amount table */}
+              <div className="card" style={{ marginTop: 16 }}>
+                <div className="card-title">Invoice Count &amp; Amount by Month</div>
+                <div className="table-wrap">
+                  <table style={{ fontSize: 12 }}>
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th style={{ textAlign: 'right' }}>Invoice Count</th>
+                        <th style={{ textAlign: 'right' }}>Invoice Amount</th>
+                        <th style={{ textAlign: 'right' }}>Avg per Invoice</th>
+                        <th style={{ textAlign: 'right' }}>% of Total Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadPeriod ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+                      ) : periodData.length === 0 ? (
+                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 16, color: 'var(--color-text-muted)' }}>No data for selected filters</td></tr>
+                      ) : (() => {
+                        const grandTotal = periodData.reduce((s, p) => s + (p.invoice_value ?? 0), 0);
+                        return periodData.map((p) => (
+                          <tr key={`${p.month}-${p.month_name}`}>
+                            <td style={{ fontWeight: 500 }}>{p.month_name}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{p.invoice_count.toLocaleString()}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-primary)', fontWeight: 600 }}>{fmt(p.invoice_value ?? 0)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{fmt(p.avg_invoice ?? 0)}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                              {grandTotal > 0 ? `${((p.invoice_value ?? 0) / grandTotal * 100).toFixed(1)}%` : '—'}
+                            </td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                    {periodData.length > 0 && (
+                      <tfoot>
+                        <tr style={{ fontWeight: 700, borderTop: '2px solid var(--color-border)' }}>
+                          <td>Total</td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>
+                            {periodData.reduce((s, p) => s + p.invoice_count, 0).toLocaleString()}
+                          </td>
+                          <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-primary)' }}>
+                            {fmt(periodData.reduce((s, p) => s + (p.invoice_value ?? 0), 0))}
+                          </td>
+                          <td colSpan={2} />
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Tab: Report (transaction detail) ── */}
+          {tab === 'report' && (
+            <div className="card">
+              <div className="card-title">
+                Invoice Report
+                <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: 10 }}>
+                  Invoice + Credit Memo · Gen. Posting Type = Sale · showing up to 200 rows
+                </span>
+              </div>
+              {(month || client) && (
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                  {month && (
+                    <span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: 12, fontWeight: 600 }}>
+                      Month: {MONTHS.find(([m]) => m === month)?.[1]}
+                      <button onClick={() => setMonth(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', marginLeft: 4, fontWeight: 700 }}>×</button>
+                    </span>
+                  )}
+                  {client && (
+                    <span style={{ fontSize: 11, padding: '2px 8px', background: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: 12, fontWeight: 600 }}>
+                      Client: {client}
+                      <button onClick={() => setClient('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', marginLeft: 4, fontWeight: 700 }}>×</button>
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="table-wrap" style={{ maxHeight: 520, overflowY: 'auto', overflowX: 'auto' }}>
+                <table style={{ fontSize: 11, whiteSpace: 'nowrap' }}>
+                  <thead>
+                    <tr>
+                      <th>Entity</th>
+                      <th>Month</th>
+                      <th>Doc Type</th>
+                      <th>GL Account</th>
+                      <th>Customer / Client</th>
+                      <th>Gen Bus PG</th>
+                      <th>Gen Prod PG</th>
+                      <th>Currency</th>
+                      <th style={{ textAlign: 'right' }}>Amount</th>
+                      <th>Department</th>
+                      <th>Vertical</th>
+                      <th>Geo</th>
+                      <th>Bal Acct Type</th>
+                      <th>Bal Acct No.</th>
+                      <th style={{ textAlign: 'right' }}>Entry No.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadDetail ? (
+                      <tr><td colSpan={15} style={{ textAlign: 'center', padding: 24, color: 'var(--color-text-muted)' }}>Loading…</td></tr>
+                    ) : errDetail ? (
+                      <tr><td colSpan={15} style={{ textAlign: 'center', padding: 24, color: 'var(--color-error)' }}>Failed to load</td></tr>
+                    ) : detailData.length === 0 ? (
+                      <tr><td colSpan={15} style={{ textAlign: 'center', padding: 24, color: 'var(--color-text-muted)' }}>No invoices for selected filters</td></tr>
+                    ) : detailData.map((r) => (
+                      <tr key={r.entry_no}>
+                        <td style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {r.entity.length > 20 ? r.entity.slice(0, 18) + '…' : r.entity}
+                        </td>
+                        <td>{r.posting_month}</td>
+                        <td>
+                          <span className={`badge ${r.document_type === 'Invoice' ? 'badge-success' : 'badge-muted'}`} style={{ fontSize: 10 }}>
+                            {r.document_type}
+                          </span>
+                        </td>
+                        <td style={{ fontFamily: 'monospace' }}>{r.gl_account_no}</td>
+                        <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {r.customer_name || r.source_no || '—'}
+                        </td>
+                        <td>{r.gen_bus_posting_group || '—'}</td>
+                        <td>{r.gen_prod_posting_group || '—'}</td>
+                        <td>
+                          {r.currency_code && (
+                            <span style={{ fontSize: 10, padding: '1px 6px', background: 'var(--color-border)', borderRadius: 10, fontFamily: 'monospace' }}>
+                              {r.currency_code}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', color: r.amount < 0 ? 'var(--color-error)' : 'inherit' }}>
+                          {fmt(r.amount)}
+                        </td>
+                        <td>{r.department_code !== '—' ? r.department_code : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
+                        <td>{r.vertical_code !== '—' ? r.vertical_code : <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
+                        <td>{r.geo_code || <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
+                        <td>{r.bal_account_type || <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
+                        <td style={{ fontFamily: 'monospace' }}>{r.bal_account_no || '—'}</td>
+                        <td style={{ textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)' }}>{r.entry_no}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {detailData.length === 200 && (
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 8, textAlign: 'center' }}>
+                  Showing 200 rows — apply filters to narrow results
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Tab: Monthly Trend ── */}
           {tab === 'trend' && (

@@ -363,8 +363,12 @@ def _inv_filters(
     year,
     vertical_code: Optional[str] = None,
     currency_code: Optional[str] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
 ) -> tuple:
-    """WHERE filters: Invoice + Credit Memo, Gen Posting Type = Sale."""
+    """WHERE filters: Invoice + Credit Memo, Gen Posting Type = Sale.
+    Excel spec filters: Companies, Month, Client.
+    """
     clauses = [
         "TRIM(doc.document_type) IN ('Invoice', 'Credit Memo')",
         "TRIM(pg.gen_posting_type) = 'Sale'",
@@ -377,6 +381,14 @@ def _inv_filters(
     if year:
         clauses.append("d.year = %s")
         params.append(year)
+    if month:
+        clauses.append("d.month = %s")
+        params.append(month)
+    if client:
+        clauses.append(
+            "(ps.customer_vendor_name ILIKE %s OR cp.source_no ILIKE %s)"
+        )
+        params.extend([f"%{client}%", f"%{client}%"])
     if vertical_code:
         clauses.append("TRIM(dep.vertical_code) = %s")
         params.append(vertical_code)
@@ -388,11 +400,12 @@ def _inv_filters(
 
 # Standard joins needed by all invoice queries
 _INV_JOINS = """
-        LEFT JOIN dim_date          d   ON d.date_id          = ps.date_id
-        LEFT JOIN dim_document      doc ON doc.document_id     = ps.document_id
-        LEFT JOIN dim_posting_group pg  ON pg.posting_group_id = ps.posting_group_id
-        LEFT JOIN dim_department    dep ON dep.department_id   = ps.department_id
-        LEFT JOIN dim_currency      cur ON cur.currency_id     = ps.currency_id
+        LEFT JOIN dim_date          d   ON d.date_id           = ps.date_id
+        LEFT JOIN dim_document      doc ON doc.document_id      = ps.document_id
+        LEFT JOIN dim_posting_group pg  ON pg.posting_group_id  = ps.posting_group_id
+        LEFT JOIN dim_department    dep ON dep.department_id    = ps.department_id
+        LEFT JOIN dim_currency      cur ON cur.currency_id      = ps.currency_id
+        LEFT JOIN dim_counterparty  cp  ON cp.counterparty_id   = ps.counterparty_id
 """
 
 
@@ -400,10 +413,12 @@ _INV_JOINS = """
 def invoices_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     vertical_code: Optional[str] = None,
     currency_code: Optional[str] = None,
 ):
-    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code, month, client)
     rows = query(f"""
         SELECT
             COUNT(*)                                                         AS invoice_count,
@@ -422,10 +437,12 @@ def invoices_summary(
 def invoices_by_period(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     vertical_code: Optional[str] = None,
     currency_code: Optional[str] = None,
 ):
-    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code, month, client)
     return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')  AS month,
@@ -445,18 +462,19 @@ def invoices_by_period(
 def invoices_by_customer(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     vertical_code: Optional[str] = None,
     currency_code: Optional[str] = None,
     limit: int = Query(default=15, le=100),
 ):
-    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
-    # exclude blank customer names
-    wh = wh + " AND NULLIF(TRIM(ps.customer_vendor_name), '') IS NOT NULL"
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code, month, client)
+    wh = wh + " AND NULLIF(TRIM(COALESCE(ps.customer_vendor_name, cp.source_no, '')), '') IS NOT NULL"
     params.append(limit)
 
     return query(f"""
         SELECT
-            ps.customer_vendor_name,
+            COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), cp.source_no) AS customer_vendor_name,
             COUNT(*)                              AS invoice_count,
             COALESCE(-SUM(ps.amount), 0)          AS total_value,
             COALESCE(-AVG(ps.amount), 0)          AS avg_invoice,
@@ -465,7 +483,7 @@ def invoices_by_customer(
         {_INV_JOINS}
         LEFT JOIN dim_company  co  ON co.company_id   = ps.company_id
         {wh}
-        GROUP BY ps.customer_vendor_name, co.company_name
+        GROUP BY COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), cp.source_no), co.company_name
         ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
         LIMIT %s
     """, params)
@@ -475,10 +493,12 @@ def invoices_by_customer(
 def invoices_by_entity(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     vertical_code: Optional[str] = None,
     currency_code: Optional[str] = None,
 ):
-    wh, params = _inv_filters(company_id, year, vertical_code, currency_code)
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code, month, client)
     return query(f"""
         SELECT
             co.company_name,
@@ -498,10 +518,12 @@ def invoices_by_entity(
 def invoices_heatmap(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     vertical_code: Optional[str] = None,
 ):
-    """Entity × Month heatmap data — invoice count and value per cell."""
-    wh, params = _inv_filters(company_id, year, vertical_code)
+    """Entity × Month heatmap — invoice count and value per cell."""
+    wh, params = _inv_filters(company_id, year, vertical_code, month=month, client=client)
     return query(f"""
         SELECT
             co.company_name,
@@ -523,10 +545,12 @@ def invoices_heatmap(
 def invoices_by_vertical(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
     currency_code: Optional[str] = None,
 ):
-    """Invoice breakdown by Vertical Code (business vertical)."""
-    wh, params = _inv_filters(company_id, year, currency_code=currency_code)
+    """Invoice breakdown by Vertical Code."""
+    wh, params = _inv_filters(company_id, year, currency_code=currency_code, month=month, client=client)
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(dep.vertical_code), ''), '(none)')  AS vertical_code,
@@ -538,6 +562,55 @@ def invoices_by_vertical(
         {wh}
         GROUP BY COALESCE(NULLIF(TRIM(dep.vertical_code), ''), '(none)')
         ORDER BY ABS(COALESCE(SUM(ps.amount), 0)) DESC
+    """, params)
+
+
+@router.get("/invoices/detail")
+def invoices_detail(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    client: Optional[str] = None,
+    vertical_code: Optional[str] = None,
+    currency_code: Optional[str] = None,
+    limit: int = Query(default=200, le=500),
+):
+    """Transaction-level invoice report — all Excel spec fields.
+    Ref: Invoice Report Relations.xlsx — Invoicing Report sheet.
+    Fields: Entity, Posting Month, Document Type, GL Account,
+            Customer, Source No, Gen Bus/Prod PG, Currency, Amount,
+            Department, Vertical, Geo Code, Bal Account, Entry No.
+    """
+    wh, params = _inv_filters(company_id, year, vertical_code, currency_code, month, client)
+    params.append(limit)
+    return query(f"""
+        SELECT
+            ps.entry_no,
+            co.company_name                                                          AS entity,
+            TO_CHAR(d.full_date, 'YYYY-MM')                                          AS posting_month,
+            d.full_date                                                              AS posting_date,
+            doc.document_type,
+            ps.account_no                                                            AS gl_account_no,
+            ps.gl_account_name,
+            COALESCE(NULLIF(TRIM(ps.customer_vendor_name), ''), cp.source_no)        AS customer_name,
+            cp.source_no,
+            pg.gen_bus_posting_group,
+            pg.gen_prod_posting_group,
+            cur.currency_code,
+            COALESCE(-ps.amount, 0)                                                  AS amount,
+            COALESCE(NULLIF(TRIM(dep.department_code), ''), '—')                     AS department_code,
+            COALESCE(NULLIF(TRIM(dep.vertical_code),   ''), '—')                     AS vertical_code,
+            geo.geo_code,
+            ba.bal_account_type,
+            ba.bal_account_no
+        FROM fact_posted_sales ps
+        {_INV_JOINS}
+        LEFT JOIN dim_company     co  ON co.company_id    = ps.company_id
+        LEFT JOIN dim_geo         geo ON geo.geo_id       = ps.dimension_set_id
+        LEFT JOIN dim_bal_account ba  ON ba.bal_account_id = ps.dimension_set_id
+        {wh}
+        ORDER BY d.full_date DESC, co.company_name
+        LIMIT %s
     """, params)
 
 
