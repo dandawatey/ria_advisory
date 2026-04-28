@@ -35,6 +35,7 @@ import KPIDashboard       from './pages/41_F041_KPIDashboard';
 import HealthScore        from './pages/42_F042_HealthScore';
 import ProjectFinancials  from './pages/43_F043_ProjectFinancials';
 import VerticalAnalytics  from './pages/44_F044_VerticalAnalytics';
+import EntityComparison   from './pages/45_F045_EntityComparison';
 
 export default function App() {
   return (
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/reports/health-score"  element={<HealthScore />} />
           <Route path="/reports/projects"      element={<ProjectFinancials />} />
           <Route path="/reports/verticals"     element={<VerticalAnalytics />} />
+          <Route path="/reports/entities"      element={<EntityComparison />} />
 
           {/* Insights */}
           <Route path="/insights/gl"           element={<GLInsights />} />

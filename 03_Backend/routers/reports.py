@@ -762,3 +762,51 @@ def vertical_departments(
             "opex_ratio_pct":   _safe_pct(opex, rev),
         })
     return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENTITY / COMPANY COMPARISON
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/entity-comparison")
+def entity_comparison(
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(year=year)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            co.company_id,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)  AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)  AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                   AS net,
+            COUNT(*)                                                             AS entry_count
+        {_GL_BASE} {wh}
+        GROUP BY co.company_name, co.company_id
+        ORDER BY revenue DESC
+    """, params)
+
+    total_rev = sum(float(r["revenue"] or 0) for r in rows)
+
+    result = []
+    for r in rows:
+        rev  = float(r["revenue"] or 0)
+        cogs = float(r["cogs"]    or 0)
+        opex = float(r["opex"]    or 0)
+        net  = float(r["net"]     or 0)
+        result.append({
+            **r,
+            "gross_margin_pct":  _safe_pct(rev - cogs, rev),
+            "net_margin_pct":    _safe_pct(net, rev),
+            "opex_ratio_pct":    _safe_pct(opex, rev),
+            "revenue_share_pct": _safe_pct(rev, total_rev),
+            "total_spend":       round(cogs + opex, 2),
+        })
+    return result
