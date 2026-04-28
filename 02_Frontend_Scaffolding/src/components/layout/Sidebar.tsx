@@ -14,16 +14,45 @@ interface NavSection {
 
 const nav: NavSection[] = [
   {
-    label: 'Reports',
+    label: 'Financial Statements',
     items: [
-      { label: 'Executive Dashboard', path: '/dashboard',         icon: '▦' },
-      { label: 'P&L Statements',      path: '/pl',                icon: '₱' },
-      { label: 'GL Insights',         path: '/insights/gl',       icon: '◑' },
-      { label: 'Chart of Accounts',   path: '/insights/coa',      icon: '≡' },
-      { label: 'Invoices',            path: '/insights/invoices', icon: '⊟' },
-      { label: 'Collection',          path: '/collections',       icon: '◷' },
-      { label: 'Ageing',              path: '/ageing',            icon: '⧖' },
-      { label: 'Annotations (NLQ)',   path: '/annotations',       icon: '◎' },
+      { label: 'Executive Dashboard', path: '/dashboard',              icon: '▦' },
+      { label: 'P&L Statement',       path: '/pl',                     icon: '₱' },
+      { label: 'Trial Balance',       path: '/reports/trial-balance',  icon: '⇌' },
+      { label: 'Balance Sheet',       path: '/reports/balance-sheet',  icon: '⊟' },
+    ],
+  },
+  {
+    label: 'Revenue & Sales',
+    items: [
+      { label: 'Analytics',           path: '/analytics',              icon: '◈' },
+      { label: 'Monthly Income',      path: '/income',                 icon: '↑' },
+      { label: 'Invoices',            path: '/insights/invoices',      icon: '⊡' },
+      { label: 'Posted Sales',        path: '/insights/posted-sales',  icon: '◉' },
+    ],
+  },
+  {
+    label: 'Collections & AR',
+    items: [
+      { label: 'Collections',         path: '/collections',            icon: '◷' },
+      { label: 'AR Ageing',           path: '/ageing',                 icon: '⧖' },
+      { label: 'Customers',           path: '/insights/customer',      icon: '◎' },
+    ],
+  },
+  {
+    label: 'GL & Expenses',
+    items: [
+      { label: 'GL Explorer',         path: '/explorer',               icon: '⊕' },
+      { label: 'GL Insights',         path: '/insights/gl',            icon: '◑' },
+      { label: 'Expense Analysis',    path: '/reports/expense',        icon: '↓' },
+      { label: 'Department Spend',    path: '/reports/dept-spend',     icon: '⊞' },
+      { label: 'Chart of Accounts',   path: '/insights/coa',           icon: '≡' },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { label: 'Annotations (NLQ)',   path: '/annotations',            icon: '✦' },
     ],
   },
 ];

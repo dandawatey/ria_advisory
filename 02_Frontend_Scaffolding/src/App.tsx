@@ -25,7 +25,11 @@ import InvoiceInsights    from './pages/31_F031_InvoiceInsights';
 import PLAnalytics        from './pages/32_F032_PLAnalytics';
 import Collections        from './pages/33_F033_Collections';
 import MonthlyIncome      from './pages/34_F034_MonthlyIncome';
-import Ageing            from './pages/35_F035_Ageing';
+import Ageing             from './pages/35_F035_Ageing';
+import TrialBalance       from './pages/36_F036_TrialBalance';
+import BalanceSheet       from './pages/37_F037_BalanceSheet';
+import ExpenseAnalysis    from './pages/38_F038_ExpenseAnalysis';
+import DeptSpend          from './pages/39_F039_DeptSpend';
 
 export default function App() {
   return (
@@ -48,6 +52,12 @@ export default function App() {
           <Route path="/entities/:id"   element={<EntityDetail />} />
           <Route path="/explorer"       element={<Explorer />} />
           <Route path="/annotations"    element={<AnnotationsNLQ />} />
+
+          {/* Reports */}
+          <Route path="/reports/trial-balance" element={<TrialBalance />} />
+          <Route path="/reports/balance-sheet" element={<BalanceSheet />} />
+          <Route path="/reports/expense"       element={<ExpenseAnalysis />} />
+          <Route path="/reports/dept-spend"    element={<DeptSpend />} />
 
           {/* Insights */}
           <Route path="/insights/gl"           element={<GLInsights />} />
