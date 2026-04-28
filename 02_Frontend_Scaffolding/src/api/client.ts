@@ -4,12 +4,61 @@
  * still renders without a running backend.
  */
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+const BASE      = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+const TOKEN_KEY = 'ria_token';
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handle401() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem('ria_refresh');
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login';
+  }
+}
 
 export async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
+  const res = await fetch(`${BASE}${path}`, { headers: authHeaders() });
+  if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
   if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+export async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `API ${path} → ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function put<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `API ${path} → ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export async function del(path: string): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
+  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
 }
 
 // ── Shared filter state type ──────────────────────────────────────────────────

@@ -1,5 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { MsalProvider } from '@azure/msal-react';
+import { msalInstance } from './config/msalConfig';
+import { AuthProvider } from './contexts/AuthContext';
+import { TenantProvider } from './contexts/TenantContext';
 import { AppShell } from './components/layout/AppShell';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Pages backed by real GL data
 import Login              from './pages/14_F014_Login';
@@ -37,67 +42,97 @@ import ProjectFinancials  from './pages/43_F043_ProjectFinancials';
 import VerticalAnalytics  from './pages/44_F044_VerticalAnalytics';
 import EntityComparison   from './pages/45_F045_EntityComparison';
 import CashFlow           from './pages/46_F046_CashFlow';
+import TenantManagement   from './pages/47_F047_TenantManagement';
+import UserManagement     from './pages/48_F048_UserManagement';
+import TenantConfig       from './pages/49_F049_TenantConfig';
+import Landing            from './pages/00_F000_Landing';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <MsalProvider instance={msalInstance}>
+      <AuthProvider>
+        <TenantProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
 
-        <Route element={<AppShell />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+              {/* Protected — all routes require authentication */}
+              <Route element={
+                <ProtectedRoute>
+                  <AppShell />
+                </ProtectedRoute>
+              }>
+                {/* Finance */}
+                <Route path="/dashboard"      element={<ExecutiveDashboard />} />
+                <Route path="/analytics"      element={<Analytics />} />
+                <Route path="/pl"             element={<PLAnalytics />} />
+                <Route path="/collections"    element={<Collections />} />
+                <Route path="/income"         element={<MonthlyIncome />} />
+                <Route path="/ageing"         element={<Ageing />} />
+                <Route path="/gl-insights"    element={<DataInsights />} />
+                <Route path="/close"          element={<CloseCockpit />} />
+                <Route path="/entities/:id"   element={<EntityDetail />} />
+                <Route path="/explorer"       element={<Explorer />} />
+                <Route path="/annotations"    element={<AnnotationsNLQ />} />
 
-          {/* Finance */}
-          <Route path="/dashboard"      element={<ExecutiveDashboard />} />
-          <Route path="/analytics"      element={<Analytics />} />
-          <Route path="/pl"             element={<PLAnalytics />} />
-          <Route path="/collections"    element={<Collections />} />
-          <Route path="/income"         element={<MonthlyIncome />} />
-          <Route path="/ageing"         element={<Ageing />} />
-          <Route path="/gl-insights"    element={<DataInsights />} />
-          <Route path="/close"          element={<CloseCockpit />} />
-          <Route path="/entities/:id"   element={<EntityDetail />} />
-          <Route path="/explorer"       element={<Explorer />} />
-          <Route path="/annotations"    element={<AnnotationsNLQ />} />
+                {/* Reports */}
+                <Route path="/reports/trial-balance" element={<TrialBalance />} />
+                <Route path="/reports/balance-sheet" element={<BalanceSheet />} />
+                <Route path="/reports/expense"       element={<ExpenseAnalysis />} />
+                <Route path="/reports/dept-spend"    element={<DeptSpend />} />
+                <Route path="/reports/kpi"           element={<KPIDashboard />} />
+                <Route path="/reports/health-score"  element={<HealthScore />} />
+                <Route path="/reports/projects"      element={<ProjectFinancials />} />
+                <Route path="/reports/verticals"     element={<VerticalAnalytics />} />
+                <Route path="/reports/entities"      element={<EntityComparison />} />
+                <Route path="/reports/cash-flow"     element={<CashFlow />} />
 
-          {/* Reports */}
-          <Route path="/reports/trial-balance" element={<TrialBalance />} />
-          <Route path="/reports/balance-sheet" element={<BalanceSheet />} />
-          <Route path="/reports/expense"       element={<ExpenseAnalysis />} />
-          <Route path="/reports/dept-spend"    element={<DeptSpend />} />
-          <Route path="/reports/kpi"           element={<KPIDashboard />} />
-          <Route path="/reports/health-score"  element={<HealthScore />} />
-          <Route path="/reports/projects"      element={<ProjectFinancials />} />
-          <Route path="/reports/verticals"     element={<VerticalAnalytics />} />
-          <Route path="/reports/entities"      element={<EntityComparison />} />
-          <Route path="/reports/cash-flow"     element={<CashFlow />} />
+                {/* Insights */}
+                <Route path="/insights/gl"           element={<GLInsights />} />
+                <Route path="/insights/coa"          element={<CoAInsights />} />
+                <Route path="/insights/customer"     element={<CustomerInsights />} />
+                <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
+                <Route path="/insights/invoices"     element={<InvoiceInsights />} />
 
-          {/* Insights */}
-          <Route path="/insights/gl"           element={<GLInsights />} />
-          <Route path="/insights/coa"          element={<CoAInsights />} />
-          <Route path="/insights/customer"     element={<CustomerInsights />} />
-          <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
-          <Route path="/insights/invoices"     element={<InvoiceInsights />} />
+                {/* Settings */}
+                <Route path="/settings"              element={<Settings />} />
 
-          {/* Settings */}
-          <Route path="/settings"              element={<Settings />} />
+                {/* Administration */}
+                <Route path="/admin/mappings"        element={<MappingConsole />} />
+                <Route path="/admin/pipeline-health" element={<PipelineHealth />} />
+                <Route path="/admin/bc-tenants"      element={<BCTenantAuth />} />
+                <Route path="/admin/tenants"         element={
+                  <ProtectedRoute requiredRole="superadmin">
+                    <TenantManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/tenants/:tenantId/users" element={
+                  <ProtectedRoute requiredRole="isource_admin">
+                    <UserManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/tenants/:tenantId/config" element={
+                  <ProtectedRoute requiredRole="isource_admin">
+                    <TenantConfig />
+                  </ProtectedRoute>
+                } />
 
-          {/* Administration */}
-          <Route path="/admin/mappings"        element={<MappingConsole />} />
-          <Route path="/admin/pipeline-health" element={<PipelineHealth />} />
-          <Route path="/admin/bc-tenants"      element={<BCTenantAuth />} />
+                {/* GL Data */}
+                <Route path="/admin/coa"            element={<CanonicalCoA />} />
+                <Route path="/admin/dq"             element={<DataQuality />} />
+                <Route path="/admin/ic-elimination" element={<ICElimination />} />
 
-          {/* GL Data */}
-          <Route path="/admin/coa"            element={<CanonicalCoA />} />
-          <Route path="/admin/dq"             element={<DataQuality />} />
-          <Route path="/admin/ic-elimination" element={<ICElimination />} />
+                {/* System */}
+                <Route path="/admin/api"  element={<APIStatus />} />
 
-          {/* System */}
-          <Route path="/admin/api"  element={<APIStatus />} />
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </TenantProvider>
+      </AuthProvider>
+    </MsalProvider>
   );
 }

@@ -62,6 +62,15 @@ const nav: NavSection[] = [
       { label: 'Settings',            path: '/settings',               icon: '⚙' },
     ],
   },
+  {
+    label: 'Administration',
+    items: [
+      { label: 'Tenant Management',   path: '/admin/tenants',          icon: '🏢' },
+      { label: 'BC Tenant Auth',      path: '/admin/bc-tenants',       icon: '🔑' },
+      { label: 'Pipeline Health',     path: '/admin/pipeline-health',  icon: '⚡' },
+      { label: 'API Status',          path: '/admin/api',              icon: '◎' },
+    ],
+  },
 ];
 
 export function Sidebar() {

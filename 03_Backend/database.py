@@ -22,11 +22,14 @@ def get_conn():
 
 
 def query(sql: str, params=None) -> list[dict]:
-    """Execute SELECT and return list of dicts."""
+    """Execute SQL. Returns rows for SELECT; empty list for INSERT/UPDATE/DELETE."""
     conn = get_conn()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params or ())
-            return [dict(r) for r in cur.fetchall()]
+            conn.commit()
+            if cur.description:
+                return [dict(r) for r in cur.fetchall()]
+            return []
     finally:
         conn.close()

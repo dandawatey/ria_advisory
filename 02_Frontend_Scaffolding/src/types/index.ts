@@ -1,3 +1,52 @@
+// ─── Auth & Tenant Types ──────────────────────────────────────────────────────
+
+export type UserRole = 'superadmin' | 'ria_admin' | 'isource_admin' | 'finance_user' | 'viewer';
+
+export interface User {
+  id: string;
+  email: string;
+  display_name: string | null;
+  role: UserRole;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  azure_oid?: string;
+}
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  status: string;
+  user_count?: number;
+  created_at?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  error: string | null;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  user: User;
+}
+
+export interface TenantUser {
+  id: string;
+  email: string;
+  display_name: string | null;
+  role: UserRole;
+  is_active: boolean;
+  created_at: string | null;
+  last_login: string | null;
+}
+
 // ─── Domain Types ────────────────────────────────────────────────────────────
 
 export type Status = 'success' | 'warning' | 'error' | 'running' | 'pending' | 'idle';
