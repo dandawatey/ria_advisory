@@ -4,8 +4,8 @@
  */
 import { test, expect } from '@playwright/test';
 
-const FRONTEND = 'http://127.0.0.1:5173';
-const BACKEND  = 'http://127.0.0.1:8000';
+const FRONTEND = 'http://localhost:4000';
+const BACKEND  = 'http://localhost:8080';
 
 async function loginAdmin(page: any) {
   await page.goto(FRONTEND + '/login');

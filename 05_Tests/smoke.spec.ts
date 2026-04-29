@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://127.0.0.1:5173';
+const BASE = 'http://localhost:4000';
 
 test.describe('i-CFO360 smoke tests', () => {
 

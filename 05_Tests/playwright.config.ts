@@ -4,10 +4,10 @@ export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
   timeout: 30_000,
-  retries: 0,
-  reporter: 'list',
+  retries: 1,
+  reporter: [['list'], ['html', { open: 'never', outputFolder: './playwright-report' }]],
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://localhost:4000',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'off',

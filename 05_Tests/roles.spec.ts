@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://127.0.0.1:5173';
+const BASE = 'http://localhost:4000';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ test('isource_admin — can access own tenant config', async ({ page }) => {
 
   await page.goto(BASE + '/admin/tenants');
 
-  const tenantRes = await page.request.get('http://127.0.0.1:8000/api/tenants', {
+  const tenantRes = await page.request.get('http://localhost:8080/api/tenants', {
     headers: { Authorization: `Bearer ${await getToken(page, 'isource_admin')}` },
   });
 
@@ -159,7 +159,7 @@ async function getToken(page: any, role: 'superadmin' | 'ria_admin' | 'isource_a
     isource_admin: { email: 'admin@isource.com',       password: 'Admin@2026' },
   }[role];
 
-  const res = await page.request.post('http://127.0.0.1:8000/auth/login', {
+  const res = await page.request.post('http://localhost:8080/auth/login', {
     data: creds,
   });
   const body = await res.json();

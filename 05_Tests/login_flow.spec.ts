@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://127.0.0.1:5173';
+const BASE = 'http://localhost:4000';
 
 test('superadmin login → /admin/hub with tenant tiles', async ({ page }) => {
   await page.goto(BASE + '/');
