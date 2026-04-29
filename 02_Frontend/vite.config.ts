@@ -8,19 +8,36 @@ function lowercaseFilenames(): Plugin {
     name: 'lowercase-filenames',
     enforce: 'post',
     generateBundle(_, bundle) {
+      // Collect files that need renaming: original → lowercase
+      const renamed = new Map<string, string>();
+      for (const chunk of Object.values(bundle)) {
+        const lower = chunk.fileName.toLowerCase();
+        if (lower !== chunk.fileName) renamed.set(chunk.fileName, lower);
+      }
+
+      // Rename files and rewrite references inside JS chunks
       for (const key of Object.keys(bundle)) {
         const chunk = bundle[key];
         const lower = chunk.fileName.toLowerCase();
+
+        // Rename the output file
         if (lower !== chunk.fileName) {
           chunk.fileName = lower;
           bundle[lower] = chunk;
           delete bundle[key];
         }
+
+        // Rewrite any uppercase asset URLs baked into JS code
+        if (chunk.type === 'chunk' && chunk.code) {
+          for (const [orig, lc] of renamed) {
+            chunk.code = chunk.code.split(orig).join(lc);
+          }
+        }
       }
     },
-    // Also lowercase asset references injected into index.html
+    // Lowercase asset references in index.html (script/link tags)
     transformIndexHtml(html) {
-      return html.replace(/\/assets\/[^"']+/g, (match) => match.toLowerCase());
+      return html.replace(/\/assets\/[^"']+/g, (m) => m.toLowerCase());
     },
   };
 }
