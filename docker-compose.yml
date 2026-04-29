@@ -1,0 +1,56 @@
+# i-finsights — Local Docker stack
+# DB: uses your existing local PostgreSQL (host.docker.internal)
+# Frontend: http://localhost:80  (Nginx → proxy /api/ → backend)
+# Backend:  http://localhost:8000 (also directly accessible)
+
+services:
+
+  backend:
+    build:
+      context: ./03_Backend
+      dockerfile: Dockerfile
+    container_name: ifinsights-api
+    restart: unless-stopped
+    ports:
+      - "8080:8000"    # host:container — 8000 taken by Docker Desktop on Mac
+    environment:
+      # ── PostgreSQL — points to host Mac Postgres ──────────────────────────
+      PGHOST:     host.docker.internal
+      PGPORT:     5432
+      PGDATABASE: ria_advisory
+      PGUSER:     yogesh.dandawate
+      PGPASSWORD: ${PGPASSWORD:-}          # set in .env or shell
+
+      # ── JWT ───────────────────────────────────────────────────────────────
+      JWT_SECRET:          ${JWT_SECRET:-local-dev-secret-change-me}
+      JWT_ALGORITHM:       HS256
+      JWT_EXPIRE_MINUTES:  60
+      JWT_REFRESH_DAYS:    7
+
+      # ── CORS — allow Nginx frontend + direct localhost access ─────────────
+      ALLOWED_ORIGINS: "http://localhost,http://localhost:80,http://localhost:8080,http://127.0.0.1,http://localhost:4000,https://i-finsights.netlify.app"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # Linux compat (no-op on Mac)
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./02_Frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty → browser calls /api/* which Nginx proxies to backend service
+        VITE_API_URL: ""
+    container_name: ifinsights-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
