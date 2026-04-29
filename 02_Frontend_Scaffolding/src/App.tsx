@@ -46,6 +46,8 @@ import TenantManagement   from './pages/47_F047_TenantManagement';
 import UserManagement     from './pages/48_F048_UserManagement';
 import TenantConfig       from './pages/49_F049_TenantConfig';
 import TenantHub          from './pages/50_F050_TenantHub';
+import NewTenant          from './pages/51_F051_NewTenant';
+import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
 export default function App() {
@@ -65,6 +67,15 @@ export default function App() {
                   <TenantHub />
                 </ProtectedRoute>
               } />
+
+              {/* New tenant form — blank sidebar layout */}
+              <Route element={
+                <ProtectedRoute requiredRole="superadmin">
+                  <AppShellBlank />
+                </ProtectedRoute>
+              }>
+                <Route path="/admin/tenants/new" element={<NewTenant />} />
+              </Route>
 
               {/* Protected — all routes require authentication */}
               <Route element={

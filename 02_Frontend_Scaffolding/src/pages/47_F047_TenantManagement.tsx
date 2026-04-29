@@ -41,13 +41,6 @@ export default function TenantManagement() {
 
   useEffect(() => { load(); }, []);
 
-  const openCreate = () => {
-    setForm(emptyForm());
-    setFormError(null);
-    setEditTarget(null);
-    setModal('create');
-  };
-
   const openEdit = (t: Tenant) => {
     setForm({ name: t.name, slug: t.slug, plan: t.plan });
     setFormError(null);
@@ -106,7 +99,7 @@ export default function TenantManagement() {
           </p>
         </div>
         <button
-          onClick={openCreate}
+          onClick={() => navigate('/admin/tenants/new')}
           style={{
             padding: '8px 18px', background: 'var(--color-primary)', color: '#fff',
             border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',

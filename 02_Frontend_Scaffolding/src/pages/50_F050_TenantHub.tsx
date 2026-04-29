@@ -233,11 +233,11 @@ export default function TenantHub() {
           display: 'flex', gap: 12,
         }}>
           <button
-            onClick={() => navigate('/admin/tenants')}
+            onClick={() => navigate('/admin/tenants/new')}
             style={{
               padding: '9px 20px', borderRadius: 8,
-              border: '1px solid #e5e7eb', background: '#fff',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151',
+              border: 'none', background: 'var(--teal-700, #0F3F3C)',
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#fff',
             }}
           >
             + New Tenant
