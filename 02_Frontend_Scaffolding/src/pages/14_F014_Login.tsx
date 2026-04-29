@@ -19,12 +19,16 @@ export default function Login() {
 
   const displayError = localError ?? authError;
 
+  const redirectAfterLogin = (role: string) => {
+    navigate(role === 'superadmin' ? '/admin/hub' : '/dashboard', { replace: true });
+  };
+
   const handleSSO = async () => {
     setLocalError(null);
     setLoading(true);
     try {
-      await loginSSO();
-      navigate('/dashboard', { replace: true });
+      const user = await loginSSO();
+      redirectAfterLogin(user.role);
     } catch (e: unknown) {
       setLocalError(e instanceof Error ? e.message : 'SSO login failed');
     } finally {
@@ -38,8 +42,8 @@ export default function Login() {
     if (!email || !password) { setLocalError('Email and password required'); return; }
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/dashboard', { replace: true });
+      const user = await login(email, password);
+      redirectAfterLogin(user.role);
     } catch (e: unknown) {
       setLocalError(e instanceof Error ? e.message : 'Login failed');
     } finally {

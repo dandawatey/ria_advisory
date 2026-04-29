@@ -13,8 +13,8 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  loginSSO: () => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  loginSSO: () => Promise<User>;
   logout: () => void;
 }
 
@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: LoginResponse = await res.json();
       _storeTokens(data.access_token, data.refresh_token);
       setUser(data.user);
+      return data.user;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Login failed');
       throw e;
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: LoginResponse = await res.json();
       _storeTokens(data.access_token, data.refresh_token);
       setUser(data.user);
+      return data.user;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'SSO login failed');
       throw e;

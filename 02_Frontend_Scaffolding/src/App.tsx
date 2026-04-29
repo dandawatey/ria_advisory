@@ -45,6 +45,7 @@ import CashFlow           from './pages/46_F046_CashFlow';
 import TenantManagement   from './pages/47_F047_TenantManagement';
 import UserManagement     from './pages/48_F048_UserManagement';
 import TenantConfig       from './pages/49_F049_TenantConfig';
+import TenantHub          from './pages/50_F050_TenantHub';
 import Landing            from './pages/00_F000_Landing';
 
 export default function App() {
@@ -57,6 +58,13 @@ export default function App() {
               {/* Public */}
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+
+              {/* Superadmin tenant hub — standalone (no AppShell) */}
+              <Route path="/admin/hub" element={
+                <ProtectedRoute requiredRole="superadmin">
+                  <TenantHub />
+                </ProtectedRoute>
+              } />
 
               {/* Protected — all routes require authentication */}
               <Route element={
