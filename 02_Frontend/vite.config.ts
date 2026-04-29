@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 function lowercaseFilenames(): Plugin {
   return {
     name: 'lowercase-filenames',
+    enforce: 'post',
     generateBundle(_, bundle) {
       for (const key of Object.keys(bundle)) {
         const chunk = bundle[key];
@@ -16,6 +17,10 @@ function lowercaseFilenames(): Plugin {
           delete bundle[key];
         }
       }
+    },
+    // Also lowercase asset references injected into index.html
+    transformIndexHtml(html) {
+      return html.replace(/\/assets\/[^"']+/g, (match) => match.toLowerCase());
     },
   };
 }
