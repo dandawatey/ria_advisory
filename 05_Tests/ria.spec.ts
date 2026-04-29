@@ -2,7 +2,7 @@
  * RIA Advisory — Playwright smoke tests
  * Verifies: backend endpoints, Explorer page, GL Search, Analytics page
  */
-import { test, expect, request } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const FRONTEND = 'http://127.0.0.1:5173';
 const BACKEND  = 'http://127.0.0.1:8000';
@@ -12,7 +12,10 @@ async function loginAdmin(page: any) {
   await page.locator('button', { hasText: 'Email & Password' }).click();
   await page.locator('button', { hasText: /superadmin/i }).click();
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
+  // Superadmin lands on hub — enter first tenant to reach dashboard
+  await page.waitForURL('**/admin/hub', { timeout: 10000 });
+  await page.locator('text=Enter tenant →').first().click();
+  await page.waitForURL('**/dashboard', { timeout: 8000 });
 }
 
 // ── 1. Backend API health ─────────────────────────────────────────────────────
@@ -51,7 +54,6 @@ test('backend /api/gl/entries returns rows from star schema', async ({ request }
   expect(rows[0]).toHaveProperty('subsidiary_name');
   expect(rows[0]).toHaveProperty('gl_account_no');
   expect(rows[0]).toHaveProperty('amount');
-  // Must NOT be a 500 error JSON from querying gl_unified
   expect(typeof rows[0].amount).toBe('number');
 });
 
@@ -73,10 +75,8 @@ test('GL Explorer page loads without errors', async ({ page }) => {
   await page.goto(`${FRONTEND}/explorer`);
   await expect(page.locator('h1')).toContainText('GL Explorer');
 
-  // KPI tiles should appear
   await expect(page.locator('.card').first()).toBeVisible({ timeout: 10000 });
 
-  // No API connection errors
   const apiErrors = errors.filter(e => e.includes('ERR_CONNECTION_RESET') || e.includes('ERR_SOCKET_NOT_CONNECTED'));
   expect(apiErrors).toHaveLength(0);
 });
@@ -84,7 +84,6 @@ test('GL Explorer page loads without errors', async ({ page }) => {
 test('GL Explorer charts tab loads chart data', async ({ page }) => {
   await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
-  // Wait for chart SVG to render (recharts outputs svg)
   await expect(page.locator('svg').first()).toBeVisible({ timeout: 15000 });
 });
 
@@ -92,27 +91,19 @@ test('GL Explorer search tab returns real DB rows', async ({ page }) => {
   await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
 
-  // Click Search tab
   await page.click('button:has-text("GL Search")');
 
-  // Select an entity from dropdown — wait for dynamic companies to load
   const select = page.locator('select').first();
   await expect(select).toBeVisible({ timeout: 5000 });
-  // Wait until at least 18 options appear (17 entities + "All entities")
   await expect(select.locator('option')).toHaveCount(18, { timeout: 10000 });
   const optionCount = await select.locator('option').count();
   expect(optionCount).toBeGreaterThan(1);
 
-  // Pick first real entity
   await select.selectOption({ index: 1 });
-
-  // Click search
   await page.click('button:has-text("Search GL")');
 
-  // Wait for results row
   await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15000 });
 
-  // Verify no "No results" empty state
   const empty = await page.locator('text=No results').count();
   expect(empty).toBe(0);
 });
@@ -121,7 +112,6 @@ test('GL Explorer stats tab loads per-entity stats', async ({ page }) => {
   await loginAdmin(page);
   await page.goto(`${FRONTEND}/explorer`);
   await page.click('button:has-text("Load Stats")');
-  // Wait for loading state to clear and all 17 rows to appear
   await expect(page.locator('table tbody tr')).toHaveCount(17, { timeout: 15000 });
 });
 
@@ -129,16 +119,13 @@ test('Analytics page loads with filter panel', async ({ page }) => {
   await loginAdmin(page);
   await page.goto(`${FRONTEND}/analytics`);
   await expect(page.locator('h1')).toBeVisible({ timeout: 5000 });
-  // Filter panel should have company checkboxes
   await expect(page.locator('input[type="checkbox"]').first()).toBeVisible({ timeout: 10000 });
 });
 
 test('Analytics KPI tiles show non-zero values', async ({ page }) => {
   await loginAdmin(page);
   await page.goto(`${FRONTEND}/analytics`);
-  // KPI tiles load from /api/analytics/kpi-summary
-  await page.waitForTimeout(4000); // allow API calls to complete
+  await page.waitForTimeout(4000);
   const kpiText = await page.locator('.card').first().textContent();
-  // Should not be all zeros or "..."
   expect(kpiText).not.toContain('...');
 });

@@ -21,8 +21,8 @@ venv/
 .claude/
 
 # Playwright test output
-02_Frontend_Scaffolding/test-results/
-02_Frontend_Scaffolding/playwright-report/
+05_Tests/test-results/
+05_Tests/playwright-report/
 
 # Python data artifacts
 03_Backend/*.db

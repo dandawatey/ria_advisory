@@ -1,7 +1,7 @@
 [build]
-  base    = "02_Frontend_Scaffolding"
+  base    = "02_Frontend"
   command = "npm run build"
-  publish = "02_Frontend_Scaffolding/dist"
+  publish = "02_Frontend/dist"
 
 [build.environment]
   NODE_VERSION = "20"

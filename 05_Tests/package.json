@@ -1,0 +1,15 @@
+{
+  "name": "ria-advisory-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RIA Advisory — Playwright E2E tests",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

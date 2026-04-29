@@ -17,7 +17,6 @@ async function loginAs(page: any, role: 'superadmin' | 'ria_admin' | 'isource_ad
   await page.locator('button', { hasText: btn }).click();
   await page.locator('button[type="submit"]').click();
 
-  // Superadmin → /admin/hub, others → /dashboard
   if (role === 'superadmin') {
     await page.waitForURL('**/admin/hub', { timeout: 10000 });
   } else {
@@ -29,34 +28,32 @@ async function loginAs(page: any, role: 'superadmin' | 'ria_admin' | 'isource_ad
 
 test('superadmin — AppShell shows "Super Admin" badge', async ({ page }) => {
   await loginAs(page, 'superadmin');
-  // Enter first tenant tile to reach AppShell dashboard
   await page.locator('text=Enter tenant →').first().click();
   await page.waitForURL('**/dashboard', { timeout: 8000 });
   await expect(page.locator('text=Super Admin').first()).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/role-superadmin.png' });
+  await page.screenshot({ path: 'screenshots/role-superadmin.png' });
 });
 
 test('ria_admin — AppShell shows "RIA Admin" badge', async ({ page }) => {
   await loginAs(page, 'ria_admin');
   await expect(page.locator('text=RIA Admin').first()).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/role-ria-admin.png' });
+  await page.screenshot({ path: 'screenshots/role-ria-admin.png' });
 });
 
 test('isource_admin — AppShell shows "iSource Admin" badge', async ({ page }) => {
   await loginAs(page, 'isource_admin');
   await expect(page.locator('text=iSource Admin').first()).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/role-isource-admin.png' });
+  await page.screenshot({ path: 'screenshots/role-isource-admin.png' });
 });
 
 // ── Tenant Management + Configure button ──────────────────────────────────
 
 test('superadmin — Tenant Management shows Configure button', async ({ page }) => {
   await loginAs(page, 'superadmin');
-  // Hub is standalone — navigate directly to tenant management
   await page.goto(BASE + '/admin/tenants');
   await page.waitForSelector('table', { timeout: 8000 });
   await expect(page.locator('button', { hasText: 'Configure' }).first()).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/tenant-list-configure-btn.png' });
+  await page.screenshot({ path: 'screenshots/tenant-list-configure-btn.png' });
 });
 
 // ── Tenant Config page — 4 tabs ───────────────────────────────────────────
@@ -66,17 +63,15 @@ test('superadmin — TenantConfig page loads with 4 tabs', async ({ page }) => {
   await page.goto(BASE + '/admin/tenants');
   await page.waitForSelector('table', { timeout: 8000 });
 
-  // Click Configure on first tenant
   await page.locator('button', { hasText: 'Configure' }).first().click();
   await page.waitForURL('**/config', { timeout: 6000 });
 
-  // All 4 tabs should be visible
   await expect(page.locator('button', { hasText: 'Branding' })).toBeVisible();
   await expect(page.locator('button', { hasText: 'BC Dynamics' })).toBeVisible();
   await expect(page.locator('button', { hasText: 'Subsidiaries' })).toBeVisible();
   await expect(page.locator('button', { hasText: 'Plan & Billing' })).toBeVisible();
 
-  await page.screenshot({ path: 'tests/screenshots/tenant-config-branding.png' });
+  await page.screenshot({ path: 'screenshots/tenant-config-branding.png' });
 });
 
 test('TenantConfig — BC Dynamics tab shows status badge', async ({ page }) => {
@@ -87,9 +82,8 @@ test('TenantConfig — BC Dynamics tab shows status badge', async ({ page }) => 
   await page.waitForURL('**/config', { timeout: 6000 });
 
   await page.locator('button', { hasText: 'BC Dynamics' }).click();
-  // Status badge should be visible (pending/authenticated/error)
   await expect(page.locator('text=Status:').first()).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/tenant-config-bc.png' });
+  await page.screenshot({ path: 'screenshots/tenant-config-bc.png' });
 });
 
 test('TenantConfig — Subsidiaries tab shows checkboxes', async ({ page }) => {
@@ -102,7 +96,7 @@ test('TenantConfig — Subsidiaries tab shows checkboxes', async ({ page }) => {
   await page.locator('button', { hasText: 'Subsidiaries' }).click();
   await expect(page.locator('button', { hasText: 'Select All' })).toBeVisible();
   await expect(page.locator('label', { hasText: 'RIA001' })).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/tenant-config-subsidiaries.png' });
+  await page.screenshot({ path: 'screenshots/tenant-config-subsidiaries.png' });
 });
 
 test('TenantConfig — Plan & Billing tab shows billing fields', async ({ page }) => {
@@ -115,7 +109,7 @@ test('TenantConfig — Plan & Billing tab shows billing fields', async ({ page }
   await page.locator('button', { hasText: 'Plan & Billing' }).click();
   await expect(page.locator('label', { hasText: 'Max Users' })).toBeVisible();
   await expect(page.locator('label', { hasText: 'Auto-renew' })).toBeVisible();
-  await page.screenshot({ path: 'tests/screenshots/tenant-config-billing.png' });
+  await page.screenshot({ path: 'screenshots/tenant-config-billing.png' });
 });
 
 // ── Logo tests ────────────────────────────────────────────────────────────
@@ -124,14 +118,14 @@ test('ria_admin — sidebar shows RIA Advisory logo', async ({ page }) => {
   await loginAs(page, 'ria_admin');
   const logo = page.locator('.app-sidebar img').first();
   await expect(logo).toHaveAttribute('alt', 'RIA Advisory');
-  await page.screenshot({ path: 'tests/screenshots/sidebar-ria-logo.png' });
+  await page.screenshot({ path: 'screenshots/sidebar-ria-logo.png' });
 });
 
 test('isource_admin — sidebar shows iSource Infosystems logo', async ({ page }) => {
   await loginAs(page, 'isource_admin');
   const logo = page.locator('.app-sidebar img').first();
   await expect(logo).toHaveAttribute('alt', 'i-Source Infosystems');
-  await page.screenshot({ path: 'tests/screenshots/sidebar-isource-logo.png' });
+  await page.screenshot({ path: 'screenshots/sidebar-isource-logo.png' });
 });
 
 // ── isource_admin config access ───────────────────────────────────────────
@@ -139,11 +133,8 @@ test('isource_admin — sidebar shows iSource Infosystems logo', async ({ page }
 test('isource_admin — can access own tenant config', async ({ page }) => {
   await loginAs(page, 'isource_admin');
 
-  // Navigate to tenant list — isource_admin should see it via menu or direct URL
-  // Get tenant id from URL after clicking configure in tenant management
   await page.goto(BASE + '/admin/tenants');
-  // isource_admin may not see Tenant Management (superadmin only)
-  // so test direct config URL with the iSource tenant id
+
   const tenantRes = await page.request.get('http://127.0.0.1:8000/api/tenants', {
     headers: { Authorization: `Bearer ${await getToken(page, 'isource_admin')}` },
   });
@@ -154,7 +145,7 @@ test('isource_admin — can access own tenant config', async ({ page }) => {
     if (isource) {
       await page.goto(BASE + `/admin/tenants/${isource.id}/config`);
       await expect(page.locator('button', { hasText: 'Branding' })).toBeVisible({ timeout: 8000 });
-      await page.screenshot({ path: 'tests/screenshots/isource-admin-config.png' });
+      await page.screenshot({ path: 'screenshots/isource-admin-config.png' });
     }
   }
 });
