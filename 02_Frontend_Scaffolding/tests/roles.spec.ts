@@ -16,13 +16,22 @@ async function loginAs(page: any, role: 'superadmin' | 'ria_admin' | 'isource_ad
 
   await page.locator('button', { hasText: btn }).click();
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL('**/dashboard', { timeout: 10000 });
+
+  // Superadmin → /admin/hub, others → /dashboard
+  if (role === 'superadmin') {
+    await page.waitForURL('**/admin/hub', { timeout: 10000 });
+  } else {
+    await page.waitForURL('**/dashboard', { timeout: 10000 });
+  }
 }
 
 // ── Role badge tests ───────────────────────────────────────────────────────
 
 test('superadmin — AppShell shows "Super Admin" badge', async ({ page }) => {
   await loginAs(page, 'superadmin');
+  // Enter first tenant tile to reach AppShell dashboard
+  await page.locator('text=Enter tenant →').first().click();
+  await page.waitForURL('**/dashboard', { timeout: 8000 });
   await expect(page.locator('text=Super Admin').first()).toBeVisible();
   await page.screenshot({ path: 'tests/screenshots/role-superadmin.png' });
 });
@@ -43,6 +52,7 @@ test('isource_admin — AppShell shows "iSource Admin" badge', async ({ page }) 
 
 test('superadmin — Tenant Management shows Configure button', async ({ page }) => {
   await loginAs(page, 'superadmin');
+  // Hub is standalone — navigate directly to tenant management
   await page.goto(BASE + '/admin/tenants');
   await page.waitForSelector('table', { timeout: 8000 });
   await expect(page.locator('button', { hasText: 'Configure' }).first()).toBeVisible();
