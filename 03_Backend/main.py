@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from routers import dashboard, entities, gl, analytics, insights, reports, settings, auth, tenants
+from routers import dashboard, entities, gl, analytics, insights, reports, settings, auth, tenants, budgets, investments
 
 app = FastAPI(
     title="UFIP API",
@@ -49,6 +49,8 @@ app.include_router(analytics.router)
 app.include_router(insights.router)
 app.include_router(reports.router)
 app.include_router(settings.router)
+app.include_router(budgets.router)
+app.include_router(investments.router)
 
 
 @app.get("/health")

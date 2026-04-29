@@ -47,6 +47,9 @@ import UserManagement     from './pages/48_F048_UserManagement';
 import TenantConfig       from './pages/49_F049_TenantConfig';
 import TenantHub          from './pages/50_F050_TenantHub';
 import NewTenant          from './pages/51_F051_NewTenant';
+import Budgeting          from './pages/52_F052_Budgeting';
+import Investment         from './pages/53_F053_Investment';
+import View360            from './pages/54_F054_360View';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -114,6 +117,11 @@ export default function App() {
                 <Route path="/insights/customer"     element={<CustomerInsights />} />
                 <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
                 <Route path="/insights/invoices"     element={<InvoiceInsights />} />
+
+                {/* Planning & Investments */}
+                <Route path="/budgeting"             element={<Budgeting />} />
+                <Route path="/investments"           element={<Investment />} />
+                <Route path="/360-view"              element={<View360 />} />
 
                 {/* Settings */}
                 <Route path="/settings"              element={<Settings />} />

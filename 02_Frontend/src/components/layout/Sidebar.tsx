@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import riaLogo     from '../../assets/ria-advisory-logo.svg';
-import isourceLogo from '../../assets/isource-logo.png';
+import riaLogo        from '../../assets/ria-advisory-logo.svg';
+import isourceLogo    from '../../assets/isource-logo.png';
+import ifinsightsLogo from '../../assets/ifinsights-logo.svg';
 
 interface NavItem {
   label: string;
@@ -58,6 +59,14 @@ const nav: NavSection[] = [
     ],
   },
   {
+    label: 'Planning & Investments',
+    items: [
+      { label: 'Budget Planning',     path: '/budgeting',              icon: '📊' },
+      { label: 'Investments',         path: '/investments',            icon: '💹' },
+      { label: '360° View',           path: '/360-view',               icon: '🔭' },
+    ],
+  },
+  {
     label: 'Tools',
     items: [
       { label: 'Annotations (NLQ)',   path: '/annotations',            icon: '✦' },
@@ -80,10 +89,14 @@ export function Sidebar() {
   const location  = useLocation();
   const { user }  = useAuth();
 
-  const isISource = user?.role === 'isource_admin';
-  const logo      = isISource ? isourceLogo : riaLogo;
-  const logoAlt   = isISource ? 'i-Source Infosystems' : 'RIA Advisory';
-  const logoStyle = isISource
+  const role = user?.role;
+  const logo = role === 'isource_admin' ? isourceLogo
+             : role === 'ria_admin'     ? riaLogo
+             : ifinsightsLogo;
+  const logoAlt = role === 'isource_admin' ? 'i-Source Infosystems'
+                : role === 'ria_admin'     ? 'RIA Advisory'
+                : 'i-finsights';
+  const logoStyle = role === 'isource_admin'
     ? { width: '100%', maxWidth: 140, display: 'block', marginBottom: 4 }
     : { width: '100%', maxWidth: 160, display: 'block', marginBottom: 4 };
 
@@ -91,7 +104,9 @@ export function Sidebar() {
     <aside className="app-sidebar">
       <div className="sidebar-logo" style={{ padding: '16px 12px 12px' }}>
         <img src={logo} alt={logoAlt} style={logoStyle} />
-        <span style={{ fontSize: 10 }}>Unified Financial Intelligence</span>
+        {role !== 'isource_admin' && role !== 'ria_admin' && (
+          <span style={{ fontSize: 9, color: '#9ca3af', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Unified Financial Intelligence</span>
+        )}
       </div>
 
       {nav.map((section) => (
