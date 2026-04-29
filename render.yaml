@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: ria-advisory-api
+    runtime: python
+    rootDir: 03_Backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PGHOST
+        sync: false          # set in Render dashboard
+      - key: PGPORT
+        value: "5432"
+      - key: PGDATABASE
+        sync: false
+      - key: PGUSER
+        sync: false
+      - key: PGPASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true  # Render auto-generates a secure random value
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: JWT_REFRESH_DAYS
+        value: "7"
+      - key: ALLOWED_ORIGINS
+        value: "https://i-finsights.netlify.app"
+    autoDeploy: true

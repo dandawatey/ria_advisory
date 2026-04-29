@@ -5,6 +5,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Set VITE_API_URL in Netlify dashboard → Site configuration → Environment variables
+  # to point at your deployed Render/Railway backend URL, e.g.:
+  # VITE_API_URL = "https://ria-advisory-api.onrender.com"
 
 # SPA fallback — all routes served by index.html
 [[redirects]]
