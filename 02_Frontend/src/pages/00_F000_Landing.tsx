@@ -114,14 +114,17 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Hexagon pattern background */}
+      <section style={{
+        position: 'relative', overflow: 'hidden',
+        background: 'linear-gradient(160deg, var(--teal-50) 0%, var(--neutral-25) 55%, var(--coral-50) 100%)',
+      }}>
+        {/* Hexagon lattice overlay */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 0,
           backgroundImage: `url(${hexPattern})`,
           backgroundRepeat: 'repeat',
           backgroundSize: '208px 240px',
-          opacity: 0.18,
+          opacity: 0.35,
           pointerEvents: 'none',
         }} />
       <div style={{
