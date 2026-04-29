@@ -108,6 +108,22 @@ test('TenantConfig — Plan & Billing tab shows billing fields', async ({ page }
   await page.screenshot({ path: 'tests/screenshots/tenant-config-billing.png' });
 });
 
+// ── Logo tests ────────────────────────────────────────────────────────────
+
+test('ria_admin — sidebar shows RIA Advisory logo', async ({ page }) => {
+  await loginAs(page, 'ria_admin');
+  const logo = page.locator('.app-sidebar img').first();
+  await expect(logo).toHaveAttribute('alt', 'RIA Advisory');
+  await page.screenshot({ path: 'tests/screenshots/sidebar-ria-logo.png' });
+});
+
+test('isource_admin — sidebar shows iSource Infosystems logo', async ({ page }) => {
+  await loginAs(page, 'isource_admin');
+  const logo = page.locator('.app-sidebar img').first();
+  await expect(logo).toHaveAttribute('alt', 'i-Source Infosystems');
+  await page.screenshot({ path: 'tests/screenshots/sidebar-isource-logo.png' });
+});
+
 // ── isource_admin config access ───────────────────────────────────────────
 
 test('isource_admin — can access own tenant config', async ({ page }) => {

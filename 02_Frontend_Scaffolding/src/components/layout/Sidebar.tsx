@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import riaLogo from '../../assets/ria-advisory-logo.svg';
+import { useAuth } from '../../contexts/AuthContext';
+import riaLogo     from '../../assets/ria-advisory-logo.svg';
+import isourceLogo from '../../assets/isource-logo.png';
 
 interface NavItem {
   label: string;
@@ -74,13 +76,21 @@ const nav: NavSection[] = [
 ];
 
 export function Sidebar() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { user }  = useAuth();
+
+  const isISource = user?.role === 'isource_admin';
+  const logo      = isISource ? isourceLogo : riaLogo;
+  const logoAlt   = isISource ? 'i-Source Infosystems' : 'RIA Advisory';
+  const logoStyle = isISource
+    ? { width: '100%', maxWidth: 140, display: 'block', marginBottom: 4 }
+    : { width: '100%', maxWidth: 160, display: 'block', marginBottom: 4 };
 
   return (
     <aside className="app-sidebar">
       <div className="sidebar-logo" style={{ padding: '16px 12px 12px' }}>
-        <img src={riaLogo} alt="RIA Advisory" style={{ width: '100%', maxWidth: 160, display: 'block', marginBottom: 4 }} />
+        <img src={logo} alt={logoAlt} style={logoStyle} />
         <span style={{ fontSize: 10 }}>Unified Financial Intelligence</span>
       </div>
 
