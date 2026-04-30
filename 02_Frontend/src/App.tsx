@@ -49,7 +49,11 @@ import TenantHub          from './pages/50_F050_TenantHub';
 import NewTenant          from './pages/51_F051_NewTenant';
 import Budgeting          from './pages/52_F052_Budgeting';
 import Investment         from './pages/53_F053_Investment';
-import View360            from './pages/54_F054_360View';
+import View360                 from './pages/54_F054_360View';
+import ERPSources              from './pages/55_F055_ERPSources';
+import FieldMapping            from './pages/56_F056_FieldMapping';
+import CrossERPPL              from './pages/57_F057_CrossERPPL';
+import ConsolidatedDashboard   from './pages/58_F058_ConsolidatedDashboard';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -153,6 +157,12 @@ export default function App() {
 
                 {/* System */}
                 <Route path="/admin/api"  element={<APIStatus />} />
+
+                {/* ERP Integration */}
+                <Route path="/erp/consolidated" element={<ConsolidatedDashboard />} />
+                <Route path="/erp/cross-pl"     element={<CrossERPPL />} />
+                <Route path="/erp/sources"      element={<ERPSources />} />
+                <Route path="/erp/mapping"      element={<FieldMapping />} />
 
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Route>

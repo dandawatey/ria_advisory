@@ -7,11 +7,13 @@ Docs at   http://localhost:8000/docs
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from routers import dashboard, entities, gl, analytics, insights, reports, settings, auth, tenants, budgets, investments
+from routers import erp_sources, mapping, freshness, cross_erp, consolidated
 
 app = FastAPI(
     title="UFIP API",
@@ -51,6 +53,16 @@ app.include_router(reports.router)
 app.include_router(settings.router)
 app.include_router(budgets.router)
 app.include_router(investments.router)
+app.include_router(erp_sources.router)
+app.include_router(mapping.router)
+app.include_router(freshness.router)
+app.include_router(cross_erp.router)
+app.include_router(consolidated.router)
+
+
+_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(_STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 @app.get("/health")

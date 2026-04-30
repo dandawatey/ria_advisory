@@ -13,73 +13,96 @@ interface NavItem {
 interface NavSection {
   label: string;
   items: NavItem[];
+  adminOnly?: boolean;
 }
 
 const nav: NavSection[] = [
   {
+    label: 'Command Center',
+    items: [
+      { label: 'Executive Dashboard', path: '/dashboard',             icon: '▦' },
+      { label: 'Health Score',        path: '/reports/health-score',  icon: '♥' },
+      { label: '360° View',           path: '/360-view',              icon: '◎' },
+    ],
+  },
+  {
     label: 'Financial Statements',
     items: [
-      { label: 'Executive Dashboard', path: '/dashboard',              icon: '▦' },
-      { label: 'P&L Statement',       path: '/pl',                     icon: '₱' },
-      { label: 'Trial Balance',       path: '/reports/trial-balance',  icon: '⇌' },
-      { label: 'Balance Sheet',       path: '/reports/balance-sheet',  icon: '⊟' },
-      { label: 'Cash Flow',           path: '/reports/cash-flow',      icon: '⇄' },
-      { label: 'KPI Dashboard',       path: '/reports/kpi',            icon: '◈' },
-      { label: 'Health Score',        path: '/reports/health-score',   icon: '♥' },
+      { label: 'P&L Statement',  path: '/pl',                    icon: '₱' },
+      { label: 'Balance Sheet',  path: '/reports/balance-sheet', icon: '⊟' },
+      { label: 'Cash Flow',      path: '/reports/cash-flow',     icon: '⇄' },
+      { label: 'Trial Balance',  path: '/reports/trial-balance', icon: '⇌' },
     ],
   },
   {
-    label: 'Revenue & Sales',
+    label: 'Performance',
     items: [
-      { label: 'Analytics',           path: '/analytics',              icon: '◈' },
-      { label: 'Monthly Income',      path: '/income',                 icon: '↑' },
-      { label: 'Invoices',            path: '/insights/invoices',      icon: '⊡' },
-      { label: 'Posted Sales',        path: '/insights/posted-sales',  icon: '◉' },
+      { label: 'KPI Dashboard',     path: '/reports/kpi',      icon: '◈' },
+      { label: 'Analytics',         path: '/analytics',        icon: '◉' },
+      { label: 'Entity Comparison', path: '/reports/entities', icon: '⊜' },
     ],
   },
   {
-    label: 'Collections & AR',
+    label: 'Revenue & Income',
     items: [
-      { label: 'Collections',         path: '/collections',            icon: '◷' },
-      { label: 'AR Ageing',           path: '/ageing',                 icon: '⧖' },
-      { label: 'Customers',           path: '/insights/customer',      icon: '◎' },
+      { label: 'Monthly Income', path: '/income',                 icon: '↑' },
+      { label: 'Posted Sales',   path: '/insights/posted-sales',  icon: '◈' },
+      { label: 'Invoices',       path: '/insights/invoices',      icon: '⊡' },
     ],
   },
   {
-    label: 'GL & Expenses',
+    label: 'Accounts Receivable',
     items: [
-      { label: 'GL Explorer',         path: '/explorer',               icon: '⊕' },
-      { label: 'GL Insights',         path: '/insights/gl',            icon: '◑' },
-      { label: 'Expense Analysis',    path: '/reports/expense',        icon: '↓' },
-      { label: 'Department Spend',    path: '/reports/dept-spend',     icon: '⊞' },
-      { label: 'Projects',            path: '/reports/projects',       icon: '◫' },
-      { label: 'Verticals',           path: '/reports/verticals',      icon: '⊗' },
-      { label: 'Entity Comparison',   path: '/reports/entities',       icon: '⊜' },
-      { label: 'Chart of Accounts',   path: '/insights/coa',           icon: '≡' },
+      { label: 'Collections', path: '/collections',        icon: '◷' },
+      { label: 'AR Ageing',   path: '/ageing',             icon: '⧖' },
+      { label: 'Customers',   path: '/insights/customer',  icon: '◎' },
     ],
   },
   {
-    label: 'Planning & Investments',
+    label: 'Cost Management',
     items: [
-      { label: 'Budget Planning',     path: '/budgeting',              icon: '📊' },
-      { label: 'Investments',         path: '/investments',            icon: '💹' },
-      { label: '360° View',           path: '/360-view',               icon: '🔭' },
+      { label: 'Expense Analysis',  path: '/reports/expense',    icon: '↓' },
+      { label: 'Dept Spend',        path: '/reports/dept-spend', icon: '⊞' },
+      { label: 'Projects',          path: '/reports/projects',   icon: '◫' },
+      { label: 'Verticals',         path: '/reports/verticals',  icon: '⊗' },
     ],
   },
   {
-    label: 'Tools',
+    label: 'Planning',
     items: [
-      { label: 'Annotations (NLQ)',   path: '/annotations',            icon: '✦' },
-      { label: 'Settings',            path: '/settings',               icon: '⚙' },
+      { label: 'Budget Planning', path: '/budgeting',    icon: '📊' },
+      { label: 'Investments',     path: '/investments',  icon: '💹' },
+    ],
+  },
+  {
+    label: 'ERP Integration',
+    items: [
+      { label: 'Consolidated View',  path: '/erp/consolidated', icon: '⊕' },
+      { label: 'Cross-ERP P&L',      path: '/erp/cross-pl',     icon: '⇌' },
+      { label: 'ERP Sources',        path: '/erp/sources',      icon: '⊙' },
+      { label: 'Field Mapping',      path: '/erp/mapping',      icon: '⇔' },
+    ],
+  },
+  {
+    label: 'Close & Control',
+    items: [
+      { label: 'Close Cockpit', path: '/close',       icon: '✓' },
+      { label: 'AI Query',      path: '/annotations', icon: '✦' },
     ],
   },
   {
     label: 'Administration',
+    adminOnly: true,
     items: [
-      { label: 'Tenant Management',   path: '/admin/tenants',          icon: '🏢' },
-      { label: 'BC Tenant Auth',      path: '/admin/bc-tenants',       icon: '🔑' },
-      { label: 'Pipeline Health',     path: '/admin/pipeline-health',  icon: '⚡' },
-      { label: 'API Status',          path: '/admin/api',              icon: '◎' },
+      { label: 'GL Mapping',        path: '/admin/mappings',         icon: '⇔' },
+      { label: 'Chart of Accounts', path: '/admin/coa',             icon: '≡' },
+      { label: 'Data Quality',      path: '/admin/dq',              icon: '◈' },
+      { label: 'IC Elimination',    path: '/admin/ic-elimination',  icon: '⊖' },
+      { label: 'Settings',          path: '/settings',              icon: '⚙' },
+      { label: 'Tenant Management', path: '/admin/tenants',         icon: '🏢' },
+      { label: 'BC Tenant Auth',    path: '/admin/bc-tenants',      icon: '🔑' },
+      { label: 'Pipeline Health',   path: '/admin/pipeline-health', icon: '⚡' },
+      { label: 'API Status',        path: '/admin/api',             icon: '◎' },
     ],
   },
 ];
@@ -90,6 +113,8 @@ export function Sidebar() {
   const { user }  = useAuth();
 
   const role = user?.role;
+  const isAdmin = role === 'superadmin' || role === 'isource_admin' || role === 'ria_admin';
+
   const logo = role === 'isource_admin' ? isourceLogo
              : role === 'ria_admin'     ? riaLogo
              : ifinsightsLogo;
@@ -109,21 +134,24 @@ export function Sidebar() {
         )}
       </div>
 
-      {nav.map((section) => (
-        <div className="sidebar-section" key={section.label}>
-          <div className="sidebar-section-label">{section.label}</div>
-          {section.items.map((item) => (
-            <button
-              key={item.path}
-              className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-            >
-              <span className="sidebar-nav-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ))}
+      {nav.map((section) => {
+        if (section.adminOnly && !isAdmin) return null;
+        return (
+          <div className="sidebar-section" key={section.label}>
+            <div className="sidebar-section-label">{section.label}</div>
+            {section.items.map((item) => (
+              <button
+                key={item.path}
+                className={`sidebar-nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                onClick={() => navigate(item.path)}
+              >
+                <span className="sidebar-nav-icon">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        );
+      })}
     </aside>
   );
 }

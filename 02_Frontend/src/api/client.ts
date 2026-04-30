@@ -69,6 +69,7 @@ export interface GLFilters {
   month_to?: string;        // 'YYYY-MM'
   account_prefix?: string;  // e.g. '4' → 4xx accounts only
   gen_post_type?: string;   // document_type e.g. 'Invoice'
+  account_category?: string; // e.g. 'Revenue', 'COGS', 'OpEx', 'Assets', 'Liabilities', 'Equity'
 }
 
 export function buildFilterQS(f?: GLFilters, extra?: Record<string, string | number>): string {
@@ -77,8 +78,9 @@ export function buildFilterQS(f?: GLFilters, extra?: Record<string, string | num
   if (f?.year)            qs.set('year',           String(f.year));
   if (f?.month_from)      qs.set('month_from',     f.month_from);
   if (f?.month_to)        qs.set('month_to',       f.month_to);
-  if (f?.account_prefix)  qs.set('account_prefix', f.account_prefix);
-  if (f?.gen_post_type)   qs.set('doc_type',       f.gen_post_type);
+  if (f?.account_prefix)   qs.set('account_prefix',  f.account_prefix);
+  if (f?.gen_post_type)    qs.set('doc_type',         f.gen_post_type);
+  if (f?.account_category) qs.set('account_category', f.account_category);
   if (extra) Object.entries(extra).forEach(([k, v]) => { if (v !== undefined && v !== '') qs.set(k, String(v)); });
   const s = qs.toString();
   return s ? `?${s}` : '';
@@ -126,6 +128,7 @@ export interface FilterOptions {
   years: number[];
   months: { year: number; month: number; month_key: string; month_name: string }[];
   currencies: { currency_code: string; currency_name: string }[];
+  account_categories: string[];
 }
 export interface KPISummary {
   revenue: number; cogs: number; opex: number; net_income: number;
@@ -460,6 +463,26 @@ export const api = {
       byCustomer: (ids: number[], yr: number | null, limit = 15) =>
         get<InvoiceCustomerRow[]>(`/api/insights/invoices/by-customer${buildInsightsQS(ids, yr, { limit })}`),
       byEntity:   (yr: number | null) => get<InvoiceEntityRow[]>(`/api/insights/invoices/by-entity${buildInsightsQS([], yr)}`),
+    },
+  },
+  erp: {
+    sources:  () => get<{ erp_source_id: number; erp_type: string; display_name: string; connection_status: string; entity_id: string | null; last_sync_at: string | null; sync_schedule: string | null; is_active: boolean }[]>('/api/erp/sources'),
+    syncLog:  (id: number, limit = 20) => get<unknown[]>(`/api/erp/sources/${id}/sync-log?limit=${limit}`),
+    freshness: () => get<{ erp_source_id: number; erp_name: string; status: string; last_sync_at: string | null; hours_stale: number | null }[]>('/api/erp/freshness'),
+    mapping: {
+      list:   (erpSourceId: number) => get<unknown[]>(`/api/erp/mapping/${erpSourceId}`),
+      upsert: (body: unknown) => post<{ mapping_id: number }>('/api/erp/mapping', body),
+      delete: (id: number) => del(`/api/erp/mapping/${id}`),
+      bulkImport: (erpSourceId: number, items: unknown[]) => post<{ imported: number }>(`/api/erp/mapping/${erpSourceId}/bulk-import`, items),
+    },
+    crossERP: {
+      pl:      (from: string, to: string) => get<unknown[]>(`/api/erp/cross-erp/pl?from_date=${from}&to_date=${to}`),
+      summary: (from: string, to: string) => get<unknown>(`/api/erp/cross-erp/pl/summary?from_date=${from}&to_date=${to}`),
+    },
+    consolidated: {
+      summary:  (from: string, to: string) => get<unknown>(`/api/erp/consolidated/summary?from_date=${from}&to_date=${to}`),
+      trend:    (from: string, to: string) => get<unknown[]>(`/api/erp/consolidated/trend?from_date=${from}&to_date=${to}`),
+      bySource: (from: string, to: string) => get<unknown[]>(`/api/erp/consolidated/by-source?from_date=${from}&to_date=${to}`),
     },
   },
   gl: {
