@@ -24,8 +24,7 @@ _FRESHNESS_SQL = """
     FROM dim_erp_source s
     LEFT JOIN fact_sync_log l
         ON l.erp_source_id = s.erp_source_id
-        AND l.status = 'completed'
-        AND l.tenant_id = %s
+        AND l.status IN ('completed', 'success')
     WHERE s.erp_source_id = ANY(%s)
       AND s.tenant_id = %s
     GROUP BY s.erp_source_id, s.erp_name
@@ -60,7 +59,7 @@ class DataFreshnessService:
     ) -> List[FreshnessStatus]:
         """Return freshness status for each requested ERP source."""
         tid = str(tenant_id)
-        rows = self._query(_FRESHNESS_SQL, (tid, erp_source_ids, tid))
+        rows = self._query(_FRESHNESS_SQL, (erp_source_ids, tid))
         return [self._build_status(r) for r in rows]
 
     def _build_status(self, row: dict) -> FreshnessStatus:

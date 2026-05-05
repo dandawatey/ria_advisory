@@ -31,8 +31,25 @@ async def lifespan(app: FastAPI):
         logger.info("Casbin RBAC enforcer ready")
     except Exception as exc:
         logger.warning("Casbin enforcer init failed (non-fatal): %s", exc)
+
+    # Startup — BC scheduled sync worker
+    _scheduler = None
+    try:
+        from workers.bc_sync_worker import start_scheduler, stop_scheduler
+        _interval = int(os.getenv("SYNC_INTERVAL_MINUTES", "15"))
+        _scheduler = start_scheduler(interval_minutes=_interval)
+    except Exception as exc:
+        logger.warning("BC sync scheduler init failed (non-fatal): %s", exc)
+
     yield
-    # Shutdown — nothing to clean up
+
+    # Shutdown — stop BC sync scheduler
+    if _scheduler is not None:
+        try:
+            from workers.bc_sync_worker import stop_scheduler
+            stop_scheduler(_scheduler)
+        except Exception as exc:
+            logger.warning("BC sync scheduler shutdown error (non-fatal): %s", exc)
 
 
 app = FastAPI(
