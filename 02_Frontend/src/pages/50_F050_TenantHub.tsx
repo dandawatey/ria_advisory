@@ -1,24 +1,34 @@
 /**
  * F050 — Superadmin Tenant Hub
- * Landing page for superadmin: tiles for every tenant.
- * Click a tile → switchTenant + navigate to /dashboard.
+ * Landing page for superadmin: management tiles per tenant.
+ * Superadmin manages tenants here — does NOT enter financial dashboards.
  */
 import { useNavigate } from 'react-router-dom';
 import { useAuth }     from '../contexts/AuthContext';
 import { useTenant }   from '../contexts/TenantContext';
 import { Tenant }      from '../types';
-import riaLogo         from '../assets/ria-advisory-logo.svg';
-import isourceLogo     from '../assets/isource-logo.png';
+import riaLogo      from '../assets/ria-advisory-logo.svg';
+import isourceLogo  from '../assets/isource-logo.png';
+import ifinsightsLogo from '../assets/ifinsights-logo.svg';
 
-// ── Tenant meta helpers ────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
-function tenantLogo(t: Tenant) {
-  if (t.slug === 'isource') return isourceLogo;
-  return riaLogo;
-}
+const SLUG_LOGO: Record<string, string> = {
+  'ria-advisory':  riaLogo,
+  'isource':       isourceLogo,
+  'ifinsights':    ifinsightsLogo,
+};
 
-function tenantLogoAlt(t: Tenant) {
-  return t.slug === 'isource' ? 'i-Source Infosystems' : t.name;
+function tenantLogoSrc(t: Tenant): string {
+  if (t.logo_url) {
+    return t.logo_url.startsWith('http') ? t.logo_url : `${API_BASE}${t.logo_url}`;
+  }
+  // Match by slug first, then name substring, then default
+  if (t.slug && SLUG_LOGO[t.slug]) return SLUG_LOGO[t.slug];
+  const nameLower = (t.name ?? '').toLowerCase();
+  if (nameLower.includes('isource') || nameLower.includes('i-source')) return isourceLogo;
+  if (nameLower.includes('ria'))                                         return riaLogo;
+  return ifinsightsLogo;
 }
 
 function planColor(plan: string): { bg: string; fg: string } {
@@ -37,14 +47,9 @@ function statusDot(status: string): string {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function TenantHub() {
-  const navigate               = useNavigate();
-  const { user }               = useAuth();
-  const { tenants, switchTenant } = useTenant();
-
-  const handleEnter = (t: Tenant) => {
-    switchTenant(t.id);
-    navigate('/dashboard');
-  };
+  const navigate    = useNavigate();
+  const { user }    = useAuth();
+  const { tenants } = useTenant();
 
   return (
     <div style={{
@@ -90,10 +95,10 @@ export default function TenantHub() {
             Platform Administration
           </div>
           <h1 style={{ margin: 0, fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', color: '#111' }}>
-            Select a tenant
+            Tenant Management
           </h1>
           <p style={{ margin: '8px 0 0', fontSize: 15, color: '#6b7280' }}>
-            {tenants.length} organisation{tenants.length !== 1 ? 's' : ''} on this platform
+            {tenants.length} organisation{tenants.length !== 1 ? 's' : ''} on this platform · Click a tile to configure
           </p>
         </div>
 
@@ -103,7 +108,18 @@ export default function TenantHub() {
             padding: 60, textAlign: 'center', color: '#9ca3af',
             border: '2px dashed #e5e7eb', borderRadius: 16, fontSize: 15,
           }}>
-            No tenants found. Create one in Tenant Management.
+            No tenants yet.
+            <button
+              onClick={() => navigate('/admin/tenants/new')}
+              style={{
+                display: 'block', margin: '16px auto 0',
+                padding: '10px 24px', borderRadius: 8,
+                border: 'none', background: 'var(--teal-700, #0F3F3C)',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#fff',
+              }}
+            >
+              + Create First Tenant
+            </button>
           </div>
         ) : (
           <div style={{
@@ -115,36 +131,23 @@ export default function TenantHub() {
               const pc  = planColor(t.plan);
               const dot = statusDot(t.status);
               return (
-                <button
+                <div
                   key={t.id}
-                  onClick={() => handleEnter(t)}
                   style={{
-                    textAlign: 'left',
                     background: '#fff',
                     border: '1px solid #e5e7eb',
                     borderRadius: 16,
                     padding: 28,
-                    cursor: 'pointer',
-                    transition: 'all 160ms ease',
                     boxShadow: '0 1px 4px rgba(0,0,0,.05)',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--teal-300, #5bbfb8)';
-                    e.currentTarget.style.boxShadow  = '0 6px 20px rgba(15,63,60,.12)';
-                    e.currentTarget.style.transform  = 'translateY(-2px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.boxShadow  = '0 1px 4px rgba(0,0,0,.05)';
-                    e.currentTarget.style.transform  = 'translateY(0)';
                   }}
                 >
                   {/* Logo */}
-                  <div style={{ marginBottom: 20, height: 36, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ marginBottom: 20, height: 44, display: 'flex', alignItems: 'center' }}>
                     <img
-                      src={tenantLogo(t)}
-                      alt={tenantLogoAlt(t)}
-                      style={{ maxHeight: 36, maxWidth: 160, objectFit: 'contain' }}
+                      src={tenantLogoSrc(t)}
+                      alt={t.name}
+                      style={{ maxHeight: 44, maxWidth: 160, objectFit: 'contain' }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = ifinsightsLogo; }}
                     />
                   </div>
 
@@ -164,7 +167,7 @@ export default function TenantHub() {
                     /{t.slug}
                   </div>
 
-                  {/* Badges row */}
+                  {/* Badges */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
                     <span style={{
                       padding: '3px 10px', borderRadius: 20,
@@ -190,44 +193,41 @@ export default function TenantHub() {
                     </span>
                   </div>
 
-                  {/* Enter CTA */}
+                  {/* Action buttons */}
                   <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    display: 'flex', gap: 8,
                     paddingTop: 16, borderTop: '1px solid #f3f4f6',
                   }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal-600, #1F6B66)' }}>
-                      Enter tenant →
-                    </span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/tenants/${t.id}/config`); }}
-                        style={{
-                          padding: '4px 10px', fontSize: 11, fontWeight: 600,
-                          border: '1px solid #bfdbfe', borderRadius: 6,
-                          background: '#eff6ff', color: '#1d4ed8', cursor: 'pointer',
-                        }}
-                      >
-                        Configure
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/tenants/${t.id}/users`); }}
-                        style={{
-                          padding: '4px 10px', fontSize: 11, fontWeight: 600,
-                          border: '1px solid #e5e7eb', borderRadius: 6,
-                          background: '#f9fafb', color: '#374151', cursor: 'pointer',
-                        }}
-                      >
-                        Users
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => navigate(`/admin/tenants/${t.id}/config`)}
+                      style={{
+                        flex: 1, padding: '8px 0', fontSize: 12, fontWeight: 700,
+                        border: 'none', borderRadius: 8,
+                        background: 'var(--teal-700, #0F3F3C)', color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Configure
+                    </button>
+                    <button
+                      onClick={() => navigate(`/admin/tenants/${t.id}/users`)}
+                      style={{
+                        flex: 1, padding: '8px 0', fontSize: 12, fontWeight: 700,
+                        border: '1px solid #e5e7eb', borderRadius: 8,
+                        background: '#f9fafb', color: '#374151',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Users
+                    </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
         )}
 
-        {/* Quick actions footer */}
+        {/* Footer actions */}
         <div style={{
           marginTop: 48, paddingTop: 32, borderTop: '1px solid #e5e7eb',
           display: 'flex', gap: 12,
@@ -241,26 +241,6 @@ export default function TenantHub() {
             }}
           >
             + New Tenant
-          </button>
-          <button
-            onClick={() => navigate('/admin/api')}
-            style={{
-              padding: '9px 20px', borderRadius: 8,
-              border: '1px solid #e5e7eb', background: '#fff',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151',
-            }}
-          >
-            API Status
-          </button>
-          <button
-            onClick={() => navigate('/admin/pipeline-health')}
-            style={{
-              padding: '9px 20px', borderRadius: 8,
-              border: '1px solid #e5e7eb', background: '#fff',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151',
-            }}
-          >
-            Pipeline Health
           </button>
         </div>
       </main>
