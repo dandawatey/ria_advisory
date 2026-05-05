@@ -73,14 +73,67 @@ const PRESET_COLORS = [
   '#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6',
 ];
 
-// ── Tab 1: Mapping Console ────────────────────────────────────────────────────
+// ── Tab 1: Mapping Console — grouped by canonical name ───────────────────────
+
+interface CanonicalGroup {
+  canonical: string;
+  accounts:  MappingRow[];
+  totalAmount: number;
+}
+
+const CANONICAL_ORDER = [
+  '4100 — Advisory Fee Revenue',
+  '4200 — Management Fee Revenue',
+  '4xxx — Revenue',
+  '5xxx — Cost of Sales',
+  '6100 — Compensation & Benefits',
+  '6200 — Technology',
+  '6300 — Occupancy',
+  '6xxx — Operating Expenses',
+  '7xxx — Other Income',
+  '8xxx — Income Tax',
+  '1000 — Cash & Cash Equivalents',
+  '1100 — Accounts Receivable',
+  '1xxx — Asset',
+  '2000 — Accounts Payable',
+  '2xxx — Liability',
+  '3xxx — Equity',
+  'SUSPENSE — Opening Balance Upload',
+  'UNMAPPED',
+];
+
+const CANONICAL_COLOR: Record<string, string> = {
+  '4': '#059669',   // revenue — green
+  '5': '#d97706',   // cogs — amber
+  '6': '#dc2626',   // opex — red
+  '7': '#0369a1',   // other income — blue
+  '8': '#6d28d9',   // tax — purple
+  '1': '#0f766e',   // assets — teal
+  '2': '#b45309',   // liabilities — orange
+  '3': '#1d4ed8',   // equity — blue
+  'S': '#9ca3af',   // suspense — grey
+  'U': '#ef4444',   // unmapped — red
+};
+
+function canonicalColor(c: string): string {
+  if (c.startsWith('4')) return CANONICAL_COLOR['4'];
+  if (c.startsWith('5')) return CANONICAL_COLOR['5'];
+  if (c.startsWith('6')) return CANONICAL_COLOR['6'];
+  if (c.startsWith('7')) return CANONICAL_COLOR['7'];
+  if (c.startsWith('8')) return CANONICAL_COLOR['8'];
+  if (c.startsWith('1')) return CANONICAL_COLOR['1'];
+  if (c.startsWith('2')) return CANONICAL_COLOR['2'];
+  if (c.startsWith('3')) return CANONICAL_COLOR['3'];
+  if (c.startsWith('SUSPENSE')) return CANONICAL_COLOR['S'];
+  return CANONICAL_COLOR['U'];
+}
 
 function MappingTab() {
   const [rows, setRows]         = useState<MappingRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [apiError, setApiError] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'mapped' | 'unmapped' | 'pending'>('all');
   const [search, setSearch]     = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     api.gl.accounts()
@@ -94,79 +147,198 @@ function MappingTab() {
           };
         });
         setRows(mapped);
+        // auto-expand first 4 groups
+        const firstFour = [...new Set(mapped.map((r) => r.suggestedCanonical))].slice(0, 4);
+        setExpanded(new Set(firstFour));
       })
       .catch(() => setApiError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = rows.filter((r) => {
-    const matchStatus = statusFilter === 'all' || r.mappingStatus === statusFilter;
-    const matchSearch = !search || r.gl_account_no.includes(search) || (r.gl_account_name ?? '').toLowerCase().includes(search.toLowerCase());
-    return matchStatus && matchSearch;
-  });
+  // Group by canonical name
+  const groupMap = new Map<string, MappingRow[]>();
+  for (const r of rows) {
+    const q = search
+      ? (r.gl_account_no.includes(search) || (r.gl_account_name ?? '').toLowerCase().includes(search.toLowerCase()))
+      : true;
+    if (!q) continue;
+    const key = r.suggestedCanonical;
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(r);
+  }
 
+  const groups: CanonicalGroup[] = CANONICAL_ORDER
+    .filter((c) => groupMap.has(c))
+    .map((c) => ({
+      canonical:   c,
+      accounts:    groupMap.get(c)!,
+      totalAmount: groupMap.get(c)!.reduce((s, r) => s + r.total_amount, 0),
+    }));
+  // append any not in the order list
+  for (const [c, accts] of groupMap) {
+    if (!CANONICAL_ORDER.includes(c)) {
+      groups.push({ canonical: c, accounts: accts, totalAmount: accts.reduce((s, r) => s + r.total_amount, 0) });
+    }
+  }
+
+  const totalAccounts = rows.length;
   const mappedCount   = rows.filter((r) => r.mappingStatus === 'mapped').length;
-  const pendingCount  = rows.filter((r) => r.mappingStatus === 'pending').length;
-  const unmappedCount = rows.filter((r) => r.mappingStatus === 'unmapped').length;
+
+  function toggleGroup(c: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(c) ? next.delete(c) : next.add(c);
+      return next;
+    });
+  }
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+      {/* Summary strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: 'Auto-mapped',   count: mappedCount,   color: 'var(--color-success)', status: 'mapped'   as const },
-          { label: 'Pending Review',count: pendingCount,  color: 'var(--color-warning)', status: 'pending'  as const },
-          { label: 'Unmapped',      count: unmappedCount, color: 'var(--color-error)',   status: 'unmapped' as const },
-        ].map(({ label, count, color, status }) => (
-          <div
-            key={label}
-            className="card"
-            style={{ padding: '14px 16px', cursor: 'pointer', border: statusFilter === status ? `2px solid ${color}` : '1px solid var(--color-border)' }}
-            onClick={() => setStatusFilter(statusFilter === status ? 'all' : status)}
-          >
-            <div style={{ fontSize: 28, fontWeight: 800, color }}>{loading ? '…' : count}</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{label}</div>
+          { label: 'Total GL Codes',    value: loading ? '…' : totalAccounts, color: 'var(--teal-700, #0f3f3c)' },
+          { label: 'Canonical Groups',  value: loading ? '…' : groups.length, color: '#6d28d9' },
+          { label: 'Auto-mapped',       value: loading ? '…' : mappedCount,   color: '#059669' },
+          { label: 'Unmapped',          value: loading ? '…' : rows.filter((r) => r.mappingStatus === 'unmapped').length, color: '#dc2626' },
+        ].map((s) => (
+          <div key={s.label} className="card" style={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: 26, fontWeight: 900, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="card">
-        <div className="flex items-center justify-between mb-12">
-          <div className="card-title" style={{ margin: 0 }}>Account Mappings ({filtered.length})</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {apiError && <span style={{ color: 'var(--color-warning)', fontSize: 12 }}>⚠ API offline</span>}
-            <input className="form-input" style={{ width: 200 }} placeholder="Search account…" value={search} onChange={(e) => setSearch(e.target.value)} />
-            {statusFilter !== 'all' && <button className="btn btn-secondary btn-sm" onClick={() => setStatusFilter('all')}>Show All</button>}
-          </div>
-        </div>
-        <div className="table-wrap" style={{ maxHeight: 540, overflowY: 'auto' }}>
-          <table style={{ fontSize: 12 }}>
-            <thead>
-              <tr>
-                <th>Account No</th><th>BC Account Name</th><th>Entities</th>
-                <th>Suggested Canonical</th><th style={{ textAlign: 'right' }}>Net Balance</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--color-text-muted)' }}>Loading…</td></tr>
-              ) : filtered.map((r) => (
-                <tr key={r.gl_account_no}>
-                  <td className="table-mono" style={{ fontWeight: 600 }}>{r.gl_account_no}</td>
-                  <td>{r.gl_account_name ?? <span style={{ color: 'var(--color-text-muted)' }}>—</span>}</td>
-                  <td style={{ textAlign: 'center' }}>{r.entity_count}</td>
-                  <td style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{r.suggestedCanonical}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 500 }}>{fmtUSD(r.total_amount)}</td>
-                  <td>
-                    <span className={`badge ${r.mappingStatus === 'mapped' ? 'badge-success' : r.mappingStatus === 'pending' ? 'badge-warning' : 'badge-error'}`}>
-                      {r.mappingStatus}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+        {apiError && <span style={{ color: 'var(--color-warning)', fontSize: 12 }}>⚠ API offline — showing suggestions only</span>}
+        <input
+          className="form-input"
+          style={{ width: 260 }}
+          placeholder="Search GL code or name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => setExpanded(new Set(groups.map((g) => g.canonical)))}
+        >
+          Expand All
+        </button>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => setExpanded(new Set())}
+        >
+          Collapse All
+        </button>
       </div>
+
+      {/* Grouped mapping rows */}
+      {loading ? (
+        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>Loading GL accounts…</div>
+      ) : groups.length === 0 ? (
+        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>No accounts match your search.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {groups.map((g) => {
+            const isOpen  = expanded.has(g.canonical);
+            const color   = canonicalColor(g.canonical);
+            const isUnmapped = g.canonical === 'UNMAPPED';
+            return (
+              <div
+                key={g.canonical}
+                style={{
+                  background: '#fff',
+                  border: `1px solid var(--color-border)`,
+                  borderLeft: `4px solid ${color}`,
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Group header — clickable */}
+                <div
+                  onClick={() => toggleGroup(g.canonical)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px', cursor: 'pointer',
+                    background: isOpen ? `${color}08` : '#fff',
+                    userSelect: 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 12, color: 'var(--color-text-muted)', width: 16 }}>
+                    {isOpen ? '▾' : '▸'}
+                  </span>
+
+                  {/* Canonical name — prominent */}
+                  <div style={{ flex: 1 }}>
+                    <span style={{
+                      fontSize: 14, fontWeight: 800,
+                      color: isUnmapped ? '#dc2626' : 'var(--color-text)',
+                    }}>
+                      {g.canonical}
+                    </span>
+                  </div>
+
+                  {/* GL code count badge */}
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 20,
+                    background: `${color}18`, color: color,
+                    fontSize: 11, fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {g.accounts.length} GL code{g.accounts.length !== 1 ? 's' : ''}
+                  </span>
+
+                  {/* Net balance */}
+                  <span style={{
+                    fontSize: 12, fontWeight: 700,
+                    color: g.totalAmount >= 0 ? '#059669' : '#dc2626',
+                    width: 90, textAlign: 'right',
+                  }}>
+                    {fmtUSD(g.totalAmount)}
+                  </span>
+                </div>
+
+                {/* GL codes list */}
+                {isOpen && (
+                  <div style={{
+                    borderTop: `1px solid ${color}22`,
+                    padding: '8px 16px 12px',
+                    background: `${color}04`,
+                  }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {g.accounts.map((a) => (
+                        <div
+                          key={a.gl_account_no}
+                          title={`${a.gl_account_no} — ${a.gl_account_name ?? 'No name'}\nEntities: ${a.entity_count} | Balance: ${fmtUSD(a.total_amount)}`}
+                          style={{
+                            display: 'inline-flex', flexDirection: 'column',
+                            background: '#fff',
+                            border: `1px solid ${color}30`,
+                            borderRadius: 8,
+                            padding: '6px 10px',
+                            minWidth: 140,
+                          }}
+                        >
+                          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color }}>
+                            {a.gl_account_no}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1, lineHeight: 1.3 }}>
+                            {a.gl_account_name ?? '—'}
+                          </span>
+                          <span style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                            {a.entity_count} entit{a.entity_count === 1 ? 'y' : 'ies'} · {fmtUSD(a.total_amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
