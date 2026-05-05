@@ -96,6 +96,7 @@ export default function HealthScore() {
   const [data, setData]           = useState<HealthScoreData | null>(null);
   const [loading, setLoading]     = useState(false);
   const [err, setErr]             = useState('');
+  const [showInfo, setShowInfo]   = useState(false);
 
   // Load filter options
   useEffect(() => {
@@ -128,9 +129,159 @@ export default function HealthScore() {
 
   return (
     <div>
+      {/* ── Info Modal ── */}
+      {showInfo && (
+        <div
+          onClick={() => setShowInfo(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 14, padding: '28px 32px',
+              maxWidth: 680, width: '100%', maxHeight: '85vh', overflowY: 'auto',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.18)', position: 'relative',
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowInfo(false)}
+              style={{
+                position: 'absolute', top: 16, right: 16,
+                width: 28, height: 28, borderRadius: '50%',
+                background: '#f3f4f6', border: 'none', cursor: 'pointer',
+                fontSize: 16, lineHeight: 1, color: '#374151',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+              aria-label="Close info modal"
+            >✕</button>
+
+            <h2 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F3F3C' }}>
+              Financial Health Score — Methodology
+            </h2>
+
+            {/* Section 1 */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F3F3C', marginBottom: 8 }}>
+              What is the Financial Health Score?
+            </h3>
+            <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, marginBottom: 20 }}>
+              The Financial Health Score is a composite 0–100 index that summarises your organisation's financial condition across six key dimensions. A single number that distils profitability, liquidity, leverage, efficiency and data completeness — giving leadership a real-time pulse on financial fitness without reading six separate reports.
+            </p>
+
+            {/* Section 2 */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F3F3C', marginBottom: 10 }}>
+              Why it matters
+            </h3>
+            <ul style={{ fontSize: 13, color: '#374151', lineHeight: 1.8, paddingLeft: 20, marginBottom: 20 }}>
+              <li><strong>Early warning system</strong> — Detects deterioration weeks before it shows in board reports. A score dropping from 72 → 58 is an actionable signal.</li>
+              <li><strong>Executive communication</strong> — One number communicates financial health in board decks, investor updates, and management reviews.</li>
+              <li><strong>Trend tracking</strong> — Monitor score movement over time: improving = good governance; declining = intervention needed.</li>
+            </ul>
+
+            {/* Section 3 */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F3F3C', marginBottom: 10 }}>
+              How the score is calculated
+            </h3>
+            <div style={{
+              background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8,
+              padding: '10px 16px', marginBottom: 14, textAlign: 'center',
+              fontFamily: 'monospace', fontSize: 13, color: '#166534', fontWeight: 600,
+            }}>
+              Score = Σ (Category Score × Weight)
+            </div>
+            <div style={{ overflowX: 'auto', marginBottom: 20 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#f0f9f8' }}>
+                    {['Category', 'Weight', 'Key Metric', 'Green ≥', 'Amber', 'Red <'].map(h => (
+                      <th key={h} style={{
+                        padding: '7px 10px', textAlign: 'left',
+                        borderBottom: '2px solid #0F3F3C', fontWeight: 600, fontSize: 11,
+                        color: '#0F3F3C',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Profitability',    '25%', 'Net Margin %',         '15%',   '5–15%',  '5%'],
+                    ['Gross Efficiency', '20%', 'Gross Margin %',       '40%',   '20–40%', '20%'],
+                    ['Liquidity',        '20%', 'Current Ratio',        '2.0×',  '1–2×',   '1×'],
+                    ['Leverage',         '15%', 'Debt/Equity Ratio',    '<0.5×', '0.5–2×', '>2×'],
+                    ['OpEx Control',     '10%', 'OpEx % of Revenue',    '<10%',  '10–25%', '>25%'],
+                    ['Data Coverage',    '10%', 'Entities with data',   '>80%',  '50–80%', '<50%'],
+                  ].map((row, ri) => (
+                    <tr key={row[0]} style={{ background: ri % 2 === 0 ? '#fff' : '#fafafa', borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '6px 10px', fontWeight: 600, fontSize: 12 }}>{row[0]}</td>
+                      <td style={{ padding: '6px 10px', color: '#6b7280' }}>{row[1]}</td>
+                      <td style={{ padding: '6px 10px' }}>{row[2]}</td>
+                      <td style={{ padding: '6px 10px', color: '#166534', fontWeight: 500 }}>{row[3]}</td>
+                      <td style={{ padding: '6px 10px', color: '#92400e' }}>{row[4]}</td>
+                      <td style={{ padding: '6px 10px', color: '#991b1b' }}>{row[5]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
+                Each category score is 0–100: raw metric mapped linearly within thresholds. Green band → 70–100 pts. Amber band → 40–69 pts. Red band → 0–39 pts.
+              </p>
+            </div>
+
+            {/* Section 4 */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F3F3C', marginBottom: 10 }}>
+              Grade scale
+            </h3>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+              {[
+                { grade: 'A', range: '85–100', bg: '#22c55e', label: 'Excellent' },
+                { grade: 'B', range: '70–84',  bg: '#0d9488', label: 'Healthy' },
+                { grade: 'C', range: '55–69',  bg: '#f59e0b', label: 'Caution' },
+                { grade: 'D', range: '40–54',  bg: '#f97316', label: 'Warning' },
+                { grade: 'F', range: '0–39',   bg: '#ef4444', label: 'Critical' },
+              ].map(g => (
+                <div key={g.grade} style={{
+                  background: g.bg, borderRadius: 10, padding: '10px 16px',
+                  textAlign: 'center', minWidth: 90, flex: '1 1 80px',
+                }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{g.grade}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.9)', marginTop: 2 }}>{g.range}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600, marginTop: 2 }}>{g.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Section 5 */}
+            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F3F3C', marginBottom: 8 }}>
+              How to use this score
+            </h3>
+            <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.7, marginBottom: 4 }}>
+              Review your weakest category — it has the highest improvement ROI. A 10-point improvement in Profitability (25% weight) moves the composite score by 2.5 points. Focus on the red categories first, then amber.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <h1 className="page-title">Financial Health Score</h1>
-        <p className="page-subtitle">Composite 0–100 score across 6 weighted categories</p>
+        <p className="page-subtitle" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          Composite 0–100 score across 6 weighted categories
+          <button
+            onClick={() => setShowInfo(true)}
+            aria-label="Financial Health Score methodology info"
+            style={{
+              width: 24, height: 24, borderRadius: '50%',
+              background: '#1F6B66', border: 'none', cursor: 'pointer',
+              color: '#fff', fontSize: 13, fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, lineHeight: 1,
+            }}
+          >ⓘ</button>
+        </p>
       </div>
 
       {loading && <p style={{ color: '#6b7280' }}>Loading…</p>}
