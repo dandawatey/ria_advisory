@@ -306,140 +306,19 @@ Internal Network
 
 ---
 
-## 7. Cloud Subscription Model
+## 7. Pricing & Deployment Costs
 
-CFO360 SaaS is offered in three tiers priced per active user per month, billed annually.
+Detailed pricing is documented separately by deployment model:
 
-### 7.1 Tier Comparison
+- **Cloud (SaaS) Pricing** → [06_Pricing_Cloud.md](06_Pricing_Cloud.md)
+  Subscription tiers (Starter / Professional / Enterprise), add-ons, implementation fees, SLA, billing terms, and indicative annual cost examples.
 
-| Feature | **Starter** | **Professional** | **Enterprise** |
-|---|---|---|---|
-| **Price** | ₹8,000 / user / month | ₹18,000 / user / month | Custom |
-| **Minimum Users** | 3 | 5 | 10 |
-| **Entities / Legal Entities** | 1 | Up to 5 | Unlimited |
-| **ERP Connectors** | 1 | Up to 3 | Unlimited |
-| **AI Agents** | CashAgent, FPAAgent | All 8 agents | All agents + custom agents |
-| **Conversational CFO Chat** | Basic | Advanced | Advanced + Voice |
-| **Board Pack Generation** | Manual trigger | Scheduled + Manual | Scheduled + Manual + API |
-| **Consolidation** | Single entity | Multi-entity | Full group consolidation |
-| **FX / Multi-currency** | No | Yes | Yes |
-| **Custom Dashboards** | 3 | 10 | Unlimited |
-| **Data Retention** | 12 months | 36 months | 7 years |
-| **API Access** | No | Read-only | Full read/write |
-| **SLA** | 99.5% | 99.9% | 99.95% |
-| **Support** | Email (48h SLA) | Priority email + chat | Dedicated CSM + 4h SLA |
-| **SSO / SAML** | No | Yes | Yes |
-| **Audit Trail** | 90 days | 1 year | 7 years |
-| **Custom Branding** | No | No | Yes |
-| **On-prem option** | No | No | Yes |
-
-### 7.2 Add-On Modules (All Tiers)
-
-| Add-On | Price |
-|---|---|
-| Additional ERP connector | ₹25,000 / month |
-| Additional legal entity | ₹5,000 / entity / month |
-| TaxAgent (GST / TDS automation) | ₹12,000 / month |
-| AuditAgent (Internal audit sampling) | ₹15,000 / month |
-| Advanced AI narrative (GPT-4 / Claude Opus) | ₹10,000 / month |
-| WhatsApp / Slack / Teams CFO briefings | ₹5,000 / month |
-| Custom report templates | ₹20,000 one-time per template |
-
-### 7.3 Implementation and Onboarding
-
-| Service | Starter | Professional | Enterprise |
-|---|---|---|---|
-| ERP Integration Setup | Self-serve | Guided (2 weeks) | Managed (4–8 weeks) |
-| Data Migration | Not included | 1 year historical | 3 years historical |
-| Training | Video library | 4 live sessions | Unlimited + train-the-trainer |
-| Implementation Fee | ₹50,000 one-time | ₹1,50,000 one-time | Custom |
+- **On-Premises Pricing & Server Requirements** → [07_Pricing_OnPrem.md](07_Pricing_OnPrem.md)
+  Perpetual + subscription license models, hardware sizing (small / medium / enterprise), software prerequisites, network requirements, support tiers, and 3-year TCO comparison.
 
 ---
 
-## 8. On-Premises Server Requirements
-
-For organizations choosing self-hosted deployment, the following minimum and recommended hardware specifications apply.
-
-### 8.1 Small Deployment (1–3 Entities, up to 20 Finance Users)
-
-| Component | Minimum | Recommended |
-|---|---|---|
-| **CPU** | 8 vCPU | 16 vCPU |
-| **RAM** | 16 GB | 32 GB |
-| **Application Disk (OS + Docker)** | 100 GB SSD | 200 GB NVMe SSD |
-| **Data Disk (PostgreSQL + MinIO)** | 500 GB SSD | 1 TB NVMe SSD |
-| **Network** | 100 Mbps | 1 Gbps |
-| **OS** | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
-| **Docker Engine** | v26+ | v26+ |
-| **Nodes** | 1 (single host) | 1 + 1 standby |
-
-### 8.2 Medium Deployment (3–10 Entities, up to 100 Finance Users)
-
-| Component | Minimum | Recommended |
-|---|---|---|
-| **CPU** | 16 vCPU | 32 vCPU |
-| **RAM** | 32 GB | 64 GB |
-| **Application Disk** | 200 GB SSD | 500 GB NVMe SSD |
-| **Data Disk (PostgreSQL + MinIO)** | 2 TB SSD | 4 TB NVMe SSD |
-| **Network** | 1 Gbps | 10 Gbps |
-| **OS** | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
-| **Docker / Kubernetes** | Docker Compose | Kubernetes (3-node) |
-| **Nodes** | 2 (app + DB separate) | 3+ node cluster |
-| **Load Balancer** | Nginx | HAProxy or F5 |
-
-### 8.3 Large / Enterprise Deployment (10+ Entities, 100+ Users, Group Consolidation)
-
-| Component | Specification |
-|---|---|
-| **Application Cluster** | 4–8 nodes, 32 vCPU / 64 GB RAM each |
-| **Database Cluster** | PostgreSQL HA with Patroni — 3 nodes (primary + 2 replicas), 32 vCPU / 128 GB RAM each |
-| **Object Storage (MinIO)** | MinIO distributed mode — 4+ nodes, 8+ drives each, minimum 20 TB raw |
-| **Redis** | Redis Sentinel or Redis Cluster — 3 nodes |
-| **Load Balancer** | Dedicated hardware LB or HA Nginx pair |
-| **Network** | 10 Gbps internal, isolated VLAN for DB nodes |
-| **Backup** | Daily snapshots to secondary storage + offsite tape / cloud backup |
-| **DR / BCP** | Hot standby in secondary DC or DR site, RPO < 1h, RTO < 4h |
-| **Kubernetes** | K8s v1.29+ recommended for large deployments |
-
-### 8.4 Software Prerequisites (All Deployment Sizes)
-
-| Software | Version | Purpose |
-|---|---|---|
-| Ubuntu Server | 22.04 LTS | Host OS |
-| Docker Engine | 26.x | Container runtime |
-| Docker Compose | v2.x | Service orchestration (small) |
-| Kubernetes | 1.29+ | Orchestration (medium/large) |
-| PostgreSQL | 16.x | Primary database |
-| Redis | 7.x | Cache and task queue |
-| MinIO | Latest stable | Object and document storage |
-| Nginx | 1.25+ | Reverse proxy |
-| Python | 3.11+ | Backend runtime |
-| Node.js | 20 LTS | Frontend build |
-
-### 8.5 Network and Security Requirements
-
-- **TLS/SSL** — Valid certificate required (internal CA accepted)
-- **Firewall rules** — Only ports 80/443 exposed externally; all inter-container traffic internal
-- **ERP network access** — Application server must reach ERP APIs / RFC endpoints
-- **Bank API access** — Outbound HTTPS to banking APIs (if cash management used)
-- **LDAP / AD integration** — Port 389/636 accessible for SSO
-- **SMTP relay** — For report delivery and alert emails
-- **Air-gapped option** — Available on request; requires offline AI model endpoint
-
-### 8.6 On-Premises Support and Maintenance
-
-| Activity | Frequency | Responsibility |
-|---|---|---|
-| Security patches | Monthly | Customer IT (vendor provides packages) |
-| Version upgrades | Quarterly | Customer IT + vendor support |
-| DB backups | Daily automated | Customer IT |
-| Health monitoring | 24x7 | Customer IT (vendor provides runbook) |
-| Incident response | On-call | Customer IT; vendor on Enterprise SLA |
-| License renewal | Annual | Vendor |
-
----
-
-## 9. Competitive Positioning
+## 8. Competitive Positioning
 
 | Dimension | CFO360 | Anaplan | Workday Adaptive | BlackLine | Oracle EPBCS |
 |---|---|---|---|---|---|
@@ -453,7 +332,7 @@ For organizations choosing self-hosted deployment, the following minimum and rec
 
 ---
 
-## 10. Indicative Roadmap
+## 9. Indicative Roadmap
 
 | Phase | Timeline | Capabilities |
 |---|---|---|
@@ -465,7 +344,7 @@ For organizations choosing self-hosted deployment, the following minimum and rec
 
 ---
 
-## 11. Summary
+## 10. Summary
 
 CFO360 transforms the Office of the CFO from a reactive reporting function into a **proactive, AI-powered financial command center**. Built on the proven i-AgentForce multi-agent platform, it is enterprise-grade, audit-ready, and deployable either as a managed SaaS or fully self-hosted on-premises solution.
 
