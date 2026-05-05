@@ -4,8 +4,17 @@ import { loginRequest } from '../config/msalConfig';
 import { User, LoginResponse } from '../types';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-const TOKEN_KEY    = 'ria_token';
-const REFRESH_KEY  = 'ria_refresh';
+const TOKEN_KEY         = 'ria_token';
+const REFRESH_KEY       = 'ria_refresh';
+const IMP_TOKEN_KEY     = 'ria_imp_token';   // impersonation token
+const IMP_USER_KEY      = 'ria_imp_user';    // impersonated user object
+
+interface ImpersonatedUser {
+  id: string;
+  email: string;
+  display_name: string | null;
+  role: string;
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -13,19 +22,35 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  // Impersonation
+  isImpersonating: boolean;
+  impersonatedUser: ImpersonatedUser | null;
+  impersonateUser: (targetUserId: string, reason?: string) => Promise<void>;
+  stopImpersonation: () => Promise<void>;
+  // Auth
   login: (email: string, password: string) => Promise<User>;
   loginSSO: () => Promise<User>;
   logout: () => void;
+  // Effective token (impersonation token when active, else regular token)
+  effectiveToken: string | null;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { instance } = useMsal();
-  const [user, setUser]           = useState<User | null>(null);
-  const [token, setToken]         = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const [user, setUser]                       = useState<User | null>(null);
+  const [token, setToken]                     = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
+  const [isLoading, setIsLoading]             = useState(true);
+  const [error, setError]                     = useState<string | null>(null);
+  const [impToken, setImpToken]               = useState<string | null>(() => localStorage.getItem(IMP_TOKEN_KEY));
+  const [impersonatedUser, setImpersonatedUser] = useState<ImpersonatedUser | null>(() => {
+    const raw = localStorage.getItem(IMP_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  });
+
+  const effectiveToken = impToken ?? token;
+  const isImpersonating = !!impToken && !!impersonatedUser;
 
   const _storeTokens = (access: string, refresh: string) => {
     localStorage.setItem(TOKEN_KEY, access);
@@ -47,7 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!stored) { setIsLoading(false); return; }
     _hydrateUser(stored)
       .then((u) => { setUser(u); setToken(stored); })
-      .catch(() => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); setToken(null); })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_KEY);
+        localStorage.removeItem(IMP_TOKEN_KEY);
+        localStorage.removeItem(IMP_USER_KEY);
+        setToken(null);
+      })
       .finally(() => setIsLoading(false));
   }, [_hydrateUser]);
 
@@ -104,14 +135,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const impersonateUser = async (targetUserId: string, reason?: string) => {
+    if (!token) throw new Error('Not authenticated');
+    const res = await fetch(`${BASE}/api/rbac/impersonate/${targetUserId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ reason: reason ?? null }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail ?? 'Impersonation failed');
+    }
+    const data = await res.json();
+    const impUser: ImpersonatedUser = data.impersonating;
+
+    localStorage.setItem(IMP_TOKEN_KEY, data.impersonation_token);
+    localStorage.setItem(IMP_USER_KEY, JSON.stringify(impUser));
+    setImpToken(data.impersonation_token);
+    setImpersonatedUser(impUser);
+  };
+
+  const stopImpersonation = async () => {
+    if (impToken) {
+      // Notify backend (best-effort — don't block on failure)
+      await fetch(`${BASE}/api/rbac/impersonate/stop`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${impToken}` },
+      }).catch(() => {});
+    }
+    localStorage.removeItem(IMP_TOKEN_KEY);
+    localStorage.removeItem(IMP_USER_KEY);
+    setImpToken(null);
+    setImpersonatedUser(null);
+  };
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(IMP_TOKEN_KEY);
+    localStorage.removeItem(IMP_USER_KEY);
     setToken(null);
     setUser(null);
+    setImpToken(null);
+    setImpersonatedUser(null);
     setError(null);
-    // Redirect handled by ProtectedRoute
-    window.location.href = '/login';
+    window.location.href = '/';
   }, []);
 
   return (
@@ -119,6 +190,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, token, isLoading,
       isAuthenticated: !!user && !!token,
       error, login, loginSSO, logout,
+      isImpersonating,
+      impersonatedUser,
+      impersonateUser,
+      stopImpersonation,
+      effectiveToken,
     }}>
       {children}
     </AuthContext.Provider>

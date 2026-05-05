@@ -94,6 +94,7 @@ const nav: NavSection[] = [
     label: 'Administration',
     adminOnly: true,
     items: [
+      { label: 'RBAC Console',       path: '/admin/rbac',             icon: '🔒' },
       { label: 'GL Mapping',        path: '/admin/mappings',         icon: '⇔' },
       { label: 'Chart of Accounts', path: '/admin/coa',             icon: '≡' },
       { label: 'Data Quality',      path: '/admin/dq',              icon: '◈' },

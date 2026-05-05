@@ -54,6 +54,7 @@ import ERPSources              from './pages/55_F055_ERPSources';
 import FieldMapping            from './pages/56_F056_FieldMapping';
 import CrossERPPL              from './pages/57_F057_CrossERPPL';
 import ConsolidatedDashboard   from './pages/58_F058_ConsolidatedDashboard';
+import RBACConsole             from './pages/60_F060_RBACConsole';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -147,6 +148,11 @@ export default function App() {
                 <Route path="/admin/tenants/:tenantId/config" element={
                   <ProtectedRoute requiredRole="isource_admin">
                     <TenantConfig />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/rbac" element={
+                  <ProtectedRoute requiredRole="isource_admin">
+                    <RBACConsole />
                   </ProtectedRoute>
                 } />
 

@@ -1,0 +1,61 @@
+# i-finsights Casbin policy seed
+# Format: p, sub, dom, obj, act
+# g lines: role inheritance (all domains via *)
+
+# ── Role hierarchy (all domains) ─────────────────────────────────────────────
+g, superadmin, ria_admin, *
+g, superadmin, isource_admin, *
+g, ria_admin, finance_user, *
+g, isource_admin, finance_user, *
+g, finance_user, viewer, *
+
+# ── viewer — read-only financial data ────────────────────────────────────────
+p, viewer, *, /api/dashboard/*, GET
+p, viewer, *, /api/analytics/*, GET
+p, viewer, *, /api/gl/*, GET
+p, viewer, *, /api/reports/*, GET
+p, viewer, *, /api/insights/*, GET
+p, viewer, *, /api/entities/*, GET
+p, viewer, *, /api/settings/me, GET
+p, viewer, *, /api/settings/me, PUT
+p, viewer, *, /health, GET
+
+# ── finance_user — same as viewer (inherits); no extra endpoints currently ───
+# (finance_user inherits all viewer policies via role hierarchy)
+
+# ── ria_admin / isource_admin — tenant + user management ─────────────────────
+p, ria_admin, *, /api/tenants/:id, GET
+p, ria_admin, *, /api/tenants/:id, PUT
+p, ria_admin, *, /api/tenants/:id/users, GET
+p, ria_admin, *, /api/tenants/:id/users, POST
+p, ria_admin, *, /api/tenants/:id/users/:uid, PUT
+p, ria_admin, *, /api/tenants/:id/users/:uid, DELETE
+p, ria_admin, *, /api/tenants/:id/logo, POST
+p, ria_admin, *, /api/tenants/:id/bc-config, GET
+p, ria_admin, *, /api/tenants/:id/bc-config, PUT
+p, ria_admin, *, /api/tenants/:id/bc-config/test, POST
+p, ria_admin, *, /api/rbac/*, GET
+p, ria_admin, *, /api/rbac/*, POST
+p, ria_admin, *, /api/rbac/*, PUT
+
+# isource_admin mirrors ria_admin
+p, isource_admin, *, /api/tenants/:id, GET
+p, isource_admin, *, /api/tenants/:id, PUT
+p, isource_admin, *, /api/tenants/:id/users, GET
+p, isource_admin, *, /api/tenants/:id/users, POST
+p, isource_admin, *, /api/tenants/:id/users/:uid, PUT
+p, isource_admin, *, /api/tenants/:id/users/:uid, DELETE
+p, isource_admin, *, /api/tenants/:id/logo, POST
+p, isource_admin, *, /api/tenants/:id/bc-config, GET
+p, isource_admin, *, /api/tenants/:id/bc-config, PUT
+p, isource_admin, *, /api/tenants/:id/bc-config/test, POST
+p, isource_admin, *, /api/rbac/*, GET
+p, isource_admin, *, /api/rbac/*, POST
+p, isource_admin, *, /api/rbac/*, PUT
+
+# ── superadmin — full platform access ────────────────────────────────────────
+p, superadmin, *, /api/tenants, GET
+p, superadmin, *, /api/tenants, POST
+p, superadmin, *, /api/tenants/:id, DELETE
+p, superadmin, *, /api/tenants/:id/users/:uid/activate, POST
+p, superadmin, *, /api/*, *

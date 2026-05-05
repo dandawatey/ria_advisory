@@ -5,6 +5,9 @@ Docs at   http://localhost:8000/docs
 """
 
 import os
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,12 +16,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from routers import dashboard, entities, gl, analytics, insights, reports, settings, auth, tenants, budgets, investments
-from routers import erp_sources, mapping, freshness, cross_erp, consolidated
+from routers import erp_sources, mapping, freshness, cross_erp, consolidated, account_groups
+from routers import rbac
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup — initialise Casbin enforcer
+    try:
+        from casbin_enforcer import init_enforcer
+        init_enforcer()
+        logger.info("Casbin RBAC enforcer ready")
+    except Exception as exc:
+        logger.warning("Casbin enforcer init failed (non-fatal): %s", exc)
+    yield
+    # Shutdown — nothing to clean up
+
 
 app = FastAPI(
     title="UFIP API",
     description="Unified Financial Intelligence Platform — RIA Advisory",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Allow origins: comma-separated ALLOWED_ORIGINS env var overrides defaults
@@ -58,6 +79,8 @@ app.include_router(mapping.router)
 app.include_router(freshness.router)
 app.include_router(cross_erp.router)
 app.include_router(consolidated.router)
+app.include_router(account_groups.router)
+app.include_router(rbac.router)
 
 
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
+import { ImpersonationBanner } from '../shared/ImpersonationBanner';
 
 function initials(name: string | null | undefined, email: string): string {
   if (name) {
@@ -23,8 +24,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function AppShell() {
-  const { user, logout }   = useAuth();
-  const { tenant }         = useTenant();
+  const { user, logout, isImpersonating } = useAuth();
+  const { tenant }                        = useTenant();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const displayName  = user?.display_name ?? user?.email ?? 'User';
@@ -33,7 +34,8 @@ export function AppShell() {
   const tenantLabel  = tenant?.name ?? user?.tenant_name ?? 'RIA Advisory';
 
   return (
-    <div className="app-layout">
+    <div className="app-layout" style={{ paddingTop: isImpersonating ? 40 : 0 }}>
+      <ImpersonationBanner />
       <Sidebar />
       <div className="app-main">
         <header className="app-header">
