@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>i-CFO360 Platform Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal-dark:   #0F3F3C;
+      --teal:        #1A6B66;
+      --teal-light:  #26A69A;
+      --coral:       #E8443B;
+      --coral-light: #F07167;
+      --amber:       #F59E0B;
+      --amber-light: #FCD34D;
+      --blue:        #1E40AF;
+      --blue-light:  #3B82F6;
+      --blue-pale:   #DBEAFE;
+      --purple:      #6D28D9;
+      --purple-light:#8B5CF6;
+      --green:       #065F46;
+      --green-light: #10B981;
+      --slate-900:   #0F172A;
+      --slate-800:   #1E293B;
+      --slate-700:   #334155;
+      --slate-600:   #475569;
+      --slate-400:   #94A3B8;
+      --slate-200:   #E2E8F0;
+      --white:       #FFFFFF;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--slate-900);
+      color: var(--white);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--teal-dark) 0%, #0a2e2c 60%, #071a19 100%);
+      border-bottom: 2px solid var(--teal-light);
+      padding: 28px 40px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left {}
+    .header-badge {
+      display: inline-block;
+      background: var(--coral);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+    header h1 span { color: var(--teal-light); }
+    .header-sub {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--slate-400);
+      letter-spacing: 0.3px;
+    }
+    .header-meta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--slate-400);
+      line-height: 1.8;
+    }
+    .header-meta strong { color: var(--teal-light); }
+
+    /* ── MAIN DIAGRAM WRAPPER ── */
+    .diagram-wrap {
+      padding: 32px 40px 24px;
+      overflow-x: auto;
+    }
+
+    /* ── SWIM LANE LAYOUT ── */
+    .swim-lanes {
+      display: grid;
+      grid-template-columns: 280px 540px 340px;
+      gap: 0;
+      min-width: 1160px;
+      position: relative;
+    }
+
+    .lane {
+      border-top: 3px solid;
+      padding-top: 0;
+      position: relative;
+    }
+    .lane-client    { border-color: var(--blue-light); }
+    .lane-app       { border-color: var(--teal-light); }
+    .lane-data      { border-color: var(--coral); }
+
+    .lane-header {
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 20px;
+    }
+    .lane-client .lane-header  { background: rgba(59,130,246,0.12); color: var(--blue-light); }
+    .lane-app    .lane-header  { background: rgba(26,107,102,0.15); color: var(--teal-light); }
+    .lane-data   .lane-header  { background: rgba(232,68,59,0.12);  color: var(--coral-light); }
+
+    .lane-content { padding: 0 14px 20px; }
+
+    /* ── COMPONENT BOXES ── */
+    .box {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      filter: brightness(1.08);
+    }
+    .box-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .box-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .box-list {
+      list-style: none;
+      padding: 0;
+    }
+    .box-list li {
+      font-size: 11.5px;
+      color: rgba(255,255,255,0.78);
+      padding: 2px 0;
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .box-list li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* Box color themes */
+    .box-browser  { background: linear-gradient(135deg, #1e3a5f 0%, #162d4a 100%); }
+    .box-browser .box-icon { background: var(--blue-light); color: #fff; }
+
+    .box-pages    { background: linear-gradient(135deg, #1a3050 0%, #122440 100%); }
+    .box-pages .box-icon { background: #2563EB; color: #fff; }
+
+    .box-auth     { background: linear-gradient(135deg, #2d1b4e 0%, #1f1238 100%); }
+    .box-auth .box-icon { background: var(--purple-light); color: #fff; }
+
+    .box-fastapi  { background: linear-gradient(135deg, #0f3f3c 0%, #0a2e2c 100%); }
+    .box-fastapi .box-icon { background: var(--teal-light); color: #fff; }
+
+    .box-worker   { background: linear-gradient(135deg, #1a4d2e 0%, #0f3320 100%); }
+    .box-worker .box-icon { background: var(--green-light); color: #fff; }
+
+    .box-routers  { background: linear-gradient(135deg, #1f3a20 0%, #152a16 100%); }
+    .box-routers .box-icon { background: #22c55e; color: #fff; }
+
+    .box-services { background: linear-gradient(135deg, #243a1a 0%, #192c11 100%); }
+    .box-services .box-icon { background: #84cc16; color: #fff; }
+
+    .box-connectors { background: linear-gradient(135deg, #2a3a1a 0%, #1c2c0e 100%); }
+    .box-connectors .box-icon { background: #a3e635; color: #333; }
+
+    .box-infra    { background: linear-gradient(135deg, #3b2200 0%, #2a1800 100%); }
+    .box-infra .box-icon { background: var(--amber); color: #333; }
+
+    .box-pg       { background: linear-gradient(135deg, #1c1a3a 0%, #12102a 100%); }
+    .box-pg .box-icon { background: #818cf8; color: #fff; }
+
+    .box-domain   { background: linear-gradient(135deg, #1a1a3a 0%, #111128 100%); border: 1px solid rgba(129,140,248,0.2); }
+    .box-domain .box-icon { background: #4f46e5; color: #fff; }
+
+    .box-erp-int  { background: linear-gradient(135deg, #1f3a1a 0%, #142a10 100%); border: 1px solid rgba(34,197,94,0.2); }
+    .box-erp-int .box-icon { background: #16a34a; color: #fff; }
+
+    .box-coa      { background: linear-gradient(135deg, #1a1f3a 0%, #111428 100%); border: 1px solid rgba(99,102,241,0.2); }
+    .box-coa .box-icon { background: #6366f1; color: #fff; }
+
+    .box-plan     { background: linear-gradient(135deg, #2a1f00 0%, #1c1500 100%); border: 1px solid rgba(245,158,11,0.2); }
+    .box-plan .box-icon { background: var(--amber); color: #333; }
+
+    .box-azure    { background: linear-gradient(135deg, #0a2a5c 0%, #071e44 100%); border: 1px solid rgba(59,130,246,0.3); }
+    .box-azure .box-icon { background: #0078d4; color: #fff; }
+
+    .box-bc-ext   { background: linear-gradient(135deg, #002a1a 0%, #001a10 100%); border: 1px solid rgba(16,185,129,0.3); }
+    .box-bc-ext .box-icon { background: #10b981; color: #fff; }
+
+    /* Sub-lane divider inside app lane */
+    .app-sub-lanes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .app-sub-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(38,166,154,0.6);
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed rgba(38,166,154,0.2);
+    }
+
+    /* ── ARROW SVG ── */
+    .arrows-svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    /* ── TOOLTIP ── */
+    #tooltip {
+      display: none;
+      position: fixed;
+      background: var(--slate-800);
+      border: 1px solid var(--teal-light);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--slate-200);
+      max-width: 280px;
+      line-height: 1.6;
+      z-index: 9999;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    #tooltip strong {
+      display: block;
+      color: var(--teal-light);
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    /* ── FLOW ARROWS LEGEND ── */
+    .flows-section {
+      padding: 20px 40px 0;
+    }
+    .flows-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--slate-400);
+      margin-bottom: 14px;
+    }
+    .flows-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+    }
+    .flow-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--slate-400);
+    }
+    .flow-line {
+      width: 36px;
+      height: 2px;
+      border-radius: 2px;
+      position: relative;
+    }
+    .flow-line::after {
+      content: '';
+      position: absolute;
+      right: -1px;
+      top: -4px;
+      border-left: 8px solid currentColor;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+    .flow-solid  { background: var(--teal-light); }
+    .flow-solid::after { color: var(--teal-light); border-left-color: var(--teal-light); }
+    .flow-blue   { background: var(--blue-light); }
+    .flow-blue::after  { border-left-color: var(--blue-light); }
+    .flow-coral  { background: var(--coral); }
+    .flow-coral::after { border-left-color: var(--coral); }
+    .flow-amber  { background: var(--amber); }
+    .flow-amber::after { border-left-color: var(--amber); }
+    .flow-dashed { background: transparent; border-top: 2px dashed var(--green-light); }
+    .flow-dashed::after { border-left-color: var(--green-light); }
+
+    /* ── COLOR LEGEND ── */
+    .legend-section {
+      padding: 20px 40px 10px;
+    }
+    .legend-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--slate-400);
+      margin-bottom: 14px;
+    }
+    .legend-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--slate-400);
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 20px;
+      padding: 16px 40px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--slate-600);
+    }
+    footer strong { color: var(--slate-400); }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      margin: 8px 40px;
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) {
+      .diagram-wrap { padding: 20px 16px; }
+      header { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════ -->
+<header>
+  <div class="header-left">
+    <div class="header-badge">Platform Architecture</div>
+    <h1><span>i-CFO360</span> Platform Architecture</h1>
+    <div class="header-sub">React 18 + TypeScript &nbsp;→&nbsp; FastAPI (Python) &nbsp;→&nbsp; PostgreSQL (41 tables, 7 domains)</div>
+  </div>
+  <div class="header-meta">
+    <div><strong>Version:</strong> 2.0</div>
+    <div><strong>Updated:</strong> 2026-05-06</div>
+    <div><strong>Tickets:</strong> IC-38 · IC-39 · IC-40 · IC-41 · IC-42</div>
+    <div><strong>Frontend:</strong> localhost:4002</div>
+    <div><strong>Backend:</strong> localhost:8000</div>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════════
+     SWIM LANE DIAGRAM
+══════════════════════════════════════════════════ -->
+<div class="diagram-wrap">
+  <div class="swim-lanes" id="swimLanes">
+
+    <!-- ── LANE 1: CLIENT ── -->
+    <div class="lane lane-client">
+      <div class="lane-header">Client Layer</div>
+      <div class="lane-content">
+
+        <div class="box box-browser" id="box-browser"
+          data-tip-title="Browser (React 18 + TypeScript)"
+          data-tip="Vite 5.3.4 build tool. Dev server: http://localhost:4002. Production: nginx on self-hosted VM (IC-39 — pending docker-compose.prod.yml).">
+          <div class="box-title">
+            <div class="box-icon">🌐</div>
+            Browser / SPA
+          </div>
+          <ul class="box-list">
+            <li>React 18.3.1 + TypeScript 5.5.3</li>
+            <li>Vite 5.3.4 build tool</li>
+            <li>React Router 6.26 (SPA)</li>
+            <li>Recharts 2.12.7 (charts)</li>
+            <li>Framer Motion (animations)</li>
+            <li>PowerBI client 2.23.1</li>
+          </ul>
+        </div>
+
+        <div class="box box-pages" id="box-pages"
+          data-tip-title="61 Page Components (F000–F061)"
+          data-tip="Pages grouped: Pipeline/ETL (F000–F013), Login (F014), Executive &amp; Explorer (F015–F019), Financial Reports &amp; Analytics (F020–F046), Admin &amp; Tenants (F049–F054), ERP Integration &amp; RBAC (F055–F061).">
+          <div class="box-title">
+            <div class="box-icon">📄</div>
+            61 Pages (F000–F061)
+          </div>
+          <ul class="box-list">
+            <li>Executive Dashboard · CFO Ratios</li>
+            <li>Health Score · 360° View</li>
+            <li>P&amp;L · Balance Sheet · Cash Flow</li>
+            <li>Trial Balance · KPI Dashboard</li>
+            <li>GL Mapping Console</li>
+            <li>RBAC Console · Tenant Hub</li>
+            <li>ERP Sources · Cross-ERP P&amp;L</li>
+          </ul>
+        </div>
+
+        <div class="box box-auth" id="box-msal"
+          data-tip-title="Azure MSAL SSO (Entra ID)"
+          data-tip="@azure/msal-browser 3.14.0 + @azure/msal-react 2.0.22. MSAL completes Entra ID OAuth2 flow → id_token sent to /auth/sso → backend issues JWT. Config in src/config/msalConfig.ts.">
+          <div class="box-title">
+            <div class="box-icon">🔐</div>
+            Azure MSAL SSO
+          </div>
+          <ul class="box-list">
+            <li>Entra ID OAuth2 flow</li>
+            <li>id_token → /auth/sso</li>
+            <li>AuthContext + TenantContext</li>
+            <li>ProtectedRoute (role guards)</li>
+          </ul>
+        </div>
+
+        <div class="box box-pages" id="box-components"
+          data-tip-title="Shared Components"
+          data-tip="Key shared components: FreshnessIndicator (on every dashboard — shows last sync time), ERPSourceBadge, KPITile, StatusBadge, AppShell, Sidebar. All follow Rule 08 frontend standards.">
+          <div class="box-title">
+            <div class="box-icon">🧩</div>
+            Shared Components
+          </div>
+          <ul class="box-list">
+            <li>FreshnessIndicator (every dashboard)</li>
+            <li>ERPSourceBadge (BC/SAP/Odoo)</li>
+            <li>KPITile · StatusBadge</li>
+            <li>AppShell · Sidebar (nav)</li>
+            <li>i-CFO360 SVG logo (IC-38)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div><!-- /lane-client -->
+
+
+    <!-- ── LANE 2: APPLICATION ── -->
+    <div class="lane lane-app">
+      <div class="lane-header">Application Layer</div>
+      <div class="lane-content">
+        <div class="app-sub-lanes">
+
+          <!-- LEFT: FastAPI -->
+          <div>
+            <div class="app-sub-label">FastAPI Backend</div>
+
+            <div class="box box-fastapi" id="box-fastapi"
+              data-tip-title="FastAPI (Python 3.12)"
+              data-tip="FastAPI 0.111.0 + Uvicorn 0.30.1. CORS reads from ALLOWED_ORIGINS env var (IC-39 fix). 21 routers mounted. APScheduler BackgroundScheduler runs in lifespan context. All DB queries via database.query() helper using parameterized psycopg2.">
+              <div class="box-title">
+                <div class="box-icon">⚡</div>
+                FastAPI App
+              </div>
+              <ul class="box-list">
+                <li>FastAPI 0.111.0</li>
+                <li>Uvicorn 0.30.1 ASGI</li>
+                <li>CORS: ALLOWED_ORIGINS env</li>
+                <li>APScheduler lifespan hook</li>
+                <li>psycopg2-binary 2.9.9</li>
+              </ul>
+            </div>
+
+            <div class="box box-auth" id="box-rbac"
+              data-tip-title="Auth &amp; RBAC (JWT + Casbin)"
+              data-tip="JWT (HS256, 60-min access + 7-day refresh). bcrypt password hashing. Casbin RBAC enforcer using casbin_rule table. 5 role levels: superadmin › ria_admin › isource_admin › finance_user › viewer. Dependency injection pattern for every endpoint.">
+              <div class="box-title">
+                <div class="box-icon">🛡</div>
+                Auth &amp; RBAC
+              </div>
+              <ul class="box-list">
+                <li>JWT HS256 (60min / 7day)</li>
+                <li>Casbin RBAC enforcer</li>
+                <li>5 role levels</li>
+                <li>bcrypt password hash</li>
+                <li>Tenant isolation per query</li>
+              </ul>
+            </div>
+
+            <div class="box box-routers" id="box-routers"
+              data-tip-title="21 API Routers"
+              data-tip="auth · tenants · dashboard · analytics · gl · reports · insights · entities · settings · canonical · mapping · rbac · freshness · consolidated · cross_erp · erp_sources · budgets · investments · account_groups">
+              <div class="box-title">
+                <div class="box-icon">🔀</div>
+                21 API Routers
+              </div>
+              <ul class="box-list">
+                <li>/auth  /tenants  /dashboard</li>
+                <li>/analytics  /gl  /reports</li>
+                <li>/rbac  /canonical  /mapping</li>
+                <li>/freshness  /consolidated</li>
+                <li>/cross_erp  /erp_sources</li>
+                <li>/budgets  /investments</li>
+              </ul>
+            </div>
+
+            <div class="box box-services" id="box-services"
+              data-tip-title="Backend Services"
+              data-tip="Service layer: freshness_service (DataFreshnessService — SQL fix IC-40), consolidated_dashboard, cross_erp_pl, health_monitor, currency, vault, dimension_mapper, mapping_service, incremental_sync, sync_alerts, sync_scheduler, audit_trail.">
+              <div class="box-title">
+                <div class="box-icon">⚙️</div>
+                Services Layer
+              </div>
+              <ul class="box-list">
+                <li>freshness_service (SQL fixed)</li>
+                <li>consolidated_dashboard</li>
+                <li>cross_erp_pl · currency</li>
+                <li>health_monitor · vault</li>
+                <li>mapping_service</li>
+                <li>audit_trail</li>
+              </ul>
+            </div>
+
+          </div><!-- /left -->
+
+          <!-- RIGHT: Infrastructure + Worker + Connectors -->
+          <div>
+            <div class="app-sub-label">Workers &amp; Infra</div>
+
+            <div class="box box-worker" id="box-worker"
+              data-tip-title="BC Scheduled Sync Worker (IC-40)"
+              data-tip="APScheduler BackgroundScheduler. Runs bc_sync_job() every 15 minutes. Watermark pattern: reads last_sync_watermark from fact_sync_log → fetches only new entries from BC Dynamics OData API. Normalizes via account_normalizer → upserts to fact_gl_normalized. Logs run stats to fact_sync_log (migration 008).">
+              <div class="box-title">
+                <div class="box-icon">⏱</div>
+                BC Sync Worker (IC-40)
+              </div>
+              <ul class="box-list">
+                <li>APScheduler 15-min interval</li>
+                <li>Watermark incremental fetch</li>
+                <li>→ fact_gl_normalized upsert</li>
+                <li>→ fact_sync_log (migration 008)</li>
+                <li>Graceful stop on shutdown</li>
+              </ul>
+            </div>
+
+            <div class="box box-connectors" id="box-connectors"
+              data-tip-title="ERP Connectors"
+              data-tip="bc_connector.py: BC Dynamics 365 OData v2.0, OAuth2 client credentials, paginated async generator, 1000-row batch, debit-positive normalization. odoo_connector.py + sap_connector.py: stub implementations (roadmap). All extend ERPConnector ABC in base.py.">
+              <div class="box-title">
+                <div class="box-icon">🔌</div>
+                ERP Connectors
+              </div>
+              <ul class="box-list">
+                <li>bc_connector.py (active)</li>
+                <li>odoo_connector.py (stub)</li>
+                <li>sap_connector.py (stub)</li>
+                <li>ERPConnector ABC (base.py)</li>
+                <li>Debit-positive normalization</li>
+              </ul>
+            </div>
+
+            <div class="box box-infra" id="box-infra"
+              data-tip-title="Infrastructure"
+              data-tip="Docker Compose for local dev (docker-compose.yml). Production: docker-compose.prod.yml PENDING (IC-39 — Neha_DevOps_006). Migrations: 008 SQL files via db_migrate.py. ETL scripts in 03_Backend/etl/ for manual data loads.">
+              <div class="box-title">
+                <div class="box-icon">🐳</div>
+                Docker &amp; Infra
+              </div>
+              <ul class="box-list">
+                <li>docker-compose.yml (local)</li>
+                <li>docker-compose.prod.yml (PENDING)</li>
+                <li>008 migration files</li>
+                <li>ETL scripts (etl/)</li>
+                <li>Playwright E2E (05_Tests/)</li>
+              </ul>
+            </div>
+
+            <div class="box box-services" id="box-etl"
+              data-tip-title="ETL Pipeline"
+              data-tip="Manual ETL pipeline: Bronze (gl_unified raw append-only) → Silver (deduplicate, type-cast, date standardize) → Gold (fact_gl_entries star schema). Triggered via ETL scripts in 03_Backend/etl/. Distinct from the automated BC Sync Worker path.">
+              <div class="box-title">
+                <div class="box-icon">🔄</div>
+                ETL Pipeline
+              </div>
+              <ul class="box-list">
+                <li>Bronze: gl_unified (raw)</li>
+                <li>Silver: dedup + normalize</li>
+                <li>Gold: fact_gl_entries (star)</li>
+                <li>CoA mapping (99.8% coverage)</li>
+              </ul>
+            </div>
+
+          </div><!-- /right -->
+        </div><!-- /app-sub-lanes -->
+      </div>
+    </div><!-- /lane-app -->
+
+
+    <!-- ── LANE 3: DATA ── -->
+    <div class="lane lane-data">
+      <div class="lane-header">Data Layer</div>
+      <div class="lane-content">
+
+        <div class="box box-pg" id="box-pg"
+          data-tip-title="PostgreSQL: ria_advisory"
+          data-tip="41 tables across 7 domains. All financial amounts: DECIMAL(20,4). All tables with client data have tenant_id UUID. fact_sync_log + fact_audit_log are append-only (REVOKE DELETE at DB init). Parameterized queries only — no string concatenation.">
+          <div class="box-title">
+            <div class="box-icon">🐘</div>
+            PostgreSQL ria_advisory
+          </div>
+          <ul class="box-list">
+            <li>41 tables · 7 domains</li>
+            <li>DECIMAL(20,4) for money</li>
+            <li>Row-level tenant isolation</li>
+            <li>Migrations 001–008</li>
+          </ul>
+        </div>
+
+        <div class="box box-domain" id="box-auth-db"
+          data-tip-title="Auth &amp; Tenancy Domain"
+          data-tip="tenants (UUID PK, slug UNIQUE, plan, status, settings JSONB). users (UUID PK, email, password_hash, role, tenant_id FK, azure_oid). casbin_rule (ptype, v0–v5) for Casbin RBAC. 5 role levels: superadmin / ria_admin / isource_admin / finance_user / viewer.">
+          <div class="box-title">
+            <div class="box-icon">👥</div>
+            Auth &amp; Tenancy
+          </div>
+          <ul class="box-list">
+            <li>tenants · users</li>
+            <li>casbin_rule (RBAC)</li>
+          </ul>
+        </div>
+
+        <div class="box box-erp-int" id="box-erp-db"
+          data-tip-title="ERP Integration Domain"
+          data-tip="dim_erp_source: registered ERP connections. tenant_bc_config: BC OAuth credentials per tenant (client_secret: encrypt in prod). fact_sync_log: append-only sync run log, extended by migration 008 with worker_run_id, records_fetched, records_upserted, last_sync_watermark, error_detail, sync_duration_ms.">
+          <div class="box-title">
+            <div class="box-icon">🔗</div>
+            ERP Integration
+          </div>
+          <ul class="box-list">
+            <li>dim_erp_source</li>
+            <li>tenant_bc_config</li>
+            <li>fact_sync_log (ext. m008)</li>
+            <li>fact_gl_normalized (IC-40)</li>
+          </ul>
+        </div>
+
+        <div class="box box-domain" id="box-star-db"
+          data-tip-title="Star Schema GL (Gold Layer)"
+          data-tip="fact_gl_entries: central fact table (188K+ rows). dim_company (17 subsidiaries), dim_account (474 accounts), dim_date (282 days), dim_currency (8), dim_document (36 types), dim_posting_group (19), dim_department (32), dim_counterparty (967), dim_project (44), dim_geo (3 regions).">
+          <div class="box-title">
+            <div class="box-icon">⭐</div>
+            Star Schema GL
+          </div>
+          <ul class="box-list">
+            <li>fact_gl_entries (188K rows)</li>
+            <li>dim_company · dim_account</li>
+            <li>dim_date · dim_currency</li>
+            <li>dim_document · dim_dept</li>
+            <li>dim_counterparty · dim_project</li>
+          </ul>
+        </div>
+
+        <div class="box box-coa" id="box-coa-db"
+          data-tip-title="Canonical CoA Domain (IC-37)"
+          data-tip="dim_canonical_account: 45 rows, 4-level hierarchy (L1: Statement, L2: Category, L3: Subcategory, L4: Source). account_mapping: 1068 rows, 99.8% coverage mapping ERP-native accounts to canonical. Powers all cross-entity P&amp;L and Balance Sheet reporting.">
+          <div class="box-title">
+            <div class="box-icon">📊</div>
+            Canonical CoA
+          </div>
+          <ul class="box-list">
+            <li>dim_canonical_account (45 rows)</li>
+            <li>account_mapping (1068 rows)</li>
+            <li>99.8% coverage</li>
+            <li>L1/L2/L3/L4 hierarchy</li>
+          </ul>
+        </div>
+
+        <div class="box box-plan" id="box-plan-db"
+          data-tip-title="Planning Domain"
+          data-tip="budgets: multi-dimensional budget entries per tenant, account, period. investments: investment tracking per entity. account_groups: custom grouping hierarchy for reporting. All scoped by tenant_id.">
+          <div class="box-title">
+            <div class="box-icon">📋</div>
+            Planning
+          </div>
+          <ul class="box-list">
+            <li>budgets (migration 003)</li>
+            <li>investments (migration 003)</li>
+            <li>account_groups (migration 004)</li>
+          </ul>
+        </div>
+
+        <div class="box box-azure" id="box-azure-ext"
+          data-tip-title="Azure AD (External)"
+          data-tip="Azure Active Directory / Entra ID. Used for: (1) MSAL SSO — browser redirects here for OAuth2 login, returns id_token. (2) BC OAuth2 — client credentials grant for BC Dynamics API access. Token validation in auth_utils.py.">
+          <div class="box-title">
+            <div class="box-icon">☁️</div>
+            Azure AD (Entra ID)
+          </div>
+          <ul class="box-list">
+            <li>MSAL SSO token endpoint</li>
+            <li>BC OAuth2 client credentials</li>
+          </ul>
+        </div>
+
+        <div class="box box-bc-ext" id="box-bc-ext"
+          data-tip-title="BC Dynamics 365 (External)"
+          data-tip="Microsoft Dynamics 365 Business Central OData v2.0 API. Called by bc_sync_worker every 15 minutes (IC-40). Filter: postingDate ne null (posted entries only). Batch size: 1000 rows. Incremental via watermark timestamp. Debit-positive normalization applied.">
+          <div class="box-title">
+            <div class="box-icon">🏢</div>
+            BC Dynamics 365
+          </div>
+          <ul class="box-list">
+            <li>OData v2.0 API</li>
+            <li>15-min pull (IC-40)</li>
+            <li>Posted entries only</li>
+            <li>1000-row batch</li>
+          </ul>
+        </div>
+
+      </div>
+    </div><!-- /lane-data -->
+
+  </div><!-- /swim-lanes -->
+</div><!-- /diagram-wrap -->
+
+
+<!-- ══════════════════════════════════════════════════
+     DATA FLOWS
+══════════════════════════════════════════════════ -->
+<hr class="section-divider" />
+<div class="flows-section">
+  <div class="flows-title">Data Flows &amp; Connections</div>
+  <div class="flows-grid">
+    <div class="flow-item">
+      <div class="flow-line flow-blue"></div>
+      <span>Browser → FastAPI: HTTPS REST (JWT Bearer)</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-blue"></div>
+      <span>Browser → Azure AD: MSAL OAuth2 SSO</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-solid"></div>
+      <span>FastAPI → PostgreSQL: psycopg2 parameterized queries</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-coral"></div>
+      <span>FastAPI Auth → Azure AD: JWT token validation</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-amber"></div>
+      <span>BC Sync Worker → BC Dynamics OData: 15-min incremental pull</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-amber"></div>
+      <span>BC Sync Worker → fact_gl_normalized: watermark upsert</span>
+    </div>
+    <div class="flow-item">
+      <div class="flow-line flow-dashed"></div>
+      <span>fact_gl_entries → Dashboards: aggregated query (dotted = read-only)</span>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider" />
+
+<!-- ══════════════════════════════════════════════════
+     COLOR LEGEND
+══════════════════════════════════════════════════ -->
+<div class="legend-section">
+  <div class="legend-title">Component Domains</div>
+  <div class="legend-grid">
+    <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f;border:1px solid #3B82F6"></div>Browser / SPA / UI Components</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0f3f3c;border:1px solid #26A69A"></div>FastAPI Core (App + CORS + Lifespan)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2d1b4e;border:1px solid #8B5CF6"></div>Auth, RBAC &amp; Security (Casbin + JWT)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a4d2e;border:1px solid #10B981"></div>BC Sync Worker (APScheduler)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1f3a20;border:1px solid #22c55e"></div>API Routers (21 modules)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#243a1a;border:1px solid #84cc16"></div>Service Layer (business logic)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2a3a1a;border:1px solid #a3e635"></div>ERP Connectors (BC / SAP / Odoo)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3b2200;border:1px solid #F59E0B"></div>Infrastructure (Docker + ETL)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1c1a3a;border:1px solid #818cf8"></div>PostgreSQL — Core Schema</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a1a3a;border:1px solid #4f46e5"></div>PostgreSQL — Auth &amp; Tenancy Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1f3a1a;border:1px solid #16a34a"></div>PostgreSQL — ERP Integration Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#1a1f3a;border:1px solid #6366f1"></div>PostgreSQL — Canonical CoA Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2a1f00;border:1px solid #F59E0B"></div>PostgreSQL — Planning Domain</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0a2a5c;border:1px solid #3B82F6"></div>Azure AD (External)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#002a1a;border:1px solid #10b981"></div>BC Dynamics 365 (External)</div>
+  </div>
+</div>
+
+<hr class="section-divider" />
+
+<!-- ══════════════════════════════════════════════════
+     MIGRATION TABLE
+══════════════════════════════════════════════════ -->
+<div class="legend-section" style="padding-bottom:20px;">
+  <div class="legend-title">Migration Sequence</div>
+  <table style="border-collapse:collapse;font-size:12px;color:var(--slate-400);width:100%;max-width:700px;">
+    <thead>
+      <tr style="color:var(--teal-light);border-bottom:1px solid rgba(38,166,154,0.3);">
+        <th style="text-align:left;padding:6px 12px 6px 0;">#</th>
+        <th style="text-align:left;padding:6px 12px;">File</th>
+        <th style="text-align:left;padding:6px 12px;">Covers</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:5px 12px 5px 0;">001</td><td style="padding:5px 12px;">auth_tenant.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Initial tenants + users schema</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">002</td><td style="padding:5px 12px;">roles_tenant_config.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Roles, tenant_bc_config</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">003</td><td style="padding:5px 12px;">budgets_investments.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Budgets + investments tables</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">004</td><td style="padding:5px 12px;">account_groups.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Account group hierarchy</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">005</td><td style="padding:5px 12px;">casbin_rbac.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Casbin rule table for RBAC enforcer</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">006</td><td style="padding:5px 12px;">company_tenant.sql</td><td style="padding:5px 12px;color:var(--slate-200);">Company ↔ tenant FK mapping</td></tr>
+      <tr><td style="padding:5px 12px 5px 0;">007</td><td style="padding:5px 12px;">canonical_model.sql</td><td style="padding:5px 12px;color:var(--slate-200);">dim_canonical_account + account_mapping (IC-37)</td></tr>
+      <tr style="color:var(--teal-light);"><td style="padding:5px 12px 5px 0;">008</td><td style="padding:5px 12px;">sync_worker.sql</td><td style="padding:5px 12px;color:var(--white);">Extended fact_sync_log — 6 new columns (IC-40)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════ -->
+<footer>
+  <div>Auto-generated 2026-05-06 &nbsp;|&nbsp; <strong>Meera_Architect_002</strong> &nbsp;|&nbsp; i-CFO360 Platform v2.0</div>
+  <div style="color:var(--slate-600);">Hover any component box for details &nbsp;·&nbsp; IC-38 · IC-39 · IC-40 · IC-41 · IC-42</div>
+</footer>
+
+<!-- ══════════════════════════════════════════════════
+     TOOLTIP ELEMENT
+══════════════════════════════════════════════════ -->
+<div id="tooltip"></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     INTERACTIONS
+══════════════════════════════════════════════════ -->
+<script>
+(function() {
+  const tooltip = document.getElementById('tooltip');
+  const boxes = document.querySelectorAll('.box[data-tip-title]');
+
+  boxes.forEach(function(box) {
+    box.addEventListener('mouseenter', function(e) {
+      const title = box.getAttribute('data-tip-title');
+      const desc  = box.getAttribute('data-tip');
+      tooltip.innerHTML = '<strong>' + title + '</strong>' + desc;
+      tooltip.style.display = 'block';
+      positionTooltip(e);
+    });
+
+    box.addEventListener('mousemove', function(e) {
+      positionTooltip(e);
+    });
+
+    box.addEventListener('mouseleave', function() {
+      tooltip.style.display = 'none';
+    });
+  });
+
+  function positionTooltip(e) {
+    const tw = 280;
+    const th = 100; // approx
+    let x = e.clientX + 14;
+    let y = e.clientY + 14;
+    if (x + tw > window.innerWidth - 10) {
+      x = e.clientX - tw - 14;
+    }
+    if (y + th > window.innerHeight - 10) {
+      y = e.clientY - th - 14;
+    }
+    tooltip.style.left = x + 'px';
+    tooltip.style.top  = y + 'px';
+  }
+
+  // Highlight group on hover
+  boxes.forEach(function(box) {
+    box.addEventListener('mouseenter', function() {
+      box.style.zIndex = '10';
+    });
+    box.addEventListener('mouseleave', function() {
+      box.style.zIndex = '';
+    });
+  });
+})();
+</script>
+</body>
+</html>

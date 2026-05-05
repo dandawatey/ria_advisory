@@ -444,3 +444,256 @@ npx playwright test --headed
 | BC integration | OData v2.0 + OAuth | Microsoft's supported API; certificate-based = no passwords |
 | Charts | Recharts | React-native, customisable, no licensing cost |
 | Deployment | Netlify + BYOB backend | Zero frontend ops; backend scales independently |
+
+---
+
+## Update 2026-05-06
+
+**Updated by:** Meera_Architect_002
+**Tickets:** IC-38, IC-39, IC-40, IC-41, IC-42
+**Status:** Active
+
+### IC-38 — Brand Identity: i-CFO360 SVG Logo System
+
+Platform rebranded from **i-finsights → i-CFO360**. New SVG logo assets added to `02_Frontend/src/assets/`:
+
+| File | Purpose |
+|------|---------|
+| `icfo360-mark.svg` | Primary brand mark (square logomark) |
+| `ifinsights-logo.svg` | Updated wordmark (full logo with tagline) |
+
+Logo renders in Sidebar header and AppShellBlank (login/landing). All references to "i-finsights" in UI headings replaced with "i-CFO360".
+
+---
+
+### IC-39 — Deployment Migration: Netlify Removed → Self-Hosted VM
+
+Netlify deployment retired. Target deployment: **self-hosted VM** via Docker Compose.
+
+- `netlify.toml` retained in repo but no longer active
+- `docker-compose.prod.yml` **pending creation** (Neha_DevOps_006 backlog)
+- CORS configuration updated: `main.py` now reads allowed origins from `ALLOWED_ORIGINS` env var (comma-separated list) instead of hardcoded Netlify URL
+- Dev server: frontend remains at `http://localhost:4002` (Vite port updated from 5173)
+- Backend: `http://localhost:8000` (unchanged)
+
+**Updated env vars:**
+```
+ALLOWED_ORIGINS=http://localhost:4002,https://your-vm-domain.com
+```
+
+**Deployment target state:**
+```
+VM (Ubuntu 22.04 LTS)
+  ├── docker-compose.prod.yml  ← PENDING IC-39
+  │     ├── ria-frontend   (nginx serving Vite build, port 80/443)
+  │     └── ria-backend    (uvicorn, port 8000)
+  └── PostgreSQL (managed or local container)
+```
+
+---
+
+### IC-40 — BC Scheduled Sync Worker (APScheduler)
+
+**New component:** `03_Backend/workers/bc_sync_worker.py`
+
+Architecture:
+
+```
+APScheduler BackgroundScheduler
+  └── bc_sync_job() — runs every 15 minutes
+        ├── Reads tenant_bc_config for all active tenants
+        ├── Calls bc_connector.fetch_gl_entries(from_watermark)
+        │     └── BC Dynamics 365 OData API v2.0 (incremental)
+        ├── Normalizes entries via account_normalizer.py
+        ├── Upserts to fact_gl_normalized (natural key dedup)
+        └── Writes sync result to fact_sync_log
+```
+
+**Watermark pattern:** each sync reads `last_sync_watermark` from `fact_sync_log` → fetches only new/changed entries since that timestamp → full-refresh fallback if no prior watermark exists.
+
+**Scheduler lifecycle:** integrated into FastAPI lifespan context manager in `main.py`:
+```python
+@asynccontextmanager
+async def lifespan(app):
+    scheduler.start()          # startup
+    yield
+    scheduler.shutdown()       # graceful shutdown
+```
+
+**Landing zone:** `fact_gl_normalized` — normalized GL entries from BC sync worker, pre-mapped to canonical CoA. Distinct from `fact_gl_entries` (star schema gold layer populated by manual ETL pipeline).
+
+---
+
+### Migration 008 — fact_sync_log Schema Extension
+
+File: `03_Backend/migrations/008_sync_worker.sql`
+
+Extended `fact_sync_log` with:
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `worker_run_id` | UUID | Unique ID per scheduler invocation |
+| `records_fetched` | INTEGER | Raw count from OData API |
+| `records_upserted` | INTEGER | Count written to fact_gl_normalized |
+| `last_sync_watermark` | TIMESTAMP | Cursor for next incremental fetch |
+| `error_detail` | TEXT | Error message if sync failed |
+| `sync_duration_ms` | INTEGER | Wall-clock time for the sync run |
+
+Table remains **append-only** (Rule 05 / Rule 06 immutable tables). No DELETE/UPDATE except `status` finalization.
+
+---
+
+### IC-41 — Health Score Methodology Modal
+
+**Modified:** `02_Frontend/src/pages/42_F042_HealthScore.tsx`
+
+Added an interactive methodology modal explaining the Health Score calculation:
+- Modal triggered by "How is this calculated?" info button in page header
+- Explains 6 sub-score components: Liquidity, Profitability, Leverage, Efficiency, Cash Flow, Growth
+- Each component shows weight (%) and data sources used
+- Modal is accessible: focus-trapped, ESC to close, `aria-modal` and `role="dialog"`
+
+---
+
+### IC-42 — Framer Motion Animations: 360° View
+
+**Modified:** `02_Frontend/src/pages/54_F054_360View.tsx`
+
+Framer Motion (`motion.div`) animations added to the 360° Financial View:
+- Page-level mount animation: fade-in + slide-up (0.4s ease-out)
+- KPI tile stagger: each tile enters with 80ms delay offset
+- Chart area: scale-in on mount (0.95 → 1.0)
+- Dependency added: `framer-motion` (already in package.json from IC-42)
+
+---
+
+### Freshness Service SQL Fix
+
+**Modified:** `03_Backend/services/freshness_service.py`
+
+Removed invalid `tenant_id` JOIN condition from `DataFreshnessService.get_freshness()` query. The `fact_sync_log` table records are keyed by `erp_source_id` not `tenant_id` directly; the fix queries via `dim_erp_source` for correct tenant scoping.
+
+**Impact:** FreshnessIndicator component on all dashboard pages now loads without 500 error when `tenant_id` not present on `fact_sync_log` rows.
+
+---
+
+### ER Diagram Added
+
+Full entity-relationship diagram: `00_docs/07_ER_Diagram.md`
+
+Covers all 41 tables across 7 domains:
+1. Auth & Tenancy
+2. ERP Integration & Sync
+3. Star Schema GL
+4. Canonical CoA
+5. Planning (Budgets & Investments)
+6. Account Groups
+7. RBAC (Casbin)
+
+---
+
+### Updated System Overview (2026-05-06)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  External Systems                                                     │
+│  ┌────────────────────────┐   ┌────────────────────────────────────┐ │
+│  │  BC Dynamics 365 OData │   │  Azure AD (Entra ID)               │ │
+│  │  v2.0 API              │   │  OAuth2 / MSAL SSO                 │ │
+│  └──────────┬─────────────┘   └──────────────────┬─────────────────┘ │
+└─────────────┼──────────────────────────────────────┼─────────────────┘
+              │ 15-min OData pull                    │ Token validation
+              ▼                                      ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  FastAPI Backend  (03_Backend/)        http://localhost:8000         │
+│                                                                     │
+│  ┌──────────────────────┐  ┌──────────────────────────────────────┐ │
+│  │  Auth & RBAC         │  │  BC Sync Worker                      │ │
+│  │  JWT + Casbin        │  │  APScheduler (15-min)                │ │
+│  │  5 role levels       │  │  bc_sync_worker.py                   │ │
+│  └──────────────────────┘  └──────────────────────────────────────┘ │
+│                                                                     │
+│  20+ API Routers:                                                   │
+│  /auth  /tenants  /dashboard  /analytics  /gl  /reports             │
+│  /rbac  /canonical  /mapping  /freshness  /consolidated             │
+│  /cross_erp  /erp_sources  /budgets  /investments  /account_groups  │
+│                                                                     │
+│  Services: freshness_service · consolidated_dashboard               │
+│            cross_erp_pl · health_monitor · currency · vault         │
+│  Connectors: bc_connector · odoo_connector · sap_connector          │
+└────────────────────────────────────────────────────────────────────┘
+                              │
+                    psycopg2 (parameterized queries)
+                              ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│  PostgreSQL: ria_advisory  (41 tables, 7 domains)                   │
+│                                                                     │
+│  ┌─────────────┐  ┌─────────────────────────┐  ┌────────────────┐  │
+│  │  Auth/RBAC  │  │  ERP Integration        │  │  Star Schema   │  │
+│  │  tenants    │  │  dim_erp_source          │  │  fact_gl_entries│  │
+│  │  users      │  │  tenant_bc_config        │  │  fact_gl_norm. │  │
+│  │  casbin_rule│  │  fact_sync_log (008)     │  │  5 dim tables  │  │
+│  └─────────────┘  └─────────────────────────┘  └────────────────┘  │
+│                                                                     │
+│  ┌─────────────────────────┐  ┌─────────────────────────────────┐  │
+│  │  Canonical CoA          │  │  Planning                       │  │
+│  │  dim_canonical_account  │  │  budgets · investments          │  │
+│  │  account_mapping (1068) │  │  account_groups                 │  │
+│  └─────────────────────────┘  └─────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+                              ▲
+                    REST API  │  Bearer JWT
+                              │
+┌─────────────────────────────────────────────────────────────────────┐
+│  React Frontend  (02_Frontend/)        http://localhost:4002         │
+│  Brand: i-CFO360  |  Assets: icfo360-mark.svg, ifinsights-logo.svg  │
+│                                                                     │
+│  61 page files (F000–F061):                                         │
+│  Dashboards · Reports · Admin · ERP Integration · Analytics         │
+│                                                                     │
+│  Components: FreshnessIndicator · ERPSourceBadge · KPITile          │
+│              HealthScore Modal · Framer Motion 360° View            │
+│  Contexts:   AuthContext · TenantContext · MSAL                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Updated Page Inventory (2026-05-06)
+
+Total: **61 page files** (F000–F061, some gaps are feature-roadmap placeholders)
+
+| Range | Group | Count |
+|-------|-------|-------|
+| F000–F013 | Pipeline / ETL Visualization | 14 |
+| F014 | Login | 1 |
+| F015–F019 | Executive & Explorer | 5 |
+| F020–F046 | Financial Reports & Analytics | 27 |
+| F049–F054 | Admin, Tenants, 360° View | 6 |
+| F055–F061 | ERP Integration & RBAC | 7 (F059 gap) |
+
+---
+
+### Updated Router Inventory (2026-05-06)
+
+Total: **21 routers** in `03_Backend/routers/`
+
+`auth` · `tenants` · `dashboard` · `analytics` · `gl` · `reports` · `insights` ·
+`entities` · `settings` · `canonical` · `mapping` · `rbac` · `freshness` ·
+`consolidated` · `cross_erp` · `erp_sources` · `budgets` · `investments` ·
+`account_groups` · `cross_erp` (merged)
+
+---
+
+### Updated Migration Sequence (2026-05-06)
+
+| # | File | Covers |
+|---|------|--------|
+| 001 | auth_tenant.sql | Initial tenants + users schema |
+| 002 | roles_tenant_config.sql | Roles, tenant_bc_config |
+| 003 | budgets_investments.sql | Budgets + investments tables |
+| 004 | account_groups.sql | Account group hierarchy |
+| 005 | casbin_rbac.sql | Casbin rule table for RBAC |
+| 006 | company_tenant.sql | Company ↔ tenant FK mapping |
+| 007 | canonical_model.sql | dim_canonical_account + account_mapping |
+| 008 | sync_worker.sql | Extended fact_sync_log (IC-40) |
