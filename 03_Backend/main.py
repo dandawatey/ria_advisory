@@ -48,6 +48,10 @@ _DEFAULT_ORIGINS = [
     "http://localhost:3000", "http://127.0.0.1:3000",
     "http://localhost:5173", "http://127.0.0.1:5173",
     "http://localhost:4000", "http://127.0.0.1:4000",
+    "http://localhost:4001", "http://127.0.0.1:4001",
+    "http://localhost:4002", "http://127.0.0.1:4002",
+    "http://localhost:4003", "http://127.0.0.1:4003",
+    "http://localhost:4004", "http://127.0.0.1:4004",
 ]
 _env_origins = os.getenv("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = (
