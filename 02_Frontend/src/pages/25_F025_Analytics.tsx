@@ -95,10 +95,10 @@ type Tab = 'pl' | 'trends' | 'costs' | 'entities' | 'insights';
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Analytics() {
   // Filter panel state
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [filters, setFilters] = useState<GLFilters>({});
   const [companySearch, setCompanySearch] = useState('');
-  const [filterOpen, setFilterOpen] = useState({ company: true, period: true, currency: false });
+  const [filterOpen, setFilterOpen] = useState({ company: true, period: true, currency: false, glgroup: false });
 
   // Tab
   const [tab, setTab] = useState<Tab>('pl');
@@ -190,6 +190,7 @@ export default function Analytics() {
   if ((filters.company_ids ?? []).length > 0) activeFilters.push(`${filters.company_ids!.length} compan${filters.company_ids!.length === 1 ? 'y' : 'ies'}`);
   if (filters.year) activeFilters.push(`FY ${filters.year}`);
   if (filters.month_from || filters.month_to) activeFilters.push(`${filters.month_from ?? '…'} → ${filters.month_to ?? '…'}`);
+  if (filters.account_category) activeFilters.push(filters.account_category);
 
   function resetFilters() { setFilters({}); setCompanySearch(''); }
 
@@ -333,7 +334,7 @@ export default function Analytics() {
             </div>
 
             {/* Currency filter */}
-            <div>
+            <div style={{ borderBottom: '1px solid var(--color-border)' }}>
               <button style={{ width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12, color: 'var(--color-text)', display: 'flex', justifyContent: 'space-between' }}
                 onClick={() => setFilterOpen((p) => ({ ...p, currency: !p.currency }))}>
                 Currency <span>{filterOpen.currency ? '▲' : '▼'}</span>
@@ -347,6 +348,32 @@ export default function Analytics() {
                 </div>
               )}
             </div>
+
+            {/* GL Group filter */}
+            {filterOpts.account_categories?.length > 0 && (
+              <div>
+                <button style={{ width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 12, color: 'var(--color-text)', display: 'flex', justifyContent: 'space-between' }}
+                  onClick={() => setFilterOpen((p) => ({ ...p, glgroup: !p.glgroup }))}>
+                  GL Group <span>{filterOpen.glgroup ? '▲' : '▼'}</span>
+                </button>
+                {filterOpen.glgroup && (
+                  <div style={{ padding: '0 10px 12px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      <button className={`btn btn-sm ${!filters.account_category ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: 10, padding: '2px 8px' }}
+                        onClick={() => setFilters((f) => ({ ...f, account_category: undefined }))}>All</button>
+                      {filterOpts.account_categories.map((cat) => (
+                        <button key={cat}
+                          className={`btn btn-sm ${filters.account_category === cat ? 'btn-primary' : 'btn-secondary'}`}
+                          style={{ fontSize: 10, padding: '2px 8px' }}
+                          onClick={() => setFilters((f) => ({ ...f, account_category: f.account_category === cat ? undefined : cat }))}
+                        >{cat}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -389,6 +416,32 @@ export default function Analytics() {
                   </ComposedChart>
                 </ResponsiveContainer>
               </ChartCard>
+              {waterfall.length > 0 && (
+                <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Month</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>COGS</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>OpEx</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Net Income</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {waterfall.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 10px' }}>{row.month}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.revenue)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.cogs)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.opex)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 600, color: (row.net_income ?? 0) >= 0 ? 'var(--color-success)' : 'var(--color-error)' }}>{fmtM(row.net_income)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16 }}>
                 <ChartCard title="Entity Revenue Ranking" loading={!!loading.ec} error={!!errors.ec} height={380}>
@@ -404,6 +457,28 @@ export default function Analytics() {
                       <Bar dataKey="opex"    name="OpEx"    fill="#ef4444" />
                     </ComposedChart>
                   </ResponsiveContainer>
+                  {contribution.length > 0 && (
+                    <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>OpEx</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {contribution.slice(0, 12).map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                              <td style={{ padding: '5px 10px' }}>{row.company_name}</td>
+                              <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.revenue)}</td>
+                              <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.opex)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </ChartCard>
 
                 <ChartCard title="Revenue Share" loading={!!loading.ec} error={!!errors.ec} height={380}>
@@ -418,6 +493,31 @@ export default function Analytics() {
                       <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
                     </PieChart>
                   </ResponsiveContainer>
+                  {contribution.length > 0 && (() => {
+                    const totalRevenue = contribution.reduce((s, c) => s + c.revenue, 0);
+                    return (
+                      <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead>
+                            <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                              <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>% Share</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {contribution.filter((c) => c.revenue > 0).slice(0, 10).map((row, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                <td style={{ padding: '5px 10px' }}>{row.company_name}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.revenue)}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{pct(totalRevenue > 0 ? (row.revenue / totalRevenue) * 100 : 0)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </ChartCard>
               </div>
 
@@ -456,24 +556,82 @@ export default function Analytics() {
                   </LineChart>
                 </ResponsiveContainer>
               </ChartCard>
+              {pivoted.length > 0 && top5ids.length > 0 && (
+                <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Month</th>
+                        {top5ids.map((id) => (
+                          <th key={id} style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>
+                            {companyById[id] ?? String(id)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pivoted.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 10px' }}>{row.month}</td>
+                          {top5ids.map((id) => (
+                            <td key={id} style={{ padding: '5px 10px', textAlign: 'right' }}>
+                              {row[String(id)] != null ? fmtM(row[String(id)] as number) : '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               {allCodes.length > 5 && (
-                <ChartCard title="Monthly Revenue — All Entities" loading={!!loading.roll} error={!!errors.roll} height={320}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={pivoted} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={fmtM} tick={{ fontSize: 10 }} />
-                      <Tooltip content={<USDTip />} />
-                      {allCodes.map((id, i) => (
-                        <Area key={id} type="monotone" dataKey={String(id)}
-                          name={companyById[id] ?? String(id)}
-                          stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]}
-                          fillOpacity={0.08} strokeWidth={1.5} dot={false} connectNulls />
-                      ))}
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </ChartCard>
+                <>
+                  <ChartCard title="Monthly Revenue — All Entities" loading={!!loading.roll} error={!!errors.roll} height={320}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={pivoted} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis tickFormatter={fmtM} tick={{ fontSize: 10 }} />
+                        <Tooltip content={<USDTip />} />
+                        {allCodes.map((id, i) => (
+                          <Area key={id} type="monotone" dataKey={String(id)}
+                            name={companyById[id] ?? String(id)}
+                            stroke={COLORS[i % COLORS.length]} fill={COLORS[i % COLORS.length]}
+                            fillOpacity={0.08} strokeWidth={1.5} dot={false} connectNulls />
+                        ))}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
+                  {pivoted.length > 0 && (
+                    <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Month</th>
+                            {top5ids.map((id) => (
+                              <th key={id} style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>
+                                {companyById[id] ?? String(id)}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pivoted.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                              <td style={{ padding: '5px 10px' }}>{row.month}</td>
+                              {top5ids.map((id) => (
+                                <td key={id} style={{ padding: '5px 10px', textAlign: 'right' }}>
+                                  {row[String(id)] != null ? fmtM(row[String(id)] as number) : '—'}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
               )}
 
               <ChartCard title="Month-over-Month Revenue Change (Latest Period)" loading={!!loading.mom} error={!!errors.mom} height={360}>
@@ -573,6 +731,28 @@ export default function Analytics() {
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
+              {topAccts.length > 0 && (
+                <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Account No</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Account Name</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topAccts.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 10px', fontFamily: 'monospace' }}>{row.gl_account_no}</td>
+                          <td style={{ padding: '5px 10px' }}>{row.gl_account_name}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.abs_amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <ChartCard title="Department Spend — COGS vs OpEx (Top 15)" loading={!!loading.dept} error={!!errors.dept} height={360}>
@@ -588,6 +768,28 @@ export default function Analytics() {
                       <Bar dataKey="opex" name="OpEx" fill="#ef4444" stackId="s" />
                     </BarChart>
                   </ResponsiveContainer>
+                  {deptHeat.length > 0 && (
+                    <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Department</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>COGS</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>OpEx</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {deptHeat.slice(0, 15).map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                              <td style={{ padding: '5px 10px' }}>{row.department_code}</td>
+                              <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.cogs)}</td>
+                              <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.opex)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </ChartCard>
 
                 <ChartCard title="Transaction Type Mix" loading={!!loading.doc} error={!!errors.doc} height={360}>
@@ -601,6 +803,31 @@ export default function Analytics() {
                       <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     </PieChart>
                   </ResponsiveContainer>
+                  {docMix.length > 0 && (() => {
+                    const totalEntries = docMix.reduce((s, r) => s + r.entry_count, 0);
+                    return (
+                      <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead>
+                            <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                              <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Type</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Count</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>%</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {docMix.map((row, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                <td style={{ padding: '5px 10px' }}>{row.document_type}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.entry_count.toLocaleString()}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{pct(totalEntries > 0 ? (row.entry_count / totalEntries) * 100 : 0)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </ChartCard>
               </div>
             </>
@@ -708,6 +935,28 @@ export default function Analytics() {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                  {coverage.length > 0 && (
+                    <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Months Present</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {coverage.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                              <td style={{ padding: '5px 10px' }}>{row.company_name}</td>
+                              <td style={{ padding: '5px 10px', textAlign: 'right', fontWeight: 600, color: row.months_present >= 10 ? 'var(--color-success)' : row.months_present >= 6 ? '#f59e0b' : 'var(--color-error)' }}>
+                                {row.months_present}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </ChartCard>
 
                 <ChartCard title="Currency Distribution" loading={!!loading.cur} error={!!errors.cur} height={360}>
@@ -722,6 +971,31 @@ export default function Analytics() {
                       <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     </PieChart>
                   </ResponsiveContainer>
+                  {currSplit.length > 0 && (() => {
+                    const totalVolume = currSplit.reduce((s, r) => s + r.total_volume, 0);
+                    return (
+                      <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <thead>
+                            <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                              <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Currency</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Volume</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>%</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currSplit.map((row, i) => (
+                              <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                <td style={{ padding: '5px 10px', fontWeight: 600 }}>{row.currency_code}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmtM(row.total_volume)}</td>
+                                <td style={{ padding: '5px 10px', textAlign: 'right' }}>{pct(totalVolume > 0 ? (row.total_volume / totalVolume) * 100 : 0)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
                 </ChartCard>
               </div>
 

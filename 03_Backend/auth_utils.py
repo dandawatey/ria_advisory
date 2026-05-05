@@ -207,7 +207,14 @@ def get_allowed_company_ids(current: dict) -> Optional[List[int]]:
     codes: list = settings.get("subsidiary_access", [])
 
     if not codes:
-        return []                            # explicitly empty → no data
+        # No subsidiary_access codes configured → fall back to dim_company.tenant_id
+        company_rows = _q(
+            "SELECT company_id FROM dim_company WHERE tenant_id = %s ORDER BY company_id",
+            (tid,)
+        )
+        if company_rows:
+            return [r["company_id"] for r in company_rows]
+        return []                            # tenant has no companies at all
 
     return _codes_to_ids(codes)
 

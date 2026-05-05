@@ -60,7 +60,7 @@ const SECTION_COLORS = { Assets: '#3b82f6', Liabilities: '#ef4444', Equity: '#10
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BalanceSheet() {
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [openSection, setOpenSection] = useState<string | null>('Assets');
 
@@ -110,33 +110,14 @@ export default function BalanceSheet() {
   ].filter((d) => d.value > 0);
 
   return (
-    <div className="page-content">
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>Balance Sheet</div>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-          Assets · Liabilities · Equity — 1xx / 2xx / 3xx accounts
-        </div>
-      </div>
-
-      {/* Filter Panel */}
-      <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
-        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entity</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
-          {filterOpts.companies.map((c) => (
-            <button key={c.company_id} onClick={() => {
-              setSelectedCompanies((prev) =>
-                prev.includes(c.company_id) ? prev.filter((x) => x !== c.company_id) : [...prev, c.company_id]
-              );
-            }} style={chip(selectedCompanies.includes(c.company_id))}>
-              {c.company_name}
-            </button>
-          ))}
-        </div>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Balance Sheet</h1>
+        <p className="page-subtitle">Assets · Liabilities · Equity — 1xx / 2xx / 3xx accounts</p>
       </div>
 
       {/* KPI Tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <KPITile label="Total Assets"      value={fmt(summary?.total_assets)}      color="#3b82f6" loading={loadSummary} />
         <KPITile label="Total Liabilities" value={fmt(Math.abs(summary?.total_liabilities ?? 0))} color="#ef4444" loading={loadSummary} />
         <KPITile label="Total Equity"      value={fmt(summary?.total_equity)}       color="#10b981" loading={loadSummary} />
@@ -144,8 +125,33 @@ export default function BalanceSheet() {
         <KPITile label="Debt / Equity"     value={summary?.debt_equity != null ? `${summary.debt_equity.toFixed(2)}×` : '—'} color="#f59e0b" loading={loadSummary} />
       </div>
 
-      {/* Chart + Sections */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* Filter Sidebar */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Entity</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
+                {filterOpts.companies.map((c) => (
+                  <button key={c.company_id} onClick={() => {
+                    setSelectedCompanies((prev) =>
+                      prev.includes(c.company_id) ? prev.filter((x) => x !== c.company_id) : [...prev, c.company_id]
+                    );
+                  }} style={chip(selectedCompanies.includes(c.company_id))}>
+                    {c.company_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Chart + Sections */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 16, alignItems: 'start' }}>
 
         {/* Accordion Sections */}
         <div>
@@ -246,6 +252,8 @@ export default function BalanceSheet() {
           ) : (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</div>
           )}
+        </div>
+          </div>
         </div>
       </div>
     </div>

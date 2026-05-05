@@ -191,6 +191,13 @@ export default function TenantHub() {
                     }}>
                       {t.user_count ?? 0} users
                     </span>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: 20,
+                      background: 'var(--teal-50, #f0faf9)', color: 'var(--teal-700, #0F3F3C)',
+                      fontSize: 11, fontWeight: 700,
+                    }}>
+                      {t.subsidiary_count ?? 0} subsidiaries
+                    </span>
                   </div>
 
                   {/* Action buttons */}

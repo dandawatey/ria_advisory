@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
-import { get } from '../api/client';
+import { get, type FilterOptions } from '../api/client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface EntityRow {
@@ -89,7 +89,9 @@ function Tile({ label, value, sub }: { label: string; value: string; sub?: strin
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function EntityComparison() {
-  const [year, setYear]       = useState<number | ''>('');
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
+  const [year, setYear]             = useState<number | ''>('');
+  const [accountCategory, setAccountCategory] = useState<string>('');
   const [rows, setRows]       = useState<EntityRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr]         = useState('');
@@ -99,16 +101,21 @@ export default function EntityComparison() {
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
+  useEffect(() => {
+    get<FilterOptions>('/api/analytics/filters').then(setFilterOpts).catch(() => {});
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true); setErr('');
     try {
       const qs = new URLSearchParams();
-      if (year) qs.set('year', String(year));
+      if (year)            qs.set('year',             String(year));
+      if (accountCategory) qs.set('account_category', accountCategory);
       const r = await get<EntityRow[]>(`/api/reports/entity-comparison?${qs}`);
       setRows(r);
     } catch (e: unknown) { setErr(String(e)); }
     finally { setLoading(false); }
-  }, [year]);
+  }, [year, accountCategory]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -166,31 +173,23 @@ export default function EntityComparison() {
     label: t === 'table' ? 'Summary Table' : t === 'revenue' ? 'Revenue Chart' : 'Margin Chart',
   }));
 
-  return (
-    <div style={{ padding: 24, maxWidth: 1300, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 4, fontSize: 22, fontWeight: 700 }}>Entity Comparison</h1>
-      <p style={{ color: '#6b7280', marginBottom: 20, fontSize: 13 }}>
-        All {rows.length} subsidiaries — revenue, cost and margin side-by-side
-      </p>
+  const chip = (active: boolean) => ({
+    padding: '3px 10px', borderRadius: 10, fontSize: 11, cursor: 'pointer',
+    border: '1px solid', borderColor: active ? '#3b82f6' : 'var(--color-border)',
+    background: active ? 'rgba(59,130,246,0.12)' : 'transparent',
+    color: active ? '#3b82f6' : 'inherit', fontWeight: active ? 600 : 400,
+    whiteSpace: 'nowrap' as const,
+  });
 
-      {/* ── Year Filter ── */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 20 }}>
-        <span style={{ fontSize: 12, color: '#6b7280' }}>Year:</span>
-        <select
-          value={year}
-          onChange={e => setYear(e.target.value ? Number(e.target.value) : '')}
-          style={{ padding: '4px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #d1d5db' }}
-        >
-          <option value="">All Years</option>
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
+  return (
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Entity Comparison</h1>
+        <p className="page-subtitle">Revenue · Spend · Margin comparison across all entities</p>
       </div>
 
-      {loading && <p style={{ color: '#6b7280' }}>Loading…</p>}
-      {err     && <p style={{ color: '#ef4444' }}>Error: {err}</p>}
-
-      {/* ── KPI Tiles ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+      {/* KPI Tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <Tile label="Entities"       value={String(rows.length)}    sub="subsidiaries" />
         <Tile label="Total Revenue"  value={fmt(totalRevenue)}      sub="consolidated" />
         <Tile label="Total Spend"    value={fmt(totalSpend)}        sub="COGS + OpEx" />
@@ -204,140 +203,235 @@ export default function EntityComparison() {
         )}
       </div>
 
-      {/* ── Tab Bar ── */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            style={{
-              padding: '6px 14px', fontSize: 12, borderRadius: 8, cursor: 'pointer',
-              background: tab === t.id ? '#1d4ed8' : '#f3f4f6',
-              color: tab === t.id ? '#fff' : '#374151',
-              border: 'none', fontWeight: tab === t.id ? 600 : 400,
-            }}
-          >{t.label}</button>
-        ))}
-      </div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* Filter Sidebar */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
 
-      {/* ── Summary Table ── */}
-      {tab === 'table' && (
-        <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f9fafb' }}>
-                  <th style={{ ...thS, textAlign: 'left', minWidth: 180 }}>Entity</th>
-                  {(
-                    [
-                      ['revenue',          'Revenue'],
-                      ['cogs',             'COGS'],
-                      ['opex',             'OpEx'],
-                      ['net',              'Net Income'],
-                      ['gross_margin_pct', 'Gross Margin'],
-                      ['net_margin_pct',   'Net Margin'],
-                      ['opex_ratio_pct',   'OpEx Ratio'],
-                      ['revenue_share_pct','Rev Share'],
-                      ['entry_count',      'GL Entries'],
-                    ] as [keyof EntityRow, string][]
-                  ).map(([k, lbl]) => (
-                    <th key={k} style={thS} onClick={() => handleSort(k)}>{lbl}{arrow(k)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((r, i) => (
-                  <tr key={r.company_id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                    <td style={{ ...tdS, textAlign: 'left' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{
-                          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                          background: PALETTE[i % PALETTE.length],
-                        }} />
-                        <span style={{ fontSize: 11, fontWeight: 500 }}>{r.company_name}</span>
-                      </span>
-                    </td>
-                    <td style={tdS}>{fmt(r.revenue)}</td>
-                    <td style={tdS}>{fmt(r.cogs)}</td>
-                    <td style={tdS}>{fmt(r.opex)}</td>
-                    <td style={{
-                      ...tdS, fontWeight: 600,
-                      color: Number(r.net) >= 0 ? '#166534' : '#991b1b',
-                    }}>{fmt(r.net)}</td>
-                    <td style={{ ...tdS, background: marginBg(r.gross_margin_pct), color: marginClr(r.gross_margin_pct), fontWeight: 600 }}>
-                      {fmtPct(r.gross_margin_pct)}
-                    </td>
-                    <td style={{ ...tdS, background: marginBg(r.net_margin_pct), color: marginClr(r.net_margin_pct), fontWeight: 600 }}>
-                      {fmtPct(r.net_margin_pct)}
-                    </td>
-                    <td style={tdS}>{fmtPct(r.opex_ratio_pct)}</td>
-                    <td style={tdS}>{fmtPct(r.revenue_share_pct)}</td>
-                    <td style={tdS}>{fmtN(r.entry_count)}</td>
-                  </tr>
+            {/* Year filter chips */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>Year</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setYear('')} style={chip(year === '')}>All</button>
+                {years.map(y => (
+                  <button key={y} onClick={() => setYear(y)} style={chip(year === y)}>{y}</button>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </div>
+
+            {/* GL Group filter chips */}
+            {filterOpts.account_categories?.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button onClick={() => setAccountCategory('')} style={chip(accountCategory === '')}>All</button>
+                  {filterOpts.account_categories.map(cat => (
+                    <button key={cat} onClick={() => setAccountCategory(cat === accountCategory ? '' : cat)} style={chip(accountCategory === cat)}>{cat}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* ── Revenue Chart ── */}
-      {tab === 'revenue' && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Revenue vs Spend — Top 15 Entities (USD M)</h2>
-          <ResponsiveContainer width="100%" height={Math.max(360, revenueChart.length * 30 + 40)}>
-            <BarChart
-              data={revenueChart}
-              layout="vertical"
-              margin={{ left: 140, right: 20, top: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `$${v}M`} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={136} />
-              <Tooltip
-                formatter={(v: number, name: string) => [`$${v.toFixed(2)}M`, name]}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Revenue" fill="#3b82f6">
-                {revenueChart.map((_, idx) => (
-                  <Cell key={idx} fill={PALETTE[revenueChart.length - 1 - idx] ?? '#3b82f6'} />
-                ))}
-              </Bar>
-              <Bar dataKey="Spend" fill="#ef444480" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading && <p style={{ color: '#6b7280' }}>Loading…</p>}
+          {err     && <p style={{ color: '#ef4444' }}>Error: {err}</p>}
 
-      {/* ── Margin Chart ── */}
-      {tab === 'margins' && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Gross vs Net Margin — All Entities (%)</h2>
-          <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
-            Green zone: Gross Margin ≥ 40% · Net Margin ≥ 15%
-          </p>
-          {/* Reference lines via SVG overlay — using Recharts */}
-          <ResponsiveContainer width="100%" height={Math.max(360, marginChart.length * 28 + 60)}>
-            <BarChart
-              data={marginChart}
-              layout="vertical"
-              margin={{ left: 140, right: 20, top: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={136} />
-              <Tooltip
-                formatter={(v: number, name: string) => [`${v.toFixed(1)}%`, name]}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Gross Margin %" fill="#22c55e" opacity={0.85} />
-              <Bar dataKey="Net Margin %"   fill="#3b82f6" opacity={0.85} />
-            </BarChart>
-          </ResponsiveContainer>
+          {/* Tab Bar */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                style={{
+                  padding: '6px 14px', fontSize: 12, borderRadius: 8, cursor: 'pointer',
+                  background: tab === t.id ? '#1d4ed8' : '#f3f4f6',
+                  color: tab === t.id ? '#fff' : '#374151',
+                  border: 'none', fontWeight: tab === t.id ? 600 : 400,
+                }}
+              >{t.label}</button>
+            ))}
+          </div>
+
+          {/* Summary Table */}
+          {tab === 'table' && (
+            <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#f9fafb' }}>
+                      <th style={{ ...thS, textAlign: 'left', minWidth: 180 }}>Entity</th>
+                      {(
+                        [
+                          ['revenue',          'Revenue'],
+                          ['cogs',             'COGS'],
+                          ['opex',             'OpEx'],
+                          ['net',              'Net Income'],
+                          ['gross_margin_pct', 'Gross Margin'],
+                          ['net_margin_pct',   'Net Margin'],
+                          ['opex_ratio_pct',   'OpEx Ratio'],
+                          ['revenue_share_pct','Rev Share'],
+                          ['entry_count',      'GL Entries'],
+                        ] as [keyof EntityRow, string][]
+                      ).map(([k, lbl]) => (
+                        <th key={k} style={thS} onClick={() => handleSort(k)}>{lbl}{arrow(k)}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map((r, i) => (
+                      <tr key={r.company_id} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                        <td style={{ ...tdS, textAlign: 'left' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{
+                              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                              background: PALETTE[i % PALETTE.length],
+                            }} />
+                            <span style={{ fontSize: 11, fontWeight: 500 }}>{r.company_name}</span>
+                          </span>
+                        </td>
+                        <td style={tdS}>{fmt(r.revenue)}</td>
+                        <td style={tdS}>{fmt(r.cogs)}</td>
+                        <td style={tdS}>{fmt(r.opex)}</td>
+                        <td style={{
+                          ...tdS, fontWeight: 600,
+                          color: Number(r.net) >= 0 ? '#166534' : '#991b1b',
+                        }}>{fmt(r.net)}</td>
+                        <td style={{ ...tdS, background: marginBg(r.gross_margin_pct), color: marginClr(r.gross_margin_pct), fontWeight: 600 }}>
+                          {fmtPct(r.gross_margin_pct)}
+                        </td>
+                        <td style={{ ...tdS, background: marginBg(r.net_margin_pct), color: marginClr(r.net_margin_pct), fontWeight: 600 }}>
+                          {fmtPct(r.net_margin_pct)}
+                        </td>
+                        <td style={tdS}>{fmtPct(r.opex_ratio_pct)}</td>
+                        <td style={tdS}>{fmtPct(r.revenue_share_pct)}</td>
+                        <td style={tdS}>{fmtN(r.entry_count)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Revenue Chart */}
+          {tab === 'revenue' && (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Revenue vs Spend — Top 15 Entities (USD M)</h2>
+              <ResponsiveContainer width="100%" height={Math.max(360, revenueChart.length * 30 + 40)}>
+                <BarChart
+                  data={revenueChart}
+                  layout="vertical"
+                  margin={{ left: 140, right: 20, top: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `$${v}M`} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={136} />
+                  <Tooltip
+                    formatter={(v: number, name: string) => [`$${v.toFixed(2)}M`, name]}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="Revenue" fill="#3b82f6">
+                    {revenueChart.map((_, idx) => (
+                      <Cell key={idx} fill={PALETTE[revenueChart.length - 1 - idx] ?? '#3b82f6'} />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="Spend" fill="#ef444480" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Spend</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Net Income</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...rows]
+                      .sort((a, b) => Number(b.revenue) - Number(a.revenue))
+                      .slice(0, 15)
+                      .map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 10px' }}>{row.company_name}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(row.revenue)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(row.total_spend)}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right', color: Number(row.net) >= 0 ? '#10b981' : '#ef4444' }}>{fmt(row.net)}</td>
+                        </tr>
+                      ))}
+                    {rows.length === 0 && (
+                      <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Margin Chart */}
+          {tab === 'margins' && (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Gross vs Net Margin — All Entities (%)</h2>
+              <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>
+                Green zone: Gross Margin ≥ 40% · Net Margin ≥ 15%
+              </p>
+              {/* Reference lines via SVG overlay — using Recharts */}
+              <ResponsiveContainer width="100%" height={Math.max(360, marginChart.length * 28 + 60)}>
+                <BarChart
+                  data={marginChart}
+                  layout="vertical"
+                  margin={{ left: 140, right: 20, top: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={136} />
+                  <Tooltip
+                    formatter={(v: number, name: string) => [`${v.toFixed(1)}%`, name]}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="Gross Margin %" fill="#22c55e" opacity={0.85} />
+                  <Bar dataKey="Net Margin %"   fill="#3b82f6" opacity={0.85} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Gross Margin %</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Net Margin %</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>OpEx Ratio %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...rows]
+                      .filter(r => r.gross_margin_pct != null)
+                      .sort((a, b) => Number(b.gross_margin_pct) - Number(a.gross_margin_pct))
+                      .map((row, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 10px' }}>{row.company_name}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.gross_margin_pct != null ? row.gross_margin_pct.toFixed(1) + '%' : '—'}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.net_margin_pct != null ? row.net_margin_pct.toFixed(1) + '%' : '—'}</td>
+                          <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.opex_ratio_pct != null ? row.opex_ratio_pct.toFixed(1) + '%' : '—'}</td>
+                        </tr>
+                      ))}
+                    {rows.filter(r => r.gross_margin_pct != null).length === 0 && (
+                      <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

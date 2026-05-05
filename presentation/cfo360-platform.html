@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280">
+<title>i-CFO360 — ISource Financial Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ── */
+:root {
+  --teal-50:#EEF5F4; --teal-100:#D4E6E3; --teal-200:#A9CDC8; --teal-300:#7DB3AC;
+  --teal-400:#4F948D; --teal-500:#2F7873; --teal-600:#1F6B66; --teal-700:#175551;
+  --teal-800:#0F3F3C; --teal-900:#082624;
+  --coral-300:#EE7D72; --coral-400:#E8564A; --coral-500:#E8443B; --coral-600:#C93328;
+  --neutral-0:#FFFFFF; --neutral-25:#FAFBFB; --neutral-50:#F4F6F6;
+  --neutral-100:#E8ECEC; --neutral-200:#D1D8D8; --neutral-300:#B0BABA;
+  --neutral-500:#66726F; --neutral-700:#333938; --neutral-900:#0E1211;
+  --success-500:#5B8A6E; --warning-500:#B88A3E; --danger-500:#B4554E;
+  --font-d:'Nunito Sans',system-ui,sans-serif;
+  --font-m:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
+  --shadow-md:0 4px 8px rgba(15,63,60,.08),0 2px 4px rgba(15,63,60,.04);
+  --shadow-lg:0 12px 24px rgba(15,63,60,.10),0 4px 8px rgba(15,63,60,.04);
+  --r-lg:12px; --r-md:8px; --r-sm:4px;
+}
+
+/* ── Reset & shell ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:var(--font-d);-webkit-font-smoothing:antialiased}
+
+/* ── Deck container ── */
+#deck{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+
+/* ── Each slide ── */
+.slide{
+  position:absolute;width:1280px;height:720px;overflow:hidden;
+  opacity:0;pointer-events:none;
+  transform:translateX(60px);
+  transition:opacity .38s ease,transform .38s ease;
+  flex-shrink:0;
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.exit-left{opacity:0;transform:translateX(-60px)}
+
+/* ── Shared lattice SVG ── */
+.lattice{position:absolute;inset:0;z-index:0}
+.scrim{position:absolute;inset:0;z-index:1}
+.s-content{position:relative;z-index:2;height:100%}
+
+/* ── Footer ── */
+.footer{
+  position:absolute;left:0;right:0;bottom:0;height:68px;
+  padding:0 96px;display:flex;align-items:center;justify-content:space-between;
+  z-index:10;
+}
+.footer-dark{background:rgba(8,38,36,.6);border-top:1px solid rgba(255,255,255,.08)}
+.footer-light{background:var(--teal-900)}
+.footer-brand{font-family:var(--font-d);font-size:13px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.01em}
+.footer-brand span{color:rgba(255,255,255,.45);font-weight:400;margin-left:8px}
+.footer-num{font-family:var(--font-m);font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.08em}
+
+/* ── SLIDE TYPE: DARK (title / section) ── */
+.s-dark{background:var(--teal-900);color:#fff}
+
+/* ── SLIDE TYPE: LIGHT ── */
+.s-light{background:var(--neutral-25)}
+.s-light .header-band{
+  position:absolute;top:0;left:0;right:0;height:210px;
+  background:linear-gradient(135deg,var(--teal-700) 0%,var(--teal-800) 100%);z-index:0;
+}
+.s-light .lattice-band{position:absolute;top:0;left:0;right:0;height:210px;opacity:.13;z-index:1}
+.s-light .s-content{position:relative;z-index:2;padding:52px 96px 78px;display:flex;flex-direction:column;height:100%}
+.s-light .eyebrow{color:var(--coral-300);font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.s-light h2{font-size:42px;font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1.08;margin-top:8px}
+.s-light .sub{font-size:15px;color:rgba(255,255,255,.82);margin-top:10px;max-width:820px;line-height:1.5}
+
+/* ── Title slide ── */
+#s1 .s-content{padding:88px 120px 80px;display:flex;flex-direction:column;justify-content:center}
+.accent-rule{width:72px;height:4px;background:var(--coral-500);border-radius:2px}
+.s1-eyebrow{color:var(--coral-300);font-size:15px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-top:22px}
+.s1-title{font-size:90px;font-weight:900;line-height:1.0;letter-spacing:-.03em;color:#fff;margin-top:16px;text-shadow:0 2px 20px rgba(0,0,0,.3)}
+.s1-title span{color:var(--teal-400)}
+.s1-sub{font-size:24px;color:rgba(255,255,255,.88);margin-top:24px;max-width:780px;font-weight:400;line-height:1.5}
+.s1-meta{font-family:var(--font-m);font-size:13px;color:rgba(255,255,255,.6);letter-spacing:.04em;margin-top:44px}
+.s1-meta strong{color:rgba(255,255,255,.9)}
+
+/* ── Section divider slide ── */
+.s-divider .s-content{padding:96px 120px;display:flex;flex-direction:column;justify-content:center}
+.s-divider .div-num{font-family:var(--font-m);font-size:80px;font-weight:500;color:rgba(255,255,255,.06);position:absolute;right:96px;top:50%;transform:translateY(-50%)}
+.s-divider .div-eyebrow{color:var(--coral-300);font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.s-divider h2{font-size:64px;font-weight:900;letter-spacing:-.03em;color:#fff;line-height:1.05;margin-top:16px;max-width:760px}
+.s-divider .div-sub{font-size:20px;color:rgba(255,255,255,.7);margin-top:20px;max-width:640px;line-height:1.55}
+
+/* ── Cards (3-col) ── */
+.cards-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:auto;padding-top:32px}
+.cards-2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:auto;padding-top:28px}
+.card{background:#fff;border:1px solid var(--neutral-100);border-top:4px solid var(--coral-500);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);display:flex;flex-direction:column}
+.card:nth-child(2){border-top-color:var(--teal-500)}
+.card:nth-child(3){border-top-color:var(--coral-400)}
+.card:nth-child(4){border-top-color:var(--teal-600)}
+.card .c-icon{width:40px;height:40px;border-radius:var(--r-md);background:var(--teal-600);color:#fff;display:flex;align-items:center;justify-content:center}
+.card:nth-child(2) .c-icon{background:var(--coral-500)}
+.card:nth-child(3) .c-icon{background:var(--teal-700)}
+.card:nth-child(4) .c-icon{background:var(--coral-400)}
+.card .c-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card h4{font-size:16px;font-weight:700;color:var(--neutral-900);margin-top:14px}
+.card p{font-size:13px;line-height:1.55;color:var(--neutral-500);margin-top:6px;flex:1}
+.card .c-stat{font-family:var(--font-m);font-size:11px;color:var(--teal-600);letter-spacing:.04em;border-top:1px dashed var(--neutral-200);margin-top:12px;padding-top:10px}
+.card:nth-child(2) .c-stat{color:var(--coral-500)}
+
+/* ── Table ── */
+.tbl-wrap{margin-top:auto;padding-top:24px;overflow:auto;flex:1;display:flex;flex-direction:column;justify-content:center}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:var(--teal-800);color:rgba(255,255,255,.9);font-weight:700;font-family:var(--font-d);letter-spacing:.04em;font-size:11px;text-transform:uppercase;padding:10px 14px;text-align:left}
+.tbl td{padding:9px 14px;border-bottom:1px solid var(--neutral-100);color:var(--neutral-700);background:#fff;vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:nth-child(even) td{background:var(--neutral-25)}
+.tbl td:first-child{font-weight:600;color:var(--neutral-900)}
+.tbl .chk{color:var(--success-500);font-weight:700;text-align:center}
+.tbl .dash{color:var(--neutral-300);text-align:center}
+.tbl .hi{background:linear-gradient(135deg,var(--teal-900),var(--teal-800)) !important;color:#fff !important;font-weight:800 !important}
+.tbl .hi td{color:#fff !important;background:transparent !important}
+
+/* ── Metric tiles ── */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:auto;padding-top:28px}
+.metric{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:18px 16px;box-shadow:var(--shadow-md);text-align:center}
+.metric .m-num{font-family:var(--font-m);font-size:32px;font-weight:500;color:var(--teal-700);letter-spacing:-.01em;line-height:1}
+.metric .m-label{font-size:11px;color:var(--neutral-500);margin-top:6px;letter-spacing:.04em;text-transform:uppercase;line-height:1.3}
+.metric .m-sub{font-size:11px;color:var(--teal-600);font-family:var(--font-m);margin-top:4px}
+
+/* ── Pipeline diagram ── */
+.pipeline{display:flex;flex-direction:column;gap:0;margin-top:auto;padding-top:24px;flex:1;justify-content:center}
+.pipe-row{display:flex;align-items:stretch;gap:12px;position:relative}
+.pipe-box{flex:1;border-radius:var(--r-lg);padding:14px 18px;border:1px solid transparent}
+.pipe-box h4{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.pipe-box p{font-size:12px;line-height:1.5;margin-top:4px;opacity:.85}
+.pipe-bronze{background:linear-gradient(135deg,#7A5230,#9A6840);color:#fff;border-color:#7A5230}
+.pipe-silver{background:linear-gradient(135deg,var(--neutral-600),var(--neutral-700));color:#fff;border-color:var(--neutral-600)}
+.pipe-gold{background:linear-gradient(135deg,#8B6914,#A07E1A);color:#fff;border-color:#8B6914}
+.pipe-api{background:linear-gradient(135deg,var(--teal-700),var(--teal-800));color:#fff;border-color:var(--teal-700)}
+.pipe-erp{background:linear-gradient(135deg,var(--teal-500),var(--teal-600));color:#fff;border-color:var(--teal-500)}
+.pipe-arrow{display:flex;align-items:center;justify-content:center;color:var(--neutral-300);font-size:18px;padding:0 4px;font-weight:300}
+.pipe-connector{width:100%;display:flex;justify-content:center;padding:4px 0;color:var(--neutral-400);font-size:14px}
+
+/* ── Two-col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:auto;padding-top:28px;flex:1}
+.col-panel{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md)}
+.col-panel h4{font-size:15px;font-weight:800;color:var(--neutral-900);padding-bottom:10px;border-bottom:2px solid var(--teal-600);margin-bottom:12px}
+.col-panel.alt h4{border-bottom-color:var(--coral-500)}
+.col-panel ul{list-style:none;padding:0}
+.col-panel ul li{font-size:12.5px;color:var(--neutral-700);padding:5px 0;border-bottom:1px solid var(--neutral-50);display:flex;gap:8px;line-height:1.45}
+.col-panel ul li::before{content:"▸";color:var(--teal-500);flex-shrink:0;margin-top:1px}
+.col-panel.alt ul li::before{color:var(--coral-500)}
+.col-panel ul li strong{color:var(--neutral-900);font-weight:700}
+
+/* ── Quote slide ── */
+.s-quote{background:var(--teal-900)}
+.s-quote .s-content{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 160px;text-align:center}
+.q-mark{font-size:120px;font-weight:900;color:rgba(255,255,255,.06);line-height:.7;font-family:Georgia,serif;margin-bottom:-20px}
+.q-text{font-size:38px;font-weight:800;color:#fff;line-height:1.25;letter-spacing:-.02em;max-width:900px}
+.q-text em{color:var(--coral-400);font-style:normal}
+.q-attr{font-family:var(--font-m);font-size:13px;color:rgba(255,255,255,.5);letter-spacing:.06em;margin-top:36px;text-transform:uppercase}
+
+/* ── Status badges ── */
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:11px;font-weight:500;padding:3px 8px;border-radius:var(--r-sm);letter-spacing:.03em}
+.badge-done{background:#e8f4ef;color:var(--success-500)}
+.badge-planned{background:#faf2e4;color:var(--warning-500)}
+.badge-next{background:#ecf5f4;color:var(--teal-600)}
+
+/* ── Roadmap cards ── */
+.roadmap-phases{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:auto;padding-top:28px;flex:1}
+.phase-card{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-md)}
+.phase-card .ph-num{font-family:var(--font-m);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.phase-card.ph1 .ph-num{color:var(--success-500)}
+.phase-card.ph2 .ph-num{color:var(--teal-500)}
+.phase-card.ph3 .ph-num{color:var(--warning-500)}
+.phase-card h4{font-size:15px;font-weight:800;color:var(--neutral-900);margin-top:6px}
+.phase-card .ph-period{font-family:var(--font-m);font-size:11px;color:var(--neutral-400);margin-top:2px}
+.phase-card ul{list-style:none;margin-top:12px}
+.phase-card ul li{font-size:12px;color:var(--neutral-700);padding:4px 0;border-bottom:1px solid var(--neutral-50);line-height:1.4;display:flex;gap:6px}
+.phase-card.ph1 ul li::before{content:"✓";color:var(--success-500);font-weight:700;flex-shrink:0}
+.phase-card.ph2 ul li::before{content:"→";color:var(--teal-500);flex-shrink:0}
+.phase-card.ph3 ul li::before{content:"◎";color:var(--warning-500);flex-shrink:0}
+
+/* ── Before/After ── */
+.ba-wrap{display:grid;grid-template-columns:1fr 48px 1fr;gap:0;margin-top:auto;padding-top:20px;flex:1;align-items:center}
+.ba-col{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-md)}
+.ba-col h4{font-size:14px;font-weight:800;text-align:center;padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid transparent}
+.ba-col.before h4{color:var(--danger-500);border-color:var(--danger-500)}
+.ba-col.after h4{color:var(--success-500);border-color:var(--success-500)}
+.ba-col ul{list-style:none}
+.ba-col ul li{font-size:13px;padding:6px 0;border-bottom:1px solid var(--neutral-50);color:var(--neutral-700);display:flex;gap:8px;align-items:flex-start}
+.ba-col.before ul li::before{content:"✗";color:var(--danger-500);font-weight:700;flex-shrink:0}
+.ba-col.after ul li::before{content:"✓";color:var(--success-500);font-weight:700;flex-shrink:0}
+.ba-arrow{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--teal-400);font-weight:300}
+
+/* ── ROI tiles ── */
+.roi-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:auto;padding-top:20px}
+.roi-big{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md)}
+.roi-big h4{font-size:14px;font-weight:800;color:var(--neutral-900);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--teal-600)}
+.roi-big table{width:100%;font-size:12px;border-collapse:collapse}
+.roi-big table th{color:var(--neutral-500);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px 6px;text-align:left}
+.roi-big table td{padding:5px 8px;border-bottom:1px solid var(--neutral-50);color:var(--neutral-700)}
+.roi-big table td:last-child{font-family:var(--font-m);color:var(--teal-700);font-weight:600;text-align:right}
+.roi-big table tr.total td{font-weight:700;color:var(--neutral-900);border-top:2px solid var(--neutral-200)}
+.roi-big table tr.total td:last-child{color:var(--teal-700)}
+.roi-list ul{list-style:none}
+.roi-list ul li{font-size:12.5px;color:var(--neutral-700);padding:6px 0;border-bottom:1px solid var(--neutral-50);display:flex;gap:8px;line-height:1.45}
+.roi-list ul li::before{content:"▸";color:var(--coral-500);flex-shrink:0}
+.roi-big .big-num{font-family:var(--font-m);font-size:40px;font-weight:500;color:var(--teal-700)}
+.roi-big .big-label{font-size:12px;color:var(--neutral-500);margin-top:4px}
+
+/* ── Ask slide ── */
+.ask-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:auto;padding-top:20px;flex:1}
+.ask-box{background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-md)}
+.ask-box h4{font-size:14px;font-weight:800;color:var(--neutral-900);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ask-box h4 .ph-badge{font-family:var(--font-m);font-size:10px;padding:2px 7px;border-radius:var(--r-sm)}
+.ask-box ul{list-style:none}
+.ask-box ul li{font-size:12.5px;color:var(--neutral-700);padding:5px 0;border-bottom:1px solid var(--neutral-50);line-height:1.45;display:flex;gap:7px}
+.ask-box ul li::before{content:"□";color:var(--teal-500);font-weight:700;flex-shrink:0}
+.cost-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.cost-tile{background:var(--neutral-25);border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px;text-align:center}
+.cost-tile .ct-amt{font-family:var(--font-m);font-size:20px;font-weight:500;color:var(--teal-700)}
+.cost-tile .ct-label{font-size:11px;color:var(--neutral-500);margin-top:4px;line-height:1.3}
+.cost-total{background:var(--teal-900);color:#fff;border-radius:var(--r-md);padding:14px;text-align:center;margin-top:10px}
+.cost-total .ct-big{font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--teal-300)}
+.cost-total .ct-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
+
+/* ── Nav controls ── */
+#nav{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;z-index:100;background:rgba(8,38,36,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:8px 20px}
+#nav button{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:18px;padding:2px 8px;border-radius:999px;transition:all .2s;font-family:var(--font-m)}
+#nav button:hover{background:rgba(255,255,255,.1);color:#fff}
+#nav-counter{font-family:var(--font-m);font-size:12px;color:rgba(255,255,255,.5);letter-spacing:.06em;min-width:54px;text-align:center}
+#nav-dots{display:flex;gap:6px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);cursor:pointer;transition:all .2s}
+.dot.active{background:var(--coral-500);width:18px;border-radius:3px}
+
+/* ── Scale to viewport ── */
+#stage{width:1280px;height:720px;position:relative;transform-origin:top left}
+</style>
+</head>
+<body>
+
+<div id="deck">
+  <div id="stage">
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 1 — TITLE
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-dark active" id="s1">
+      <svg class="lattice" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="lat1" x="0" y="0" width="140" height="121" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1.4">
+            <polygon points="35,10 70,10 87,40 70,70 35,70 18,40"/>
+            <polygon points="105,10 140,10 157,40 140,70 105,70 87,40"/>
+            <polygon points="70,70 105,70 122,100 105,130 70,130 53,100"/>
+          </g></pattern></defs>
+        <rect width="100%" height="100%" fill="url(#lat1)" opacity=".20"/>
+      </svg>
+      <div class="scrim" style="background:linear-gradient(105deg,rgba(8,38,36,.94) 0%,rgba(8,38,36,.65) 55%,rgba(8,38,36,.15) 100%)"></div>
+      <div class="s-content">
+        <div style="padding:88px 120px 0">
+          <div class="accent-rule"></div>
+          <div class="s1-eyebrow" style="margin-top:22px">Financial Intelligence · 2026</div>
+          <div class="s1-title">i-CFO<span>360</span></div>
+          <div class="s1-sub">One Number. Real-Time.<br>From 17 Subsidiaries Down to a Single GL Entry.</div>
+          <div style="display:flex;gap:20px;margin-top:32px">
+            <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-lg);padding:14px 20px;display:flex;align-items:center;gap:10px">
+              <div style="font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--teal-300)">58</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.3;text-transform:uppercase;letter-spacing:.06em">Features<br>Built</div>
+            </div>
+            <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-lg);padding:14px 20px;display:flex;align-items:center;gap:10px">
+              <div style="font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--teal-300)">188K</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.3;text-transform:uppercase;letter-spacing:.06em">GL Entries<br>Indexed</div>
+            </div>
+            <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-lg);padding:14px 20px;display:flex;align-items:center;gap:10px">
+              <div style="font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--teal-300)">17</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.3;text-transform:uppercase;letter-spacing:.06em">Subsidiaries<br>Consolidated</div>
+            </div>
+            <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-lg);padding:14px 20px;display:flex;align-items:center;gap:10px">
+              <div style="font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--coral-400)">7+</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.3;text-transform:uppercase;letter-spacing:.06em">ERP Systems<br>Supported</div>
+            </div>
+          </div>
+          <div class="s1-meta">Presented by <strong>i-Source Infosystems</strong> &nbsp;·&nbsp; For RIA Advisory Board &amp; Executive Leadership &nbsp;·&nbsp; Confidential</div>
+        </div>
+      </div>
+      <div class="footer footer-dark">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="background:var(--teal-600);width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff">iS</div>
+          <div class="footer-brand">i-Source Infosystems <span>ISource Financial Intelligence Platform</span></div>
+        </div>
+        <div class="footer-num">01 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 2 — THE PROBLEM
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s2">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><defs><pattern id="lat2" x="0" y="0" width="140" height="121" patternUnits="userSpaceOnUse"><g fill="none" stroke="#7DB3AC" stroke-width="1.2"><polygon points="35,10 70,10 87,40 70,70 35,70 18,40"/><polygon points="105,10 140,10 157,40 140,70 105,70 87,40"/><polygon points="70,70 105,70 122,100 105,130 70,130 53,100"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#lat2)"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">The Problem</div>
+        <h2>Your Finance Team Loses 8–10 Days Every Month</h2>
+        <div class="sub">Manual consolidation across 17 subsidiaries — month after month, unchanged.</div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Problem</th><th>Business Impact</th><th style="width:140px">Severity</th></tr></thead>
+            <tbody>
+              <tr><td>8–10 day close cycle</td><td>Board decisions made on month-old data</td><td><span class="badge" style="background:#fde8e6;color:var(--danger-500)">● Critical</span></td></tr>
+              <tr><td>Manual Excel consolidation</td><td>Error risk, no audit trail, no repeatability</td><td><span class="badge" style="background:#fde8e6;color:var(--danger-500)">● Critical</span></td></tr>
+              <tr><td>Zero intra-month visibility</td><td>CFO flying blind on current-month performance</td><td><span class="badge" style="background:#fde8e6;color:var(--danger-500)">● Critical</span></td></tr>
+              <tr><td>Email-driven IC sign-off</td><td>No accountability, missed deadlines, disputes</td><td><span class="badge" style="background:#faf2e4;color:var(--warning-500)">● High</span></td></tr>
+              <tr><td>17 disconnected BC tenants</td><td>No programmatic access, no automation possible</td><td><span class="badge" style="background:#faf2e4;color:var(--warning-500)">● High</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:16px;background:var(--teal-900);border-radius:var(--r-lg);padding:16px 22px;display:flex;align-items:center;gap:14px">
+          <div style="font-size:32px;color:rgba(255,255,255,.25);font-family:Georgia,serif;line-height:.8">"</div>
+          <div style="font-size:14px;color:rgba(255,255,255,.85);font-style:italic;line-height:1.5;flex:1">We're a group of 17 subsidiaries with 17 separate financial realities — and no single version of the truth.</div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">02 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 3 — THE SOLUTION
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s3">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">The Answer</div>
+        <h2>One Platform. Real-Time. Fully Automated.</h2>
+        <div class="sub">i-CFO360 eliminates the gap between your ERP data and your boardroom decisions.</div>
+        <div class="cards-3" style="margin-top:28px">
+          <div class="card">
+            <div class="c-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <h4>Close in 3 Days</h4>
+            <p>The Close Cockpit manages the entire month-end workflow — IC reconciliation, entity sign-off, SLA tracking, Controller approval — in one place.</p>
+            <div class="c-stat">↓ 70% reduction vs. today's 10-day cycle</div>
+          </div>
+          <div class="card">
+            <div class="c-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+            <h4>See Today's Numbers</h4>
+            <p>Live consolidated P&L, KPIs, and subsidiary performance. Intra-month. No waiting for month-end. CFO sees the group picture in real-time.</p>
+            <div class="c-stat">Real-time data refresh via OData pipeline</div>
+          </div>
+          <div class="card">
+            <div class="c-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <h4>Drill Group → GL in One Click</h4>
+            <p>From consolidated group revenue → subsidiary → department → individual GL journal entry. Full drill-through. No exports. No waiting.</p>
+            <div class="c-stat">188,380 GL entries — sub-2 second search</div>
+          </div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:12px;align-items:center">
+          <div style="background:var(--teal-50);border:1px solid var(--teal-200);border-radius:var(--r-md);padding:10px 18px;font-size:12px;color:var(--teal-700);flex:1;text-align:center;font-weight:600">17 BC Tenants → Automated Pipeline → Live Dashboard → CFO · Controller · Finance Teams</div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">03 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 4 — PLATFORM OVERVIEW
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s4">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Platform at a Glance</div>
+        <h2>58 Features. 9 API Layers. 200,000+ Data Points.</h2>
+        <div class="sub">Every financial workflow your group needs — built, deployed, and live.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px;flex:1">
+          <table class="tbl" style="height:fit-content">
+            <thead><tr><th>Module</th><th>What Users Get</th></tr></thead>
+            <tbody>
+              <tr><td>Executive Dashboard</td><td>Live group P&L, 5 KPI tiles, subsidiary grid, trend charts</td></tr>
+              <tr><td>Close Cockpit</td><td>IC reconciliation, entity sign-off, close timeline, Controller approval</td></tr>
+              <tr><td>Financial Reports</td><td>Trial Balance, Balance Sheet, P&L, Cash Flow, Expense Analysis</td></tr>
+              <tr><td>GL Explorer</td><td>Search 188,380 journal entries in under 2 seconds</td></tr>
+            </tbody>
+          </table>
+          <table class="tbl" style="height:fit-content">
+            <thead><tr><th>Module</th><th>What Users Get</th></tr></thead>
+            <tbody>
+              <tr><td>KPI & Analytics</td><td>Current Ratio, EBITDA Margin, DSO, Health Score, YoY trends</td></tr>
+              <tr><td>Subsidiary Benchmarking</td><td>Side-by-side entity comparison — revenue, margin, spend</td></tr>
+              <tr><td>Multi-ERP Integration</td><td>BC, SAP, Oracle, Odoo, JDE, Tally, D365F connectors</td></tr>
+              <tr><td>Multi-Tenancy</td><td>RIA Advisory + iSource, fully isolated, configurable branding</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="metrics" style="padding-top:16px">
+          <div class="metric"><div class="m-num">188K</div><div class="m-label">GL Entries</div><div class="m-sub">FY 2022–2025</div></div>
+          <div class="metric"><div class="m-num">474</div><div class="m-label">Canonical CoA</div><div class="m-sub">accounts</div></div>
+          <div class="metric"><div class="m-num">32</div><div class="m-label">Departments</div><div class="m-sub">tracked</div></div>
+          <div class="metric"><div class="m-num">44</div><div class="m-label">Projects</div><div class="m-sub">tracked</div></div>
+          <div class="metric"><div class="m-num">8</div><div class="m-label">Currencies</div><div class="m-sub">auto-translated</div></div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">04 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 5 — DATA PIPELINE
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s5">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Data Architecture</div>
+        <h2>Automated. Auditable. No Human in the Data Loop.</h2>
+        <div class="sub">Bronze → Silver → Gold medallion architecture with full audit trail at every step.</div>
+        <div class="pipeline">
+          <div class="pipe-row">
+            <div class="pipe-box pipe-erp" style="max-width:none">
+              <h4>17 Business Central Tenants (OData API)</h4>
+              <p>Certificate-based OAuth2 · No passwords in code · Auto-paginated GL fetch · Per-tenant incremental sync</p>
+            </div>
+          </div>
+          <div class="pipe-connector">↓ Raw append · Full source preservation</div>
+          <div class="pipe-row">
+            <div class="pipe-box pipe-bronze">
+              <h4>Bronze Zone</h4>
+              <p>Raw append-only store · Every source record preserved forever · Complete audit trail · No transforms</p>
+            </div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-box pipe-silver">
+              <h4>Silver Layer</h4>
+              <p>Type cast · Deduplicate · Canonical CoA mapping · Dimension enrichment (dept, project, vertical, geo)</p>
+            </div>
+            <div class="pipe-arrow">→</div>
+            <div class="pipe-box pipe-gold">
+              <h4>Gold Layer</h4>
+              <p>IC Elimination · FX Translation · Star schema · fact_gl_entries · fact_coa_balances · 12 dim tables</p>
+            </div>
+          </div>
+          <div class="pipe-connector">↓ REST API · &lt;2s response · 65 endpoints · JWT auth</div>
+          <div class="pipe-row">
+            <div class="pipe-box pipe-api" style="max-width:none">
+              <h4>i-CFO360 Dashboard</h4>
+              <p>CFO · Group Controller · Subsidiary Controllers · Finance Analysts · Viewers &nbsp;|&nbsp; Live at https://i-finsights.netlify.app</p>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <div style="flex:1;background:var(--neutral-50);border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--neutral-700)"><strong style="color:var(--teal-700)">Data Quality Gates</strong> — blocks Gold promotion if completeness &lt; threshold</div>
+          <div style="flex:1;background:var(--neutral-50);border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--neutral-700)"><strong style="color:var(--teal-700)">Retry + Fallback</strong> — auto-recovers from BC API outages</div>
+          <div style="flex:1;background:var(--neutral-50);border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--neutral-700)"><strong style="color:var(--teal-700)">Lineage</strong> — column-level trace from source BC field to dashboard metric</div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">05 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 6 — FEATURES BY PERSONA
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s6">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Feature Deep Dive</div>
+        <h2>Built for Every Finance Persona</h2>
+        <div class="sub">Role-tailored dashboards and tools — from Group CFO to subsidiary analyst.</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px;flex:1">
+          <div class="col-panel">
+            <h4>Group CFO</h4>
+            <ul>
+              <li><strong>Executive Dashboard</strong> — consolidated P&L, EBITDA, Net Income in real-time</li>
+              <li><strong>Entity Grid</strong> — 17 subsidiaries ranked by revenue &amp; margin</li>
+              <li><strong>KPI Dashboard</strong> — Current Ratio, Quick Ratio, DSO, ROA</li>
+              <li><strong>Cash Flow</strong> — Operating, Investing, Financing</li>
+              <li><strong>Health Score</strong> — 0–100 composite from 6 financial ratios</li>
+            </ul>
+          </div>
+          <div class="col-panel alt">
+            <h4>Group Controller</h4>
+            <ul>
+              <li><strong>Close Cockpit</strong> — 10 days → 3 days close cycle</li>
+              <li><strong>IC Reconciliation</strong> — status per entity, SLA alerts</li>
+              <li><strong>Sign-off Tracking</strong> — subsidiary controller workflow</li>
+              <li><strong>Trial Balance</strong> — debit/credit/net across all entities</li>
+              <li><strong>Data Quality</strong> — DQ exceptions before close sign-off</li>
+            </ul>
+          </div>
+          <div class="col-panel">
+            <h4>Subsidiary Controllers</h4>
+            <ul>
+              <li><strong>Entity Detail</strong> — own entity P&L, Trial Balance, Balance Sheet</li>
+              <li><strong>GL Explorer</strong> — search 188K+ entries by account/dept/date</li>
+              <li><strong>Vertical Analytics</strong> — business unit P&L</li>
+              <li><strong>Budget vs Actual</strong> — variance tracking (Phase 2)</li>
+              <li><strong>Annotations</strong> — comment on any metric for audit trail</li>
+            </ul>
+          </div>
+          <div class="col-panel alt">
+            <h4>Finance Analysts</h4>
+            <ul>
+              <li><strong>22 Reports</strong> — all financial statements, custom date ranges</li>
+              <li><strong>Multi-Dim Analytics</strong> — filter by company, year, month, currency</li>
+              <li><strong>CoA Insights</strong> — account-level drill-through analysis</li>
+              <li><strong>Invoice Detail</strong> — line-level posted sales analysis</li>
+              <li><strong>Dept Spend Heatmap</strong> — cross-entity expense breakdown</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">06 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 7 — SECURITY & GOVERNANCE
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s7">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Security &amp; Governance</div>
+        <h2>Enterprise-Grade Access Control</h2>
+        <div class="sub">5-tier role hierarchy, Azure SSO, full audit trail — compliance-ready from day one.</div>
+        <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:20px;margin-top:24px;flex:1">
+          <div>
+            <table class="tbl">
+              <thead><tr><th>Action</th><th style="text-align:center">superadmin</th><th style="text-align:center">ria_admin</th><th style="text-align:center">finance_user</th><th style="text-align:center">viewer</th></tr></thead>
+              <tbody>
+                <tr><td>View all tenants</td><td class="chk">✓</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td></tr>
+                <tr><td>Manage users</td><td class="chk">✓</td><td class="chk">✓</td><td class="dash">—</td><td class="dash">—</td></tr>
+                <tr><td>View all reports</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td><td style="text-align:center;color:var(--warning-500);font-size:11px">Limited</td></tr>
+                <tr><td>GL Explorer</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td><td class="dash">—</td></tr>
+                <tr><td>Pipeline control</td><td class="chk">✓</td><td class="chk">✓</td><td class="dash">—</td><td class="dash">—</td></tr>
+                <tr><td>BC configuration</td><td class="chk">✓</td><td class="chk">✓</td><td class="dash">—</td><td class="dash">—</td></tr>
+                <tr><td>Annotations</td><td class="chk">✓</td><td class="chk">✓</td><td class="chk">✓</td><td class="dash">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="col-panel" style="flex:1">
+              <h4>Compliance Posture</h4>
+              <ul>
+                <li><strong>Authentication</strong> — Azure Entra ID SSO, no RIA passwords stored</li>
+                <li><strong>Encryption</strong> — bcrypt for local accounts, JWT for API sessions</li>
+                <li><strong>Audit Trail</strong> — every data access logged: user, timestamp, entity</li>
+                <li><strong>Tenant Isolation</strong> — RIA Advisory and iSource data never cross-visible</li>
+                <li><strong>Lineage</strong> — column-level trace from BC source field to dashboard metric</li>
+              </ul>
+            </div>
+            <div style="background:var(--teal-900);border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;gap:12px">
+              <div style="font-size:28px">🔐</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.8);line-height:1.45">BC credentials stored as vault references only — secret redacted on all API reads. Zero plaintext secrets in code or database.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">07 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 8 — MULTI-ERP INTEGRATION
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s8">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Multi-ERP Architecture</div>
+        <h2>One Platform. Any ERP. Any Mix.</h2>
+        <div class="sub">i-CFO360 consolidates financials across subsidiaries running different ERP systems — no manual bridges.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px;flex:1">
+          <div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">Business Central</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">OAuth2 · OData · Live</div>
+                <div style="margin-top:6px"><span class="badge badge-done">● Active</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">SAP S/4HANA</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">OData v4 · RFC</div>
+                <div style="margin-top:6px"><span class="badge badge-next">● Connector Ready</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">Oracle ERP Cloud</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">REST API · FBDI</div>
+                <div style="margin-top:6px"><span class="badge badge-next">● Connector Ready</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">Odoo</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">REST API · JSON-RPC</div>
+                <div style="margin-top:6px"><span class="badge badge-next">● Connector Ready</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">JD Edwards</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">Orchestrator REST</div>
+                <div style="margin-top:6px"><span class="badge badge-planned">● Planned</span></div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-md);padding:12px 10px;text-align:center;box-shadow:var(--shadow-md)">
+                <div style="font-size:11px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em">Tally</div>
+                <div style="font-size:10px;color:var(--neutral-500);margin-top:3px">File Import · XML</div>
+                <div style="margin-top:6px"><span class="badge badge-planned">● Planned</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-panel" style="display:flex;flex-direction:column">
+            <h4>Canonical Normalisation Engine</h4>
+            <ul style="flex:1">
+              <li>Every ERP's GL data normalised to a <strong>single canonical Chart of Accounts</strong></li>
+              <li>Debit-positive normal form enforced across all connectors</li>
+              <li>Field mapping console — drag-and-drop ERP field → canonical field</li>
+              <li>Cross-ERP P&L — compare subsidiaries running different ERPs side-by-side</li>
+              <li>Consolidated dashboard — unified group view regardless of ERP mix</li>
+            </ul>
+            <div style="background:var(--teal-50);border:1px solid var(--teal-200);border-radius:var(--r-md);padding:10px 14px;margin-top:12px;font-size:12px;color:var(--teal-800)">
+              <strong>New client with mixed ERP estate?</strong> i-CFO360 handles it. No rip-and-replace required.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">08 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 9 — MULTI-TENANCY
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s9">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Multi-Tenancy Architecture</div>
+        <h2>Built for Multiple Organisations from Day One</h2>
+        <div class="sub">Complete isolation between organisations — shared infrastructure, zero data leakage.</div>
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;margin-top:22px;flex:1">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:#fff;border:2px solid var(--teal-200);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-md)">
+                <div style="font-size:12px;font-weight:800;color:var(--teal-700);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">RIA Advisory Tenant</div>
+                <div style="font-size:12px;color:var(--neutral-700);line-height:1.6">
+                  17 Subsidiaries<br>RIA Admin users<br>Full financial access<br>BC Dynamics connection<br>Custom branding
+                </div>
+              </div>
+              <div style="background:#fff;border:2px solid var(--coral-200);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-md)">
+                <div style="font-size:12px;font-weight:800;color:var(--coral-500);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">iSource Infosystems Tenant</div>
+                <div style="font-size:12px;color:var(--neutral-700);line-height:1.6">
+                  iSource users only<br>iSource Admin<br>Tenant configuration<br>BC Dynamics connection<br>Platform monitoring
+                </div>
+              </div>
+            </div>
+            <div style="background:var(--teal-900);border-radius:var(--r-lg);padding:12px 16px;display:flex;align-items:center;justify-content:center;gap:8px">
+              <div style="font-size:12px;color:rgba(255,255,255,.7)">↕ Isolated · No cross-tenant data visibility · Shared infrastructure</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--neutral-100);border-radius:var(--r-lg);padding:14px 16px;box-shadow:var(--shadow-md);text-align:center">
+              <div style="font-size:13px;font-weight:800;color:var(--neutral-900)">Superadmin Hub (i-Source)</div>
+              <div style="font-size:12px;color:var(--neutral-500);margin-top:4px">Manages all tenants · Single control plane · Platform monitoring</div>
+            </div>
+          </div>
+          <div class="col-panel" style="display:flex;flex-direction:column">
+            <h4>Onboarding a New Client</h4>
+            <ul style="flex:1">
+              <li>Superadmin creates new tenant <strong>(&lt;1 minute)</strong></li>
+              <li>Configure branding — logo, colours, display name</li>
+              <li>Set subsidiary access — which entities they see</li>
+              <li>Run onboarding wizard: BC connect → CoA map → pipeline test</li>
+              <li>Invite first admin user via email</li>
+            </ul>
+            <div style="background:linear-gradient(135deg,var(--teal-700),var(--teal-800));border-radius:var(--r-md);padding:14px;margin-top:12px;text-align:center">
+              <div style="font-family:var(--font-m);font-size:28px;font-weight:500;color:var(--teal-300)">&lt;1 hour</div>
+              <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:4px">New client fully onboarded &amp; live</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">09 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 10 — TECHNOLOGY STACK
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s10">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Technology</div>
+        <h2>Modern Stack. Zero Licensing Cost. Full Ownership.</h2>
+        <div class="sub">Enterprise-grade architecture at a fraction of the cost — with 100% source code ownership.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px;flex:1">
+          <table class="tbl">
+            <thead><tr><th>Component</th><th>Choice</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td>Frontend</td><td style="font-family:var(--font-m);font-size:11px">React 18 + TypeScript</td><td>Battle-tested, Netlify-hosted, zero server ops</td></tr>
+              <tr><td>Backend</td><td style="font-family:var(--font-m);font-size:11px">FastAPI (Python)</td><td>Async, auto-documented, easy cloud deploy</td></tr>
+              <tr><td>Database</td><td style="font-family:var(--font-m);font-size:11px">PostgreSQL + Star Schema</td><td>ACID + OLAP at scale, no licensing fee</td></tr>
+              <tr><td>Auth</td><td style="font-family:var(--font-m);font-size:11px">Azure Entra ID + JWT</td><td>Enterprise SSO — no password management</td></tr>
+              <tr><td>Deploy</td><td style="font-family:var(--font-m);font-size:11px">Netlify + Container</td><td>Frontend free tier, backend scales on demand</td></tr>
+              <tr><td>Tests</td><td style="font-family:var(--font-m);font-size:11px">Playwright E2E</td><td>Full browser automation, 20 tests passing</td></tr>
+            </tbody>
+          </table>
+          <table class="tbl">
+            <thead><tr><th>Capability</th><th>Hyperion / OneStream</th><th>i-CFO360</th></tr></thead>
+            <tbody>
+              <tr><td>BC native integration</td><td style="color:var(--danger-500)">Custom connector</td><td style="color:var(--success-500);font-weight:700">Built-in OData</td></tr>
+              <tr><td>Source code ownership</td><td style="color:var(--danger-500)">No</td><td style="color:var(--success-500);font-weight:700">100%</td></tr>
+              <tr><td>Monthly close workflow</td><td style="color:var(--danger-500)">Separate module</td><td style="color:var(--success-500);font-weight:700">Built-in</td></tr>
+              <tr><td>Per-user licensing</td><td style="color:var(--danger-500)">$$$$</td><td style="color:var(--success-500);font-weight:700">None</td></tr>
+              <tr><td>Customisation</td><td style="color:var(--warning-500)">Vendor dependent</td><td style="color:var(--success-500);font-weight:700">Full</td></tr>
+              <tr><td>On-prem / cloud choice</td><td style="color:var(--warning-500)">Limited</td><td style="color:var(--success-500);font-weight:700">Either</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">10 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 11 — CURRENT STATUS
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s11">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Current Status</div>
+        <h2>58 Features Built and Deployed. Live Now.</h2>
+        <div class="sub">All core modules complete. 20 Playwright E2E tests passing. Deployed at i-finsights.netlify.app</div>
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;margin-top:22px;flex:1">
+          <table class="tbl">
+            <thead><tr><th>Domain</th><th style="width:80px;text-align:center">Features</th><th style="width:130px">Status</th></tr></thead>
+            <tbody>
+              <tr><td>Data Pipeline (F001–F013)</td><td style="text-align:center;font-family:var(--font-m)">13</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Auth &amp; Access (F014)</td><td style="text-align:center;font-family:var(--font-m)">1</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Executive Dashboards (F015–F020)</td><td style="text-align:center;font-family:var(--font-m)">5</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Financial Reports (F032–F046)</td><td style="text-align:center;font-family:var(--font-m)">14</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Analytics Workbench (F025–F031)</td><td style="text-align:center;font-family:var(--font-m)">7</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Administration (F021–F024, F040)</td><td style="text-align:center;font-family:var(--font-m)">5</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Multi-Tenancy (F047–F051)</td><td style="text-align:center;font-family:var(--font-m)">5</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr><td>Multi-ERP Integration (F055–F058)</td><td style="text-align:center;font-family:var(--font-m)">4</td><td><span class="badge badge-done">✓ Complete</span></td></tr>
+              <tr class="hi"><td><strong>Total</strong></td><td style="text-align:center;font-family:var(--font-m);color:var(--teal-300);font-weight:700">58</td><td><span class="badge" style="background:rgba(255,255,255,.1);color:#fff">✓ All Complete</span></td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="col-panel" style="flex:1">
+              <h4>Quality Gates Passed</h4>
+              <ul>
+                <li>20 Playwright E2E tests passing (headed browser)</li>
+                <li>All 5 role levels tested: superadmin → viewer</li>
+                <li>Superadmin hub → tenant switch → dashboard flow</li>
+                <li>BC OAuth test endpoint functional</li>
+                <li>Star schema: 188,380 GL entries indexed</li>
+              </ul>
+            </div>
+            <div style="background:var(--teal-900);border-radius:var(--r-lg);padding:16px;text-align:center">
+              <div style="font-family:var(--font-m);font-size:11px;color:var(--teal-400);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Live Deployment</div>
+              <div style="font-family:var(--font-m);font-size:14px;color:rgba(255,255,255,.9);word-break:break-all">https://i-finsights.netlify.app</div>
+              <div style="display:flex;justify-content:center;gap:8px;margin-top:10px">
+                <span class="badge" style="background:rgba(91,138,110,.2);color:var(--success-500)">● Live</span>
+                <span class="badge" style="background:rgba(91,138,110,.2);color:var(--success-500)">● All Systems OK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">11 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 12 — ROADMAP
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s12">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Roadmap</div>
+        <h2>What's Next</h2>
+        <div class="sub">Three phases of expansion — from close automation to full enterprise reporting and SaaS scale.</div>
+        <div class="roadmap-phases">
+          <div class="phase-card ph1">
+            <div class="ph-num">Phase 1 — Current</div>
+            <h4>Foundation Complete</h4>
+            <div class="ph-period">Delivered · Live Now</div>
+            <ul>
+              <li>58 features across 8 domains</li>
+              <li>BC integration + star schema + gold layer</li>
+              <li>All financial reports built</li>
+              <li>Multi-tenancy + RBAC</li>
+              <li>Multi-ERP connector framework</li>
+              <li>20 E2E tests passing</li>
+            </ul>
+          </div>
+          <div class="phase-card ph2">
+            <div class="ph-num">Phase 2 — Close Automation &amp; AI</div>
+            <h4>Q3 2026</h4>
+            <div class="ph-period">Planned · In Design</div>
+            <ul>
+              <li>Automated IC reconciliation matching</li>
+              <li>Close deadline alerts (email + in-app)</li>
+              <li>Natural Language Query — "Show March OpEx by entity"</li>
+              <li>AI anomaly detection on GL entries</li>
+              <li>Scheduled pipeline runs (zero-touch daily refresh)</li>
+            </ul>
+          </div>
+          <div class="phase-card ph3">
+            <div class="ph-num">Phase 3 &amp; 4 — External Reporting &amp; Scale</div>
+            <h4>Q4 2026 → 2027</h4>
+            <div class="ph-period">Roadmap · Vision</div>
+            <ul>
+              <li>XBRL / iXBRL export (regulatory filing)</li>
+              <li>Board pack PDF generation (one-click)</li>
+              <li>IFRS/GAAP presentation layer</li>
+              <li>External auditor read-only portal</li>
+              <li>Additional client tenants (SaaS revenue)</li>
+              <li>Mobile dashboard (PWA) + Power Platform integration</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">12 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 13 — BUSINESS CASE / ROI
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s13">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Business Case</div>
+        <h2>Return on Investment</h2>
+        <div class="sub">Conservative estimates based on current finance team size and close cycle data.</div>
+        <div class="roi-row">
+          <div class="roi-big">
+            <h4>Time Savings — Monthly</h4>
+            <table>
+              <thead><tr><th>Activity</th><th>Today</th><th>With i-CFO360</th><th>Saving</th></tr></thead>
+              <tbody>
+                <tr><td>Monthly close</td><td>10 days × 4 staff</td><td>3 days × 2 staff</td><td>34 person-days</td></tr>
+                <tr><td>IC reconciliation</td><td>3 days manually</td><td>Automated</td><td>3 person-days</td></tr>
+                <tr><td>Report preparation</td><td>2 days per request</td><td>Self-service</td><td>~8 person-days</td></tr>
+                <tr><td>DQ fixes</td><td>1 day per close</td><td>Gates prevent</td><td>1 person-day</td></tr>
+                <tr class="total"><td><strong>Total monthly saving</strong></td><td></td><td></td><td><strong>~46 person-days</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="roi-big" style="flex:1">
+              <h4>Risk Reduction</h4>
+              <div class="roi-list">
+                <ul>
+                  <li><strong>Restatement risk</strong> — manual Excel consolidation → material misstatement risk eliminated</li>
+                  <li><strong>Audit risk</strong> — full data lineage → auditors can trace every number to source</li>
+                  <li><strong>Decision risk</strong> — month-old data → real-time → better strategic decisions</li>
+                  <li><strong>Compliance risk</strong> — full RBAC audit trail → regulatory defensibility</li>
+                </ul>
+              </div>
+            </div>
+            <div style="background:var(--teal-900);border-radius:var(--r-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em">Board sees numbers</div>
+                <div style="font-family:var(--font-m);font-size:22px;color:var(--teal-300);margin-top:2px">7 days sooner</div>
+              </div>
+              <div style="width:1px;height:40px;background:rgba(255,255,255,.1)"></div>
+              <div>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em">Intra-month decisions</div>
+                <div style="font-family:var(--font-m);font-size:22px;color:var(--teal-300);margin-top:2px">Live data</div>
+              </div>
+              <div style="width:1px;height:40px;background:rgba(255,255,255,.1)"></div>
+              <div>
+                <div style="font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em">New subsidiary onboard</div>
+                <div style="font-family:var(--font-m);font-size:22px;color:var(--coral-400);margin-top:2px">&lt;1 hour</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">13 / 14</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         SLIDE 14 — ASK + NEXT STEPS
+         ════════════════════════════════════════════════ -->
+    <div class="slide s-light" id="s14">
+      <div class="header-band"></div>
+      <svg class="lattice-band" viewBox="0 0 1280 210"><use href="#lat2"/></svg>
+      <div class="s-content">
+        <div class="eyebrow">Ask &amp; Next Steps</div>
+        <h2>What We Need to Go Live</h2>
+        <div class="sub">Infrastructure + credentials + UAT. Total infrastructure cost under $250/month.</div>
+        <div class="ask-grid">
+          <div class="ask-box">
+            <h4>30 Days <span class="ph-badge" style="background:var(--teal-50);color:var(--teal-700)">Immediate</span></h4>
+            <ul>
+              <li>Production DB hosting — Managed PostgreSQL (Azure / Supabase)</li>
+              <li>Backend cloud deployment — Azure Container Apps or Render.com</li>
+              <li>BC credential provisioning — App registration per BC tenant (IT/BC admin)</li>
+              <li>User acceptance testing — Group Controller + 2 subsidiary controllers, 2 weeks</li>
+            </ul>
+          </div>
+          <div class="ask-box">
+            <h4>90 Days <span class="ph-badge" style="background:var(--coral-50);color:var(--coral-600)">Go Live</span></h4>
+            <ul>
+              <li>Live BC connection — real data from at least 3 BC tenants via OData</li>
+              <li>First live close cycle — run close through Close Cockpit</li>
+              <li>Training — CFO dashboard walkthrough, Controller close workflow, entity detail</li>
+              <li>Hypercare — 2-week support period post go-live</li>
+            </ul>
+          </div>
+          <div class="ask-box" style="grid-column:1/-1">
+            <h4>Investment Required <span class="ph-badge" style="background:var(--neutral-50);color:var(--neutral-600)">Monthly</span></h4>
+            <div class="cost-grid">
+              <div class="cost-tile"><div class="ct-amt">$50–150</div><div class="ct-label">Production DB<br>Azure PostgreSQL</div></div>
+              <div class="cost-tile"><div class="ct-amt">$30–80</div><div class="ct-label">Backend Hosting<br>Azure Container Apps</div></div>
+              <div class="cost-tile"><div class="ct-amt">Free</div><div class="ct-label">Frontend<br>Netlify (current)</div></div>
+            </div>
+            <div class="cost-total"><div class="ct-big">&lt;$250/month</div><div class="ct-sub">Total infrastructure cost to serve all RIA Advisory users</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer footer-light">
+        <div class="footer-brand">i-CFO360 <span>ISource Financial Intelligence Platform</span></div>
+        <div class="footer-num">14 / 14</div>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+</div><!-- /deck -->
+
+<!-- ── Navigation ── -->
+<div id="nav">
+  <button onclick="go(-1)" title="Previous (←)">‹</button>
+  <div id="nav-dots"></div>
+  <span id="nav-counter">1 / 14</span>
+  <button onclick="go(1)" title="Next (→)">›</button>
+</div>
+
+<script>
+const TOTAL = 14;
+let cur = 0;
+
+const slides = () => document.querySelectorAll('.slide');
+const dotsEl = document.getElementById('nav-dots');
+const counter = document.getElementById('nav-counter');
+
+// Build dots
+for(let i=0;i<TOTAL;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' active':'');
+  d.onclick=()=>goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n){
+  const ss=slides();
+  ss[cur].classList.remove('active');
+  ss[cur].classList.add('exit-left');
+  setTimeout(()=>ss[cur].classList.remove('exit-left'),380);
+  cur=Math.max(0,Math.min(TOTAL-1,n));
+  ss[cur].classList.add('active');
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  counter.textContent=(cur+1)+' / '+TOTAL;
+}
+
+function go(dir){goTo(cur+dir)}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' ')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+  if(e.key==='Home')goTo(0);
+  if(e.key==='End')goTo(TOTAL-1);
+});
+
+// Scale stage to fill viewport maintaining 16:9
+function scale(){
+  const stage=document.getElementById('stage');
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const s=Math.min(vw/1280,vh/720);
+  stage.style.transform=`scale(${s})`;
+  stage.style.left=((vw-1280*s)/2)+'px';
+  stage.style.top=((vh-720*s)/2)+'px';
+  stage.style.position='absolute';
+}
+scale();
+window.addEventListener('resize',scale);
+</script>
+</body>
+</html>

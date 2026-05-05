@@ -3,7 +3,7 @@
  * 4-tab config page: Branding | BC Dynamics | Subsidiaries | Plan & Billing
  * Access: ria_admin (own tenant) | isource_admin (own tenant) | superadmin (any)
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { get, put, post } from '../api/client';
 
@@ -64,9 +64,13 @@ export default function TenantConfig() {
   const [error,      setError]      = useState<string | null>(null);
 
   // Branding state
-  const [branding,    setBranding]    = useState<Branding>({});
-  const [brandSaving, setBrandSaving] = useState(false);
-  const [brandOk,     setBrandOk]     = useState(false);
+  const [branding,      setBranding]      = useState<Branding>({});
+  const [brandSaving,   setBrandSaving]   = useState(false);
+  const [brandOk,       setBrandOk]       = useState(false);
+  const [logoFile,      setLogoFile]      = useState<File | null>(null);
+  const [logoPreview,   setLogoPreview]   = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // BC config state
   const [bc,          setBC]          = useState<BCConfig>({});
@@ -112,12 +116,48 @@ export default function TenantConfig() {
 
   // ── Save helpers ──────────────────────────────────────────────────────────
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile || !tenantId) return null;
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', logoFile);
+      const apiBase = import.meta.env.VITE_API_URL ?? '';
+      const res = await fetch(`${apiBase}/api/tenants/${tenantId}/logo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('ria_token')}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error('Logo upload failed');
+      const data = await res.json();
+      return data.logo_url as string;
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   const saveBranding = async () => {
     if (!tenantId) return;
     setBrandSaving(true);
     setBrandOk(false);
     try {
-      await put(`/api/tenants/${tenantId}/config`, { branding });
+      // Upload new logo first if one was selected
+      if (logoFile) {
+        const url = await uploadLogo();
+        if (url) setBranding((b) => ({ ...b, logo_url: url }));
+        const updatedBranding = { ...branding, ...(url ? { logo_url: url } : {}) };
+        await put(`/api/tenants/${tenantId}/config`, { branding: updatedBranding });
+      } else {
+        await put(`/api/tenants/${tenantId}/config`, { branding });
+      }
+      setLogoFile(null);
       setBrandOk(true);
       setTimeout(() => setBrandOk(false), 3000);
     } catch (e: unknown) {
@@ -314,12 +354,49 @@ export default function TenantConfig() {
               </div>
             </div>
           </div>
+          {/* Logo upload */}
           <div>
-            <label style={labelStyle}>Logo URL</label>
-            <input style={inputStyle} placeholder="https://…" value={branding.logo_url ?? ''}
-              onChange={(e) => setBranding((b) => ({ ...b, logo_url: e.target.value }))} />
+            <label style={labelStyle}>Logo</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {(logoPreview || branding.logo_url) && (
+                <img
+                  src={logoPreview ?? (
+                    (branding.logo_url ?? '').startsWith('http')
+                      ? branding.logo_url!
+                      : `${import.meta.env.VITE_API_URL ?? ''}${branding.logo_url}`
+                  )}
+                  alt="Logo"
+                  style={{ height: 48, maxWidth: 160, objectFit: 'contain', borderRadius: 6,
+                    border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }}
+                />
+              )}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                  style={{
+                    padding: '7px 14px', border: '1px solid #d1d5db', borderRadius: 7,
+                    background: '#fff', fontSize: 13, fontWeight: 600,
+                    color: '#374151', cursor: 'pointer',
+                  }}
+                >
+                  {logoUploading ? 'Uploading…' : logoFile ? 'Change logo' : 'Upload logo'}
+                </button>
+                {logoFile && (
+                  <div style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>{logoFile.name}</div>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleLogoChange}
+                />
+              </div>
+            </div>
           </div>
-          <div>{saveBtn(brandSaving, brandOk, saveBranding)}</div>
+          <div>{saveBtn(brandSaving || logoUploading, brandOk, saveBranding)}</div>
         </div>
       )}
 

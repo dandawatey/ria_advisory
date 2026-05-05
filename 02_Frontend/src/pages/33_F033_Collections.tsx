@@ -16,8 +16,6 @@ import {
   type CollectionCustomerRow,
   type CollectionEntityRow,
 } from '../api/client';
-import { GLFilterBar } from '../components/GLFilterBar';
-
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
   if (n == null || isNaN(n)) return '—';
@@ -141,7 +139,7 @@ interface DrillState {
 export default function Collections() {
   const [tab, setTab] = useState<Tab>('monthly');
   const [filterOpts, setFilterOpts] = useState<FilterOptions>({
-    companies: [], years: [], months: [], currencies: [],
+    companies: [], years: [], months: [], currencies: [], account_categories: [],
   });
 
   // Filter state
@@ -150,9 +148,6 @@ export default function Collections() {
   const [monthFrom, setMonthFrom] = useState<string>('');
   const [monthTo, setMonthTo] = useState<string>('');
   const [drill, setDrill] = useState<DrillState | null>(null);
-  const [accountPrefix, setAccountPrefix] = useState('');
-  const [genPostType, setGenPostType] = useState('');
-
   // Data state
   const [summary, setSummary] = useState<CollectionSummary | null>(null);
   const [monthly, setMonthly] = useState<CollectionMonthRow[]>([]);
@@ -190,11 +185,11 @@ export default function Collections() {
     setLoadSummary(true);
     setErrSummary(false);
     api.collections
-      .summary(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
+      .summary(selectedCompanies, year, mf(), mt())
       .then(setSummary)
       .catch(() => setErrSummary(true))
       .finally(() => setLoadSummary(false));
-  }, [selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Monthly tab data
   useEffect(() => {
@@ -202,11 +197,11 @@ export default function Collections() {
     setLoadMonthly(true);
     setErrMonthly(false);
     api.collections
-      .monthly(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
+      .monthly(selectedCompanies, year, mf(), mt())
       .then(setMonthly)
       .catch(() => setErrMonthly(true))
       .finally(() => setLoadMonthly(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Customer tab data
   useEffect(() => {
@@ -216,11 +211,11 @@ export default function Collections() {
     const customerMonthFrom = drill?.type === 'month' ? drill.value : (monthFrom || undefined);
     const customerMonthTo = drill?.type === 'month' ? drill.value : (monthTo || undefined);
     api.collections
-      .byCustomer(selectedCompanies, year, customerMonthFrom, customerMonthTo, 25, accountPrefix || undefined, genPostType || undefined)
+      .byCustomer(selectedCompanies, year, customerMonthFrom, customerMonthTo, 25)
       .then(setCustomers)
       .catch(() => setErrCustomers(true))
       .finally(() => setLoadCustomers(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Entity tab data
   useEffect(() => {
@@ -228,11 +223,11 @@ export default function Collections() {
     setLoadEntities(true);
     setErrEntities(false);
     api.collections
-      .byEntity(selectedCompanies, year, mf(), mt(), accountPrefix || undefined, genPostType || undefined)
+      .byEntity(selectedCompanies, year, mf(), mt())
       .then(setEntities)
       .catch(() => setErrEntities(true))
       .finally(() => setLoadEntities(false));
-  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill, accountPrefix, genPostType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, selectedCompanies, year, monthFrom, monthTo, drill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleCompany = (id: number) => {
     setSelectedCompanies((prev) =>
@@ -463,15 +458,6 @@ export default function Collections() {
                 </button>
               </div>
             )}
-
-            <div style={{ marginTop: 14 }}>
-              <GLFilterBar
-                accountPrefix={accountPrefix}
-                onAccountPrefix={setAccountPrefix}
-                genPostType={genPostType}
-                onGenPostType={setGenPostType}
-              />
-            </div>
           </div>
         </div>
 

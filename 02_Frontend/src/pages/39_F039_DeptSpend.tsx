@@ -67,10 +67,11 @@ function deptTotals(rows: DeptRow[]): { dept: string; vertical: string | null; t
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function DeptSpend() {
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [year, setYear] = useState<number | null>(null);
   const [deptFilter, setDeptFilter] = useState('');
+  const [accountCategory, setAccountCategory] = useState<string>('');
 
   const [summary, setSummary] = useState<DeptSummary | null>(null);
   const [rows, setRows]       = useState<DeptRow[]>([]);
@@ -85,10 +86,11 @@ export default function DeptSpend() {
   const buildQS = useCallback(() => {
     const qs = new URLSearchParams();
     selectedCompanies.forEach((id) => qs.append('company_id', String(id)));
-    if (year)        qs.set('year', String(year));
-    if (deptFilter)  qs.set('department_code', deptFilter);
+    if (year)            qs.set('year',             String(year));
+    if (deptFilter)      qs.set('department_code',  deptFilter);
+    if (accountCategory) qs.set('account_category', accountCategory);
     return qs;
-  }, [selectedCompanies, year, deptFilter]);
+  }, [selectedCompanies, year, deptFilter, accountCategory]);
 
   useEffect(() => {
     setLoadSummary(true);
@@ -116,133 +118,147 @@ export default function DeptSpend() {
   const deptOptions = Array.from(new Set(rows.map((r) => r.department_code))).sort();
 
   return (
-    <div className="page-content">
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>Department Spend</div>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-          Spend by department + vertical · quarterly breakdown
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-          {/* Entity */}
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entity</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
-              {filterOpts.companies.map((c) => (
-                <button key={c.company_id} onClick={() => {
-                  setSelectedCompanies((prev) =>
-                    prev.includes(c.company_id) ? prev.filter((x) => x !== c.company_id) : [...prev, c.company_id]
-                  );
-                }} style={chip(selectedCompanies.includes(c.company_id))}>{c.company_name}</button>
-              ))}
-            </div>
-          </div>
-          {/* Year */}
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Year</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              <button onClick={() => setYear(null)} style={chip(year === null)}>All</button>
-              {filterOpts.years.map((y) => (
-                <button key={y} onClick={() => setYear(y === year ? null : y)} style={chip(year === y)}>{y}</button>
-              ))}
-            </div>
-          </div>
-          {/* Dept Filter */}
-          {deptOptions.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Department</div>
-              <select
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-                style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit', fontSize: 12 }}
-              >
-                <option value="">All</option>
-                {deptOptions.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Department Spend</h1>
+        <p className="page-subtitle">Spend by department + vertical · quarterly breakdown</p>
       </div>
 
       {/* KPI Tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 16 }}>
-        <KPITile label="Total Spend"  value={fmt(summary?.total_spend)}    color="#3b82f6" loading={loadSummary} />
-        <KPITile label="Departments"  value={String(summary?.dept_count ?? '—')}   color="#f59e0b" loading={loadSummary} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
+        <KPITile label="Total Spend"  value={fmt(summary?.total_spend)}              color="#3b82f6" loading={loadSummary} />
+        <KPITile label="Departments"  value={String(summary?.dept_count    ?? '—')}  color="#f59e0b" loading={loadSummary} />
         <KPITile label="Verticals"    value={String(summary?.vertical_count ?? '—')} color="#10b981" loading={loadSummary} />
-        <KPITile label="Entities"     value={String(summary?.entity_count ?? '—')}  color="#8b5cf6" loading={loadSummary} />
+        <KPITile label="Entities"     value={String(summary?.entity_count  ?? '—')}  color="#8b5cf6" loading={loadSummary} />
       </div>
 
-      {/* Bar Chart */}
-      {loadRows ? (
-        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
-      ) : errRows ? (
-        <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-error)' }}>Failed to load</div>
-      ) : (
-        <>
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-title">Top Departments by Spend</div>
-            <div style={{ height: Math.max(240, chartData.length * 28 + 40) }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ left: 120, right: 20, top: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => fmt(v)} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="dept" width={115} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => fmt(v)} />
-                  <Bar dataKey="total" name="Spend">
-                    {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* Filter Panel */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
 
-          {/* Detail Table */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Department</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Vertical</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>Year</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>Period</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Category</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Amount</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Entries</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.slice(0, 200).map((r, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '5px 12px' }}>{r.company_name}</td>
-                      <td style={{ padding: '5px 12px', fontFamily: 'monospace' }}>{r.department_code}</td>
-                      <td style={{ padding: '5px 12px', color: 'var(--color-text-muted)' }}>{r.vertical_code ?? '—'}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'center' }}>{r.fiscal_year}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'center' }}>P{r.fiscal_period}</td>
-                      <td style={{ padding: '5px 12px', color: 'var(--color-text-muted)' }}>{r.account_category ?? '—'}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', fontWeight: 600 }}>{fmt(r.total_amount)}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', color: 'var(--color-text-muted)' }}>{r.entry_count}</td>
-                    </tr>
-                  ))}
-                  {rows.length === 0 && (
-                    <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
-                  )}
-                </tbody>
-              </table>
-              {rows.length > 200 && (
-                <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
-                  Showing 200 of {rows.length} rows
-                </div>
-              )}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Entity</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
+                {filterOpts.companies.map((c) => (
+                  <button key={c.company_id} onClick={() => {
+                    setSelectedCompanies((prev) =>
+                      prev.includes(c.company_id) ? prev.filter((x) => x !== c.company_id) : [...prev, c.company_id]
+                    );
+                  }} style={chip(selectedCompanies.includes(c.company_id))}>{c.company_name}</button>
+                ))}
+              </div>
             </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Year</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setYear(null)} style={chip(year === null)}>All</button>
+                {filterOpts.years.map((y) => (
+                  <button key={y} onClick={() => setYear(y === year ? null : y)} style={chip(year === y)}>{y}</button>
+                ))}
+              </div>
+            </div>
+
+            {deptOptions.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Department</div>
+                <select
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value)}
+                  style={{ width: '100%', padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit', fontSize: 12 }}
+                >
+                  <option value="">All</option>
+                  {deptOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            )}
+
+            {filterOpts.account_categories?.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button onClick={() => setAccountCategory('')} style={chip(accountCategory === '')}>All</button>
+                  {filterOpts.account_categories.map((cat) => (
+                    <button key={cat} onClick={() => setAccountCategory(cat === accountCategory ? '' : cat)} style={chip(accountCategory === cat)}>{cat}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loadRows ? (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
+          ) : errRows ? (
+            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--color-error)' }}>Failed to load</div>
+          ) : (
+            <>
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div className="card-title">Top Departments by Spend</div>
+                <div style={{ height: Math.max(240, chartData.length * 28 + 40) }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 120, right: 20, top: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                      <XAxis type="number" tickFormatter={(v) => fmt(v)} tick={{ fontSize: 11 }} />
+                      <YAxis type="category" dataKey="dept" width={115} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Bar dataKey="total" name="Spend">
+                        {chartData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Department</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Vertical</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>Year</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>Period</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Category</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Amount</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Entries</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.slice(0, 200).map((r, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 12px' }}>{r.company_name}</td>
+                          <td style={{ padding: '5px 12px', fontFamily: 'monospace' }}>{r.department_code}</td>
+                          <td style={{ padding: '5px 12px', color: 'var(--color-text-muted)' }}>{r.vertical_code ?? '—'}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'center' }}>{r.fiscal_year}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'center' }}>P{r.fiscal_period}</td>
+                          <td style={{ padding: '5px 12px', color: 'var(--color-text-muted)' }}>{r.account_category ?? '—'}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', fontWeight: 600 }}>{fmt(r.total_amount)}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', color: 'var(--color-text-muted)' }}>{r.entry_count}</td>
+                        </tr>
+                      ))}
+                      {rows.length === 0 && (
+                        <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  {rows.length > 200 && (
+                    <div style={{ padding: '8px 12px', fontSize: 11, color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)' }}>
+                      Showing 200 of {rows.length} rows
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

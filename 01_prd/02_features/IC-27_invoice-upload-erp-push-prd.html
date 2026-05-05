@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IC-27 — Invoice Upload &amp; ERP Push Utility · PRD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   i-Source Design System Tokens
+═══════════════════════════════════════════════════════════ */
+:root {
+  --teal-50: #EEF5F4; --teal-100: #D4E6E3; --teal-200: #A9CDC8;
+  --teal-300: #7DB3AC; --teal-400: #4F948D; --teal-500: #2F7873;
+  --teal-600: #1F6B66; --teal-700: #175551; --teal-800: #0F3F3C;
+  --teal-900: #082624;
+  --coral-300: #EE7D72; --coral-400: #E8564A; --coral-500: #E8443B;
+  --coral-600: #C93328;
+  --neutral-0: #FFFFFF; --neutral-25: #FAFBFB; --neutral-50: #F4F6F6;
+  --neutral-100: #E8ECEC; --neutral-200: #D1D8D8; --neutral-300: #B0BABA;
+  --neutral-500: #66726F; --neutral-600: #4A5352; --neutral-700: #333938;
+  --neutral-800: #1F2423; --neutral-900: #0E1211;
+  --success-500: #5B8A6E; --warning-500: #B88A3E; --danger-500: #B4554E;
+  --font-display: 'Nunito Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --shadow-sm: 0 1px 3px rgba(15,63,60,0.08), 0 1px 2px rgba(15,63,60,0.04);
+  --shadow-md: 0 4px 8px rgba(15,63,60,0.08), 0 2px 4px rgba(15,63,60,0.04);
+  --shadow-lg: 0 12px 24px rgba(15,63,60,0.10), 0 4px 8px rgba(15,63,60,0.04);
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Base Reset & Typography
+═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 15px; }
+body {
+  margin: 0; padding: 0;
+  font-family: var(--font-display);
+  color: var(--neutral-900);
+  background: var(--neutral-50);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Cover Page
+═══════════════════════════════════════════════════════════ */
+.cover {
+  min-height: 100vh;
+  background: var(--teal-900);
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: 0 0 80px;
+}
+.cover-lattice {
+  position: absolute; inset: 0;
+  opacity: .18; z-index: 0;
+  pointer-events: none;
+}
+.cover-scrim {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(130deg, rgba(8,38,36,.95) 0%, rgba(8,38,36,.65) 55%, rgba(8,38,36,.2) 100%);
+}
+.cover-content {
+  position: relative; z-index: 2;
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center;
+  padding: 120px 96px 80px;
+  max-width: 900px;
+}
+.cover-eyebrow {
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase; color: var(--coral-300);
+  margin-bottom: 20px;
+}
+.cover-accent-rule { width: 72px; height: 4px; background: var(--coral-500); margin-bottom: 28px; }
+.cover-title {
+  font-family: var(--font-display); font-size: 62px; font-weight: 900;
+  line-height: 1.05; letter-spacing: -0.025em;
+  color: #fff; margin: 0 0 10px;
+  text-shadow: 0 2px 24px rgba(0,0,0,.3);
+}
+.cover-ticket {
+  font-family: var(--font-mono); font-size: 13px; color: var(--teal-300);
+  letter-spacing: .06em; margin-bottom: 20px;
+}
+.cover-sub {
+  font-size: 20px; font-weight: 400; line-height: 1.55;
+  color: rgba(255,255,255,.88); max-width: 680px; margin: 0 0 48px;
+}
+.cover-meta-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+  border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius-lg);
+  overflow: hidden; max-width: 720px;
+}
+.cover-meta-item {
+  padding: 16px 20px;
+  border-right: 1px solid rgba(255,255,255,.12);
+}
+.cover-meta-item:last-child { border-right: none; }
+.cover-meta-label {
+  font-size: 10px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: rgba(255,255,255,.45); margin-bottom: 4px;
+}
+.cover-meta-value { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.9); }
+
+.cover-footer {
+  position: relative; z-index: 2;
+  padding: 20px 96px 0;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.cover-footer-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.cover-logo-box {
+  background: var(--teal-700); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 15px; font-weight: 900; color: white; letter-spacing: -.01em;
+}
+.cover-logo-box span { color: var(--coral-400); }
+.cover-footer-name {
+  font-size: 13px; font-weight: 600; color: rgba(255,255,255,.75);
+}
+.cover-footer-conf {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(255,255,255,.4); letter-spacing: .06em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Main Document Body
+═══════════════════════════════════════════════════════════ */
+.doc-body {
+  max-width: 960px; margin: 0 auto;
+  padding: 60px 64px 120px;
+  background: var(--neutral-0);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ─ TOC ─────────────────────────────────────────────────── */
+.toc-page {
+  padding: 0 0 56px;
+  border-bottom: 2px solid var(--neutral-100);
+  margin-bottom: 56px;
+}
+.toc-header {
+  background: linear-gradient(135deg, var(--teal-700), var(--teal-800));
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  position: relative; overflow: hidden;
+}
+.toc-header svg.lattice-mini {
+  position: absolute; inset: 0; opacity: .12; pointer-events: none;
+}
+.toc-header-content { position: relative; z-index: 1; }
+.toc-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--coral-300); margin-bottom: 6px; }
+.toc-title { font-size: 28px; font-weight: 800; color: white; letter-spacing: -.02em; }
+.toc-list { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 32px; }
+.toc-list li {
+  display: flex; align-items: baseline; gap: 0;
+  padding: 8px 0; border-bottom: 1px solid var(--neutral-50);
+  break-inside: avoid;
+}
+.toc-num { font-family: var(--font-mono); font-size: 11px; color: var(--coral-500); font-weight: 600; min-width: 28px; }
+.toc-label { font-size: 13.5px; font-weight: 600; color: var(--neutral-700); }
+.toc-pts { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--neutral-300); }
+
+/* ─ Section Headers ──────────────────────────────────────── */
+.section {
+  margin-bottom: 52px;
+  page-break-inside: avoid;
+}
+.section-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--neutral-100);
+}
+.section-num {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  color: var(--coral-500); letter-spacing: .08em;
+  background: var(--coral-500); color: white;
+  padding: 4px 8px; border-radius: var(--radius-sm);
+  white-space: nowrap; margin-top: 3px;
+}
+.section-title { font-size: 26px; font-weight: 800; color: var(--teal-800); letter-spacing: -.02em; line-height: 1.2; }
+
+.subsection { margin: 28px 0; }
+.subsection-title {
+  font-size: 16px; font-weight: 800; color: var(--neutral-800);
+  letter-spacing: -.01em; margin: 0 0 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.subsection-title::before {
+  content: ''; display: block; width: 4px; height: 18px;
+  background: var(--teal-500); border-radius: 2px;
+}
+
+/* ─ Impact Table (cover-style) ───────────────────────────── */
+.impact-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--neutral-100);
+  border: 1px solid var(--neutral-100);
+  border-radius: var(--radius-lg); overflow: hidden;
+  margin: 20px 0;
+}
+.impact-cell {
+  background: white; padding: 18px 16px;
+  display: flex; flex-direction: column;
+}
+.impact-label { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--neutral-500); margin-bottom: 6px; }
+.impact-before { font-size: 13px; color: var(--danger-500); font-weight: 500; margin-bottom: 2px; }
+.impact-before::before { content: 'Before: '; font-weight: 700; }
+.impact-after { font-size: 13px; color: var(--success-500); font-weight: 500; }
+.impact-after::before { content: 'After: '; font-weight: 700; }
+
+/* ─ Persona Cards ───────────────────────────────────────── */
+.persona-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 16px 0; }
+.persona-card {
+  border: 1px solid var(--neutral-100);
+  border-top: 4px solid var(--teal-500);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.persona-card:nth-child(2) { border-top-color: var(--coral-500); }
+.persona-card:nth-child(3) { border-top-color: var(--teal-700); }
+.persona-role {
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--teal-600); margin-bottom: 6px;
+}
+.persona-card:nth-child(2) .persona-role { color: var(--coral-600); }
+.persona-name { font-size: 16px; font-weight: 800; color: var(--neutral-800); margin-bottom: 10px; }
+.persona-field { font-size: 12.5px; color: var(--neutral-600); margin-bottom: 6px; line-height: 1.4; }
+.persona-field strong { color: var(--neutral-800); }
+
+/* ─ Feature Story Card ───────────────────────────────────── */
+.story-card {
+  border: 1px solid var(--neutral-100);
+  border-left: 5px solid var(--teal-500);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin: 20px 0;
+  box-shadow: var(--shadow-sm);
+  page-break-inside: avoid;
+}
+.story-meta {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.badge {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: var(--radius-sm);
+  letter-spacing: .04em;
+}
+.badge-ticket { background: var(--teal-900); color: white; }
+.badge-points { background: var(--coral-500); color: white; }
+.badge-agent { background: var(--neutral-100); color: var(--neutral-700); }
+.badge-sprint { background: var(--teal-50); color: var(--teal-700); border: 1px solid var(--teal-200); }
+.story-title { font-size: 17px; font-weight: 800; color: var(--teal-800); margin: 0 0 14px; }
+
+/* ─ Tables ───────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: linear-gradient(135deg, var(--teal-700), var(--teal-800)); }
+thead th {
+  padding: 11px 14px; text-align: left;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.9);
+}
+tbody tr { border-bottom: 1px solid var(--neutral-100); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:nth-child(even) { background: var(--neutral-25); }
+tbody td { padding: 10px 14px; color: var(--neutral-700); vertical-align: top; line-height: 1.4; }
+tbody td:first-child { font-weight: 600; color: var(--neutral-800); }
+.tbl-code { font-family: var(--font-mono); font-size: 11px; color: var(--teal-700); }
+
+/* ─ AC List ──────────────────────────────────────────────── */
+.ac-list { list-style: none; margin: 10px 0; padding: 0; }
+.ac-list li {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 7px 0; border-bottom: 1px dashed var(--neutral-100);
+  font-size: 13.5px; color: var(--neutral-700); line-height: 1.4;
+}
+.ac-list li:last-child { border-bottom: none; }
+.ac-num {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  color: var(--teal-600); min-width: 44px;
+  background: var(--teal-50); padding: 2px 6px; border-radius: 4px;
+  text-align: center; margin-top: 1px;
+}
+
+/* ─ Architecture Box ─────────────────────────────────────── */
+.arch-box {
+  background: var(--teal-900);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  margin: 16px 0;
+  position: relative; overflow: hidden;
+}
+.arch-box svg.lattice-mini {
+  position: absolute; inset: 0; opacity: .08; pointer-events: none;
+}
+.arch-box-content { position: relative; z-index: 1; }
+.arch-box pre {
+  margin: 0; font-family: var(--font-mono); font-size: 12px;
+  color: var(--teal-200); line-height: 1.7;
+}
+
+/* ─ Tool Registry ────────────────────────────────────────── */
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+.tool-item {
+  border: 1px solid var(--neutral-100);
+  border-left: 3px solid var(--teal-500);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--neutral-25);
+}
+.tool-name { font-family: var(--font-mono); font-size: 12px; color: var(--teal-700); font-weight: 600; margin-bottom: 4px; }
+.tool-sig { font-family: var(--font-mono); font-size: 11px; color: var(--neutral-500); margin-bottom: 4px; }
+.tool-desc { font-size: 12px; color: var(--neutral-600); line-height: 1.4; }
+
+/* ─ DB Schema ────────────────────────────────────────────── */
+.db-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.db-card {
+  border: 1px solid var(--neutral-100); border-radius: var(--radius-md);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.db-card-header {
+  background: var(--teal-800); padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.db-card-name { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: white; }
+.db-card-tag { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.db-card-tag.immutable { color: var(--coral-300); }
+.db-card-tag.mutable { color: var(--teal-300); }
+.db-card-cols { padding: 10px 14px; }
+.db-col-row { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--neutral-50); font-size: 12px; }
+.db-col-row:last-child { border-bottom: none; }
+.db-col-name { font-family: var(--font-mono); color: var(--teal-700); min-width: 140px; font-size: 11.5px; }
+.db-col-type { font-family: var(--font-mono); color: var(--neutral-400); font-size: 11px; }
+.db-col-note { color: var(--neutral-500); font-size: 11px; font-style: italic; }
+
+/* ─ API Endpoints ────────────────────────────────────────── */
+.api-list { margin: 14px 0; }
+.api-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-bottom: 1px solid var(--neutral-100);
+  font-size: 13px;
+}
+.api-item:last-child { border-bottom: none; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.api-item:first-child { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.api-item { background: white; }
+.api-item:nth-child(even) { background: var(--neutral-25); }
+.method-badge {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  padding: 3px 7px; border-radius: var(--radius-sm);
+  min-width: 50px; text-align: center;
+}
+.method-get { background: var(--teal-50); color: var(--teal-700); }
+.method-post { background: #EEF4F0; color: var(--success-500); }
+.method-patch { background: #FAF2E4; color: var(--warning-500); }
+.api-path { font-family: var(--font-mono); font-size: 12px; color: var(--neutral-700); min-width: 280px; }
+.api-desc { font-size: 12.5px; color: var(--neutral-600); }
+.api-auth { margin-left: auto; }
+.api-auth .badge { background: var(--teal-900); color: rgba(255,255,255,.8); font-size: 10px; }
+
+/* ─ Security / NFR Cards ─────────────────────────────────── */
+.req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+.req-card {
+  border: 1px solid var(--neutral-100); border-radius: var(--radius-md);
+  padding: 14px 16px; box-shadow: var(--shadow-sm);
+  page-break-inside: avoid;
+}
+.req-icon { font-size: 20px; margin-bottom: 8px; }
+.req-title { font-size: 13.5px; font-weight: 800; color: var(--neutral-800); margin-bottom: 4px; }
+.req-desc { font-size: 12.5px; color: var(--neutral-600); line-height: 1.45; }
+
+/* ─ Lifecycle Diagram ─────────────────────────────────────── */
+.lifecycle {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; margin: 20px 0;
+}
+.lc-row { display: flex; align-items: center; gap: 8px; }
+.lc-state {
+  padding: 7px 20px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.lc-state.uploaded { background: var(--neutral-100); color: var(--neutral-700); }
+.lc-state.extracting { background: var(--teal-50); color: var(--teal-700); }
+.lc-state.extracted { background: var(--teal-100); color: var(--teal-800); }
+.lc-state.validating { background: #FAF2E4; color: var(--warning-500); }
+.lc-state.pending { background: #FAF2E4; color: var(--warning-500); }
+.lc-state.approved { background: #EEF4F0; color: var(--success-500); }
+.lc-state.posted { background: var(--teal-700); color: white; }
+.lc-state.failed { background: #F7E8E6; color: var(--danger-500); }
+.lc-arrow { color: var(--neutral-400); font-size: 16px; }
+.lc-fork { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.lc-fork-label { font-size: 11px; color: var(--neutral-400); font-style: italic; }
+.lc-connector { width: 2px; height: 20px; background: var(--neutral-200); margin: 0 auto; }
+
+/* ─ Sprint Plan ──────────────────────────────────────────── */
+.sprint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.sprint-card {
+  border: 1px solid var(--neutral-100); border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-sm);
+}
+.sprint-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sprint-1 .sprint-header { background: var(--teal-700); }
+.sprint-2 .sprint-header { background: var(--teal-800); }
+.sprint-name { font-size: 14px; font-weight: 800; color: white; }
+.sprint-pts { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,.7); }
+.sprint-rows { padding: 0 18px 14px; }
+.sprint-row {
+  display: flex; align-items: center; gap: 10px; padding: 9px 0;
+  border-bottom: 1px dashed var(--neutral-100); font-size: 13px;
+}
+.sprint-row:last-child { border-bottom: none; }
+.sprint-ticket { font-family: var(--font-mono); font-size: 11px; color: var(--teal-600); font-weight: 700; min-width: 48px; }
+.sprint-story { font-weight: 600; color: var(--neutral-700); flex: 1; }
+.sprint-agent { font-size: 11px; color: var(--neutral-400); }
+.sprint-sp { font-family: var(--font-mono); font-size: 11px; background: var(--coral-500); color: white; padding: 2px 6px; border-radius: 999px; font-weight: 600; }
+
+/* ─ Success Metrics ──────────────────────────────────────── */
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 16px 0; }
+.metric-card {
+  border: 1px solid var(--neutral-100); border-radius: var(--radius-lg);
+  padding: 18px; text-align: center; box-shadow: var(--shadow-sm);
+}
+.metric-value { font-size: 28px; font-weight: 900; color: var(--teal-600); letter-spacing: -.02em; margin-bottom: 4px; }
+.metric-label { font-size: 12px; font-weight: 600; color: var(--neutral-600); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.metric-desc { font-size: 11.5px; color: var(--neutral-400); line-height: 1.4; }
+
+/* ─ Jira Traceability ────────────────────────────────────── */
+.jira-grid { display: grid; gap: 10px; margin: 16px 0; }
+.jira-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border: 1px solid var(--neutral-100);
+  border-left: 4px solid var(--teal-500); border-radius: var(--radius-md);
+  background: var(--neutral-25);
+}
+.jira-epic { border-left-color: var(--coral-500) !important; background: white !important; }
+.jira-ticket { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--teal-700); min-width: 52px; }
+.jira-title { font-size: 13.5px; font-weight: 600; color: var(--neutral-700); flex: 1; }
+.jira-type { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--neutral-400); background: var(--neutral-100); padding: 2px 7px; border-radius: 999px; }
+.jira-points { font-family: var(--font-mono); font-size: 11px; color: var(--neutral-400); }
+.jira-sprint-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.jira-s1 { background: var(--teal-50); color: var(--teal-700); }
+.jira-s2 { background: var(--teal-100); color: var(--teal-800); }
+
+/* ─ Prose ─────────────────────────────────────────────────── */
+p { margin: 0 0 12px; color: var(--neutral-700); font-size: 14px; line-height: 1.65; }
+ul, ol { margin: 8px 0 12px 20px; padding: 0; color: var(--neutral-700); font-size: 14px; line-height: 1.6; }
+li { margin-bottom: 4px; }
+strong { color: var(--neutral-800); font-weight: 700; }
+code { font-family: var(--font-mono); font-size: 12px; background: var(--neutral-50); padding: 2px 5px; border-radius: 3px; color: var(--teal-700); border: 1px solid var(--neutral-100); }
+
+/* ─ Callout ──────────────────────────────────────────────── */
+.callout {
+  display: flex; gap: 12px; padding: 14px 16px;
+  border-radius: var(--radius-md); margin: 16px 0;
+  border: 1px solid;
+}
+.callout-info { background: var(--teal-50); border-color: var(--teal-200); }
+.callout-warn { background: #FAF2E4; border-color: #E8D5B0; }
+.callout-icon { font-size: 18px; flex-shrink: 0; }
+.callout-body { font-size: 13.5px; line-height: 1.5; color: var(--neutral-700); }
+
+/* ─ Page Break ───────────────────────────────────────────── */
+.page-break { page-break-before: always; border-top: 2px solid var(--neutral-100); margin: 48px 0; padding-top: 8px; }
+
+/* ─ Footer Strip ─────────────────────────────────────────── */
+.doc-footer {
+  margin-top: 60px; padding-top: 20px;
+  border-top: 2px solid var(--neutral-100);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.doc-footer-brand { font-size: 12px; font-weight: 700; color: var(--teal-600); }
+.doc-footer-meta { font-family: var(--font-mono); font-size: 11px; color: var(--neutral-400); }
+
+/* ═══════════════════════════════════════════════════════════
+   Print Overrides
+═══════════════════════════════════════════════════════════ */
+@media print {
+  @page { size: A4; margin: 0; }
+  body { background: white !important; }
+  .doc-body { box-shadow: none !important; padding: 40px 56px 80px !important; }
+  .cover { min-height: 297mm; }
+  .page-break { page-break-before: always; }
+  .section { page-break-inside: avoid; }
+  .story-card, .db-card, .sprint-card, .persona-card { page-break-inside: avoid; }
+  a { text-decoration: none; color: inherit !important; }
+  .arch-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  thead tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .sprint-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .cover-meta-grid { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <svg class="cover-lattice" viewBox="0 0 1280 900" preserveAspectRatio="xMidYMid slice">
+    <defs><pattern id="hex" x="0" y="0" width="140" height="121" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#7DB3AC" stroke-width="1.6">
+        <polygon points="35,10 70,10 87,40 70,70 35,70 18,40"/>
+        <polygon points="105,10 140,10 157,40 140,70 105,70 87,40"/>
+        <polygon points="70,70 105,70 122,100 105,130 70,130 53,100"/>
+      </g></pattern></defs>
+    <rect width="100%" height="100%" fill="url(#hex)"/>
+  </svg>
+  <div class="cover-scrim"></div>
+
+  <div class="cover-content">
+    <div class="cover-accent-rule"></div>
+    <div class="cover-eyebrow">Product Requirements Document · 2026-04-30</div>
+    <div class="cover-ticket">IC-27 · EPIC · i-CFO360</div>
+    <h1 class="cover-title">Invoice Upload<br>&amp; ERP Push<br>Utility</h1>
+    <p class="cover-sub">Agentic invoice processing — Finance uploads PDF, Excel, or Image invoices; AI extracts, validates, and pushes to ERP with full audit trail and human-in-the-loop review.</p>
+
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Version</div>
+        <div class="cover-meta-value">1.0 · Draft</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Owner</div>
+        <div class="cover-meta-value">Aarav_PM_001</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Reviewer</div>
+        <div class="cover-meta-value">Kabir_010</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Stories</div>
+        <div class="cover-meta-value">IC-28 → IC-33</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div class="cover-footer-brand">
+      <div class="cover-logo-box">i-<span>CFO</span>360</div>
+      <div class="cover-footer-name">i-Source Infosystems · i-CFO360 Platform</div>
+    </div>
+    <div class="cover-footer-conf">INTERNAL CONFIDENTIAL · PRD v1.0</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     DOCUMENT BODY
+════════════════════════════════════════════════════════ -->
+<div class="doc-body">
+
+  <!-- ── TABLE OF CONTENTS ── -->
+  <div class="toc-page">
+    <div class="toc-header">
+      <svg class="lattice-mini" viewBox="0 0 900 90" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="hex2" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1">
+            <polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/>
+          </g></pattern></defs>
+        <rect width="100%" height="100%" fill="url(#hex2)"/>
+      </svg>
+      <div class="toc-header-content">
+        <div class="toc-eyebrow">Contents</div>
+        <div class="toc-title">IC-27 — Invoice Upload &amp; ERP Push Utility</div>
+      </div>
+    </div>
+    <ul class="toc-list">
+      <li><span class="toc-num">01</span><span class="toc-label">Executive Summary</span></li>
+      <li><span class="toc-num">02</span><span class="toc-label">User Personas</span></li>
+      <li><span class="toc-num">03</span><span class="toc-label">User Journey</span></li>
+      <li><span class="toc-num">04</span><span class="toc-label">Feature Requirements (IC-28–33)</span></li>
+      <li><span class="toc-num">05</span><span class="toc-label">Invoice Lifecycle State Machine</span></li>
+      <li><span class="toc-num">06</span><span class="toc-label">Agentic Architecture — InvoiceAgent</span></li>
+      <li><span class="toc-num">07</span><span class="toc-label">Data Model</span></li>
+      <li><span class="toc-num">08</span><span class="toc-label">API Design</span></li>
+      <li><span class="toc-num">09</span><span class="toc-label">Security Requirements</span></li>
+      <li><span class="toc-num">10</span><span class="toc-label">Non-Functional Requirements</span></li>
+      <li><span class="toc-num">11</span><span class="toc-label">Out of Scope — Phase 1</span></li>
+      <li><span class="toc-num">12</span><span class="toc-label">Rollout Plan</span></li>
+      <li><span class="toc-num">13</span><span class="toc-label">Success Metrics</span></li>
+      <li><span class="toc-num">14</span><span class="toc-label">Jira Traceability</span></li>
+    </ul>
+  </div>
+
+  <!-- ══ 1. EXECUTIVE SUMMARY ══════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <div class="section-title">Executive Summary</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Problem</div>
+      <p>Finance teams across all i-CFO360 client organisations receive vendor invoices in heterogeneous formats — PDF, Excel, and scanned images. The current manual workflow creates three compounding problems:</p>
+      <ul>
+        <li><strong>Speed:</strong> 5–15 minutes per invoice of manual ERP data entry</li>
+        <li><strong>Accuracy:</strong> 3–8% error rate — industry benchmark for manual keying; errors discovered weeks later during reconciliation</li>
+        <li><strong>Auditability:</strong> No trail on who entered what and when; month-end bottleneck with 200–500 invoices queued</li>
+      </ul>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Strategic Goal</div>
+      <p>Build an <strong>agentic invoice processing utility</strong> within i-CFO360 that: accepts PDF, Excel, and image invoices in batch; uses an AI agent (Claude claude-sonnet-4-6 + tool use) to extract, validate, and resolve ambiguity; surfaces a Finance review console for human approval before any ERP push; and maintains an immutable audit log of every action.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Business Impact</div>
+      <div class="impact-grid">
+        <div class="impact-cell">
+          <div class="impact-label">Processing Time</div>
+          <div class="impact-before">5–15 min / invoice</div>
+          <div class="impact-after">&lt; 2 min (review only)</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-label">Error Rate</div>
+          <div class="impact-before">3–8% (manual keying)</div>
+          <div class="impact-after">&lt; 0.5% (AI + human confirm)</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-label">Audit Trail</div>
+          <div class="impact-before">None</div>
+          <div class="impact-after">100% — every state change</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-label">Batch Capacity</div>
+          <div class="impact-before">1 at a time</div>
+          <div class="impact-after">50 invoices / session</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 2. USER PERSONAS ═══════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <div class="section-title">User Personas</div>
+    </div>
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="persona-role">P1 · Daily User</div>
+        <div class="persona-name">Finance Data Entry Clerk</div>
+        <div class="persona-field"><strong>Pain:</strong> Spends 60–80% of day on manual ERP data entry. Repetitive, error-prone.</div>
+        <div class="persona-field"><strong>Goal:</strong> Upload batch, confirm AI-extracted data, approve. Done.</div>
+        <div class="persona-field"><strong>Tech level:</strong> Non-technical. Requires intuitive drag-drop UI.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-role">P2 · Controller</div>
+        <div class="persona-name">Finance Controller</div>
+        <div class="persona-field"><strong>Pain:</strong> No visibility into invoice queue health. Errors discovered in reconciliation.</div>
+        <div class="persona-field"><strong>Goal:</strong> See invoice queue: pending, failed, posted. Drill into exceptions.</div>
+        <div class="persona-field"><strong>Tech level:</strong> Finance-domain expert; comfortable with data tables.</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-role">P3 · Management</div>
+        <div class="persona-name">Finance Manager / CFO</div>
+        <div class="persona-field"><strong>Pain:</strong> No approval workflow — invoices either go in or get lost.</div>
+        <div class="persona-field"><strong>Goal:</strong> Review flagged invoices above threshold; approve or reject with reason.</div>
+        <div class="persona-field"><strong>Tech level:</strong> Light digital user; needs simple, unambiguous interface.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 3. USER JOURNEY ════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <div class="section-title">User Journey</div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-icon">🧑‍💼</div>
+      <div class="callout-body"><strong>Finance Clerk:</strong> Upload batch of PDFs → sees per-file extraction progress → reviews AI-pre-filled fields → corrects any WARN/FAIL → approves → invoice pushed to BC → confirmation with ERP document number.</div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-icon">📊</div>
+      <div class="callout-body"><strong>Finance Controller:</strong> Opens History page → filters by <code>status = PENDING_REVIEW</code> → reviews exceptions → clears backlog → exports CSV for audit.</div>
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-body"><strong>AI Agent (background):</strong> Receives file → extracts fields with confidence scores → validates all 7 rules → pauses and asks Finance for help if confidence &lt; 70% or FAIL rule cannot be auto-resolved → on Finance approval → pushes to ERP → logs every action to immutable audit table.</div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══ 4. FEATURE REQUIREMENTS ═══════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <div class="section-title">Feature Requirements</div>
+    </div>
+
+    <!-- IC-28 -->
+    <div class="story-card">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-28</span>
+        <span class="badge badge-points">5 pts</span>
+        <span class="badge badge-agent">Ananya_Frontend_004</span>
+        <span class="badge badge-sprint">Sprint 1</span>
+      </div>
+      <div class="story-title">File Upload UI — Drag-Drop, Batch, Progress</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Requirement</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td>F1.1</td><td>Drag-and-drop zone accepting PDF, Excel (.xlsx/.xls), Image (JPG/PNG/TIFF)</td><td>Must</td></tr>
+            <tr><td>F1.2</td><td>File picker fallback (Browse button)</td><td>Must</td></tr>
+            <tr><td>F1.3</td><td>Batch upload: up to 50 files per session</td><td>Must</td></tr>
+            <tr><td>F1.4</td><td>Per-file upload progress bar</td><td>Must</td></tr>
+            <tr><td>F1.5</td><td>Client-side validation: file type + 10 MB max enforced before upload</td><td>Must</td></tr>
+            <tr><td>F1.6</td><td>Batch reference field (user labels the batch, e.g. "April AP Run")</td><td>Should</td></tr>
+            <tr><td>F1.7</td><td>On upload complete, navigate to Review Console for first file in batch</td><td>Must</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>User can drag 10 PDFs onto drop zone; all 10 upload successfully</li>
+        <li><span class="ac-num">AC-02</span>File &gt; 10 MB rejected client-side with clear error before any API call</li>
+        <li><span class="ac-num">AC-03</span>Unsupported file type (e.g. .docx) rejected with helpful error message</li>
+        <li><span class="ac-num">AC-04</span>Progress bar shows per-file upload % in real time</li>
+        <li><span class="ac-num">AC-05</span>After all files uploaded, user sees extraction status screen</li>
+      </ul>
+    </div>
+
+    <!-- IC-29 -->
+    <div class="story-card" style="border-left-color: var(--coral-500);">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-29</span>
+        <span class="badge badge-points">8 pts</span>
+        <span class="badge badge-agent">Rohan_Backend_003</span>
+        <span class="badge badge-sprint">Sprint 1</span>
+      </div>
+      <div class="story-title">Parsing Engine — PDF / Excel / Image + InvoiceAgent</div>
+      <p>The parsing engine uses a tiered approach per file type, always falling back to Claude Vision for unstructured or scanned content.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File Type</th><th>Primary Parser</th><th>Fallback</th></tr></thead>
+          <tbody>
+            <tr><td>PDF (text layer)</td><td>pdfplumber — text extraction + regex field mapping</td><td>Claude Vision</td></tr>
+            <tr><td>PDF (scanned)</td><td>pdf2image → Claude Vision structured prompt</td><td>—</td></tr>
+            <tr><td>Excel (.xlsx/.xls)</td><td>openpyxl — header detection + column mapping</td><td>—</td></tr>
+            <tr><td>Image (JPG/PNG/TIFF)</td><td>Claude Vision API — structured extraction prompt</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px; color: var(--neutral-600);">10 mandatory extracted fields: <code>vendor_name</code>, <code>invoice_no</code>, <code>invoice_date</code>, <code>due_date</code>, <code>currency</code>, <code>subtotal</code>, <code>tax_amount</code>, <code>total_amount</code>, <code>line_description</code>, <code>line_amount</code>. Every field carries a confidence score 0–100. Fields &lt; 70 trigger <code>request_human_input</code> via InvoiceAgent.</p>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>Text-based PDF with clear layout → all 10 fields extracted, confidence &gt; 85</li>
+        <li><span class="ac-num">AC-02</span>Scanned PDF → Claude Vision extracts ≥ 8/10 fields; missing fields flagged WARN</li>
+        <li><span class="ac-num">AC-03</span>Excel invoice → header row detected, line items mapped to canonical fields</li>
+        <li><span class="ac-num">AC-04</span>Extraction async; upload endpoint returns immediately; frontend polls status</li>
+        <li><span class="ac-num">AC-05</span>Parsing failure (unreadable file) → <code>status = EXTRACTION_FAILED</code>, error stored</li>
+      </ul>
+    </div>
+
+    <!-- IC-30 -->
+    <div class="story-card">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-30</span>
+        <span class="badge badge-points">5 pts</span>
+        <span class="badge badge-agent">Rohan_Backend_003</span>
+        <span class="badge badge-sprint">Sprint 1</span>
+      </div>
+      <div class="story-title">Validation Engine — 7 Rules + State Machine</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Rule</th><th>Severity</th><th>Condition</th></tr></thead>
+          <tbody>
+            <tr><td>MANDATORY_FIELDS</td><td><span style="color:var(--danger-500); font-weight:700">FAIL</span></td><td>vendor_name, invoice_no, invoice_date, total_amount all present</td></tr>
+            <tr><td>AMOUNT_CONSISTENCY</td><td><span style="color:var(--danger-500); font-weight:700">FAIL</span></td><td>subtotal + tax_amount = total_amount (± 0.01 tolerance)</td></tr>
+            <tr><td>TAX_REASONABLENESS</td><td><span style="color:var(--warning-500); font-weight:700">WARN</span></td><td>tax_rate between 0–30%; flag if outside range</td></tr>
+            <tr><td>DATE_VALID</td><td><span style="color:var(--danger-500); font-weight:700">FAIL</span></td><td>invoice_date ≤ today; due_date ≥ invoice_date if present</td></tr>
+            <tr><td>DUPLICATE_INVOICE</td><td><span style="color:var(--danger-500); font-weight:700">FAIL</span></td><td>invoice_no + vendor_no combination not already POSTED</td></tr>
+            <tr><td>VENDOR_EXISTS</td><td><span style="color:var(--danger-500); font-weight:700">FAIL</span></td><td>vendor matched to ERP master with confidence ≥ 80%</td></tr>
+            <tr><td>CURRENCY_SUPPORTED</td><td><span style="color:var(--warning-500); font-weight:700">WARN</span></td><td>currency code in ERP configured currency list</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>Invoice with mismatched amounts → FAIL AMOUNT_CONSISTENCY, push blocked</li>
+        <li><span class="ac-num">AC-02</span>Duplicate invoice # (same vendor, already POSTED) → FAIL DUPLICATE_INVOICE</li>
+        <li><span class="ac-num">AC-03</span>Unknown vendor → FAIL VENDOR_EXISTS, agent asks Finance to select from candidates</li>
+        <li><span class="ac-num">AC-04</span>All 7 rules stored in <code>invoice_validations</code> on every extraction</li>
+        <li><span class="ac-num">AC-05</span>Finance can override WARN with reason; FAIL requires field correction</li>
+      </ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- IC-31 -->
+    <div class="story-card" style="border-left-color: var(--coral-500);">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-31</span>
+        <span class="badge badge-points">8 pts</span>
+        <span class="badge badge-agent">Ananya_Frontend_004</span>
+        <span class="badge badge-sprint">Sprint 2</span>
+      </div>
+      <div class="story-title">Review Console — Side-by-Side Viewer + Human-in-the-Loop</div>
+      <p>The review console is the primary human control point. Finance reviews AI-extracted data against the source document before approving.</p>
+      <div class="arch-box" style="margin-bottom: 16px;">
+        <svg class="lattice-mini" viewBox="0 0 900 80" preserveAspectRatio="xMidYMid slice">
+          <defs><pattern id="hex3" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+            <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+          </pattern></defs>
+          <rect width="100%" height="100%" fill="url(#hex3)"/>
+        </svg>
+        <div class="arch-box-content">
+          <pre>┌──────────────────────────┬────────────────────────────────┐
+│  LEFT: Document Viewer   │  RIGHT: Extracted Fields Form  │
+│  [Document image/PDF]    │  Vendor:    Acme LLC    [✓]    │
+│  Source highlights on    │  Total:     $12,450.00  [⚠️]   │
+│  hover (field → doc)     │  [VALIDATION BANNER]           │
+│                          │  ⛔ AMOUNT_CONSISTENCY: FAIL   │
+│                          │  [APPROVE]  [REJECT]           │
+└──────────────────────────┴────────────────────────────────┘
+      ◀ Previous (3/12)                    Next ▶ (5/12)</pre>
+        </div>
+      </div>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>Document renders in left panel (PDF pages, image); Finance can zoom</li>
+        <li><span class="ac-num">AC-02</span>All extracted fields editable inline; edited fields marked with pencil icon</li>
+        <li><span class="ac-num">AC-03</span>Validation banner shows all FAIL/WARN rules; PASS rules hidden by default</li>
+        <li><span class="ac-num">AC-04</span>Agent question widget renders when <code>pending_question</code> present; Finance can answer</li>
+        <li><span class="ac-num">AC-05</span>Approve button disabled until all FAIL rules cleared</li>
+        <li><span class="ac-num">AC-06</span>Reject requires reason text (min 10 chars); stored in state log</li>
+        <li><span class="ac-num">AC-07</span>Keyboard arrow keys navigate between invoices in batch</li>
+        <li><span class="ac-num">AC-08</span>Batch progress indicator visible (e.g. "4 of 12 reviewed")</li>
+      </ul>
+    </div>
+
+    <!-- IC-32 -->
+    <div class="story-card">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-32</span>
+        <span class="badge badge-points">8 pts</span>
+        <span class="badge badge-agent">Rohan_Backend_003</span>
+        <span class="badge badge-sprint">Sprint 2</span>
+      </div>
+      <div class="story-title">ERP Push Service — BC + Retry + Idempotency</div>
+      <p><strong>Phase 1 target:</strong> Microsoft Business Central (BC REST API v2.0). Push creates a Purchase Invoice with all line items. Idempotency prevents double-posting.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Scenario</th><th>Behaviour</th></tr></thead>
+          <tbody>
+            <tr><td>Successful push</td><td>status = POSTED, erp_document_number stored</td></tr>
+            <tr><td>Duplicate push (same invoice_id)</td><td>Return existing ERP doc number — no second BC request</td></tr>
+            <tr><td>BC auth token expired</td><td>PUSH_FAILED status; Finance notified to re-auth</td></tr>
+            <tr><td>BC API 4xx (data error)</td><td>PUSH_FAILED; no retry — Finance data issue</td></tr>
+            <tr><td>BC API 5xx / timeout</td><td>Retry up to 3× with exponential backoff (2s, 4s, 8s)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>Approved BC invoice → Purchase Invoice created in BC with correct vendor, amount, lines</li>
+        <li><span class="ac-num">AC-02</span>Duplicate push (same invoice_id) → returns existing ERP doc number</li>
+        <li><span class="ac-num">AC-03</span>BC 5xx → retries up to 3× with exponential backoff</li>
+        <li><span class="ac-num">AC-04</span>Push completes within 30 seconds for single invoice under normal conditions</li>
+        <li><span class="ac-num">AC-05</span>Every push attempt logged in <code>invoice_push_log</code> (append-only)</li>
+      </ul>
+    </div>
+
+    <!-- IC-33 -->
+    <div class="story-card" style="border-left-color: var(--teal-700);">
+      <div class="story-meta">
+        <span class="badge badge-ticket">IC-33</span>
+        <span class="badge badge-points">5 pts</span>
+        <span class="badge badge-agent">Ananya + Rohan</span>
+        <span class="badge badge-sprint">Sprint 2</span>
+      </div>
+      <div class="story-title">Audit Trail &amp; History Page</div>
+      <ul class="ac-list">
+        <li><span class="ac-num">AC-01</span>History page loads with correct counts in summary row (Today / Pending / Posted / Failed)</li>
+        <li><span class="ac-num">AC-02</span>Filter by <code>status = PUSH_FAILED</code> → shows only failed invoices</li>
+        <li><span class="ac-num">AC-03</span>Export CSV → downloads within 5s for up to 10,000 rows (streaming)</li>
+        <li><span class="ac-num">AC-04</span>Every state transition recorded in <code>invoice_state_log</code></li>
+        <li><span class="ac-num">AC-05</span>Admin can view complete state history for any invoice</li>
+        <li><span class="ac-num">AC-06</span>No DELETE on <code>invoice_state_log</code> — enforced at PostgreSQL privilege level</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══ 5. LIFECYCLE STATE MACHINE ════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <div class="section-title">Invoice Lifecycle State Machine</div>
+    </div>
+    <div class="arch-box">
+      <svg class="lattice-mini" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="hex4" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+        </pattern></defs>
+        <rect width="100%" height="100%" fill="url(#hex4)"/>
+      </svg>
+      <div class="arch-box-content">
+        <pre>UPLOADED
+  │ (async background task)
+  ▼
+EXTRACTING  → EXTRACTION_FAILED (unreadable file)
+  │
+  ▼
+EXTRACTED
+  │ (auto-trigger validation)
+  ▼
+VALIDATING  → VALIDATION_FAILED (FAIL rules present — Finance must correct)
+  │
+  ▼
+PENDING_REVIEW
+  │ (Finance reviews in Review Console)
+  ├─► REJECTED (rejection reason required)
+  │
+  ▼
+APPROVED
+  │ (Finance clicks "Push to ERP")
+  ▼
+PUSHING  → PUSH_FAILED (ERP error, up to 3 retries, then Finance retry)
+  │
+  ▼
+POSTED ✓ (ERP document number stored, immutable)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══ 6. AGENTIC ARCHITECTURE ═══════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <div class="section-title">Agentic Architecture — InvoiceAgent</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Why Agentic?</div>
+      <p>A hardcoded pipeline cannot handle the ambiguity inherent in real-world invoices. The AI agent uses reasoning to resolve cases that rule-based parsing fails on:</p>
+      <ul>
+        <li>Vendor name on invoice ≠ exact ERP vendor master name (fuzzy matching + Finance confirmation)</li>
+        <li>Scanned invoices with partial OCR failures requiring contextual inference</li>
+        <li>Multi-currency, multi-tax-rate invoices requiring business logic, not just field parsing</li>
+        <li>Agent asks Finance targeted, specific questions — one at a time — instead of a generic "extraction failed" error</li>
+      </ul>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Tool Registry (7 Tools)</div>
+      <div class="tool-grid">
+        <div class="tool-item">
+          <div class="tool-name">extract_fields</div>
+          <div class="tool-sig">(file_path, file_type)</div>
+          <div class="tool-desc">Returns InvoiceExtraction with all 10 fields + confidence scores + line items</div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-name">validate_invoice</div>
+          <div class="tool-sig">(fields)</div>
+          <div class="tool-desc">Runs all 7 validation rules; returns ValidationResult[] with rule, status, message, field_ref</div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-name">lookup_vendor</div>
+          <div class="tool-sig">(name)</div>
+          <div class="tool-desc">Fuzzy-matches vendor name against ERP master; returns vendor_no, confidence, candidates[]</div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-name">check_duplicate</div>
+          <div class="tool-sig">(invoice_no, vendor_no)</div>
+          <div class="tool-desc">Checks invoice_no + vendor combination; returns is_duplicate + existing_doc_no if found</div>
+        </div>
+        <div class="tool-item" style="border-left-color: var(--coral-500);">
+          <div class="tool-name" style="color: var(--coral-600);">request_human_input</div>
+          <div class="tool-sig">(field, question, options[])</div>
+          <div class="tool-desc"><strong>PAUSE → surfaces to Review Console → RESUME.</strong> Agent loop suspends until Finance answers.</div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-name">push_to_erp</div>
+          <div class="tool-sig">(invoice, erp_config)</div>
+          <div class="tool-desc">Pushes approved invoice to ERP via ERPInvoicePusher; returns PushResult with doc_no + status</div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-name">log_audit_event</div>
+          <div class="tool-sig">(event_type, payload)</div>
+          <div class="tool-desc">Writes to invoice_state_log — append-only, immutable</div>
+        </div>
+        <div class="tool-item" style="background: var(--neutral-50); border: 1px dashed var(--neutral-200);">
+          <div class="tool-name" style="color: var(--neutral-400);">Model: claude-sonnet-4-6</div>
+          <div class="tool-desc" style="color: var(--neutral-400);">Tool-use loop with human-in-the-loop interrupts. System prompt enforces NEVER push without Finance approval.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Human-in-the-Loop Protocol</div>
+      <div class="arch-box">
+        <svg class="lattice-mini" viewBox="0 0 900 120" preserveAspectRatio="xMidYMid slice">
+          <defs><pattern id="hex5" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+            <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+          </pattern></defs>
+          <rect width="100%" height="100%" fill="url(#hex5)"/>
+        </svg>
+        <div class="arch-box-content">
+          <pre>Agent calls request_human_input(field="vendor_no",
+  question="I found two vendors matching 'Acme'. Which is correct?",
+  options=["Acme LLC (V001)", "Acme Corp (V002)", "Neither — enter manually"]
+)
+  → Backend stores question in invoice_uploads.pending_question (JSONB)
+  → Agent loop pauses (returns PENDING token)
+  → Frontend Review Console polls GET /api/invoices/{id}
+  → On pending_question present → renders question widget
+  → Finance selects answer → POST /api/invoices/{id}/answer
+  → Backend appends answer to agent conversation history
+  → Agent resumes tool loop with confirmed vendor_no</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Agent File Locations</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="tbl-code">03_Backend/agents/invoice_agent.py</td><td>Agent class, tool registry, system prompt, conversation loop</td></tr>
+            <tr><td class="tbl-code">03_Backend/agents/invoice_tools.py</td><td>Tool implementations called by agent</td></tr>
+            <tr><td class="tbl-code">03_Backend/connectors/invoice_pushers/base.py</td><td>ERPInvoicePusher ABC — push_invoice, check_vendor, get_doc_number</td></tr>
+            <tr><td class="tbl-code">03_Backend/connectors/invoice_pushers/bc_invoice_pusher.py</td><td>BC implementation of the pusher ABC</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══ 7. DATA MODEL ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <div class="section-title">Data Model</div>
+    </div>
+    <p>Migration file: <code>03_Backend/migrations/005_invoice_upload.sql</code> (idempotent — safe to re-run). All tables carry <code>tenant_id UUID NOT NULL</code> — every query filters by current tenant.</p>
+    <div class="db-cards">
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-name">invoice_uploads</div>
+          <div class="db-card-tag mutable">Mutable</div>
+        </div>
+        <div class="db-card-cols">
+          <div class="db-col-row"><span class="db-col-name">id</span><span class="db-col-type">UUID PK</span></div>
+          <div class="db-col-row"><span class="db-col-name">tenant_id</span><span class="db-col-type">UUID NOT NULL</span></div>
+          <div class="db-col-row"><span class="db-col-name">uploaded_by</span><span class="db-col-type">UUID → users</span></div>
+          <div class="db-col-row"><span class="db-col-name">filename</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">file_path</span><span class="db-col-type">TEXT</span><span class="db-col-note">tenant-scoped</span></div>
+          <div class="db-col-row"><span class="db-col-name">file_type</span><span class="db-col-type">TEXT</span><span class="db-col-note">pdf|excel|image</span></div>
+          <div class="db-col-row"><span class="db-col-name">status</span><span class="db-col-type">TEXT</span><span class="db-col-note">lifecycle enum</span></div>
+          <div class="db-col-row"><span class="db-col-name">pending_question</span><span class="db-col-type">JSONB</span><span class="db-col-note">HITL agent question</span></div>
+          <div class="db-col-row"><span class="db-col-name">erp_document_no</span><span class="db-col-type">TEXT</span><span class="db-col-note">set on POSTED</span></div>
+        </div>
+      </div>
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-name">invoice_line_items</div>
+          <div class="db-card-tag mutable">Mutable</div>
+        </div>
+        <div class="db-card-cols">
+          <div class="db-col-row"><span class="db-col-name">id</span><span class="db-col-type">UUID PK</span></div>
+          <div class="db-col-row"><span class="db-col-name">upload_id</span><span class="db-col-type">UUID → uploads</span></div>
+          <div class="db-col-row"><span class="db-col-name">field_name</span><span class="db-col-type">TEXT</span><span class="db-col-note">canonical field</span></div>
+          <div class="db-col-row"><span class="db-col-name">field_value</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">confidence</span><span class="db-col-type">DECIMAL(5,2)</span><span class="db-col-note">0–100</span></div>
+          <div class="db-col-row"><span class="db-col-name">source_page</span><span class="db-col-type">INTEGER</span></div>
+          <div class="db-col-row"><span class="db-col-name">source_coords</span><span class="db-col-type">JSONB</span><span class="db-col-note">{x1,y1,x2,y2}</span></div>
+          <div class="db-col-row"><span class="db-col-name">manually_edited</span><span class="db-col-type">BOOLEAN</span><span class="db-col-note">Finance corrections</span></div>
+        </div>
+      </div>
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-name">invoice_validations</div>
+          <div class="db-card-tag mutable">Mutable</div>
+        </div>
+        <div class="db-card-cols">
+          <div class="db-col-row"><span class="db-col-name">upload_id</span><span class="db-col-type">UUID → uploads</span></div>
+          <div class="db-col-row"><span class="db-col-name">rule_name</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">status</span><span class="db-col-type">TEXT</span><span class="db-col-note">PASS|WARN|FAIL</span></div>
+          <div class="db-col-row"><span class="db-col-name">message</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">field_ref</span><span class="db-col-type">TEXT</span><span class="db-col-note">field that failed</span></div>
+        </div>
+      </div>
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-card-name">invoice_push_log</div>
+          <div class="db-card-tag immutable">Immutable ⬤</div>
+        </div>
+        <div class="db-card-cols">
+          <div class="db-col-row"><span class="db-col-name">upload_id</span><span class="db-col-type">UUID → uploads</span></div>
+          <div class="db-col-row"><span class="db-col-name">pushed_by</span><span class="db-col-type">UUID → users</span></div>
+          <div class="db-col-row"><span class="db-col-name">erp_type</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">erp_document_no</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">push_status</span><span class="db-col-type">TEXT</span><span class="db-col-note">SUCCESS|FAILED|RETRYING</span></div>
+          <div class="db-col-row"><span class="db-col-name">attempt_number</span><span class="db-col-type">INTEGER</span></div>
+          <div class="db-col-row"><span class="db-col-name">error_message</span><span class="db-col-type">TEXT</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="db-card" style="margin-top: 12px;">
+      <div class="db-card-header">
+        <div class="db-card-name">invoice_state_log</div>
+        <div class="db-card-tag immutable">Immutable ⬤ — Append Only — No DELETE / UPDATE</div>
+      </div>
+      <div class="db-card-cols" style="display: flex; gap: 40px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <div class="db-col-row"><span class="db-col-name">upload_id</span><span class="db-col-type">UUID → uploads</span></div>
+          <div class="db-col-row"><span class="db-col-name">from_status</span><span class="db-col-type">TEXT</span></div>
+          <div class="db-col-row"><span class="db-col-name">to_status</span><span class="db-col-type">TEXT NOT NULL</span></div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+          <div class="db-col-row"><span class="db-col-name">changed_by</span><span class="db-col-type">UUID → users</span></div>
+          <div class="db-col-row"><span class="db-col-name">reason</span><span class="db-col-type">TEXT</span><span class="db-col-note">for REJECTED / PUSH_FAILED</span></div>
+          <div class="db-col-row"><span class="db-col-name">created_at</span><span class="db-col-type">TIMESTAMPTZ</span><span class="db-col-note">immutable timestamp</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 8. API DESIGN ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <div class="section-title">API Design</div>
+    </div>
+    <div style="border: 1px solid var(--neutral-100); border-radius: var(--radius-md); overflow: hidden;">
+      <div class="api-list">
+        <div class="api-item">
+          <span class="method-badge method-post">POST</span>
+          <span class="api-path">/api/invoices/upload</span>
+          <span class="api-desc">Multipart batch upload (≤50 files, ≤10 MB each)</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-get">GET</span>
+          <span class="api-path">/api/invoices/{id}</span>
+          <span class="api-desc">Invoice detail: extracted fields + validations + state history</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-get">GET</span>
+          <span class="api-path">/api/invoices/{id}/file</span>
+          <span class="api-desc">Serve original file (auth-gated — no direct storage URL)</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-patch">PATCH</span>
+          <span class="api-path">/api/invoices/{id}/fields</span>
+          <span class="api-desc">Update extracted field value (Finance correction in review console)</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-post">POST</span>
+          <span class="api-path">/api/invoices/{id}/answer</span>
+          <span class="api-desc">Submit Finance answer to InvoiceAgent HITL question; resumes agent loop</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-post">POST</span>
+          <span class="api-path">/api/invoices/{id}/approve</span>
+          <span class="api-desc">Approve invoice for ERP push — requires no FAIL validations</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-post">POST</span>
+          <span class="api-path">/api/invoices/{id}/reject</span>
+          <span class="api-desc">Reject invoice with reason (min 10 chars)</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-post">POST</span>
+          <span class="api-path">/api/invoices/{id}/push</span>
+          <span class="api-desc">Push approved invoice to ERP; idempotent on duplicate call</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-get">GET</span>
+          <span class="api-path">/api/invoices/history</span>
+          <span class="api-desc">Paginated list with status / date / user filters; 25 rows/page</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+        <div class="api-item">
+          <span class="method-badge method-get">GET</span>
+          <span class="api-path">/api/invoices/history/export</span>
+          <span class="api-desc">Streaming CSV export of filtered results (up to 10,000 rows)</span>
+          <span class="api-auth"><span class="badge" style="background:var(--teal-900); color:rgba(255,255,255,.8); font-size:10px;">Bearer</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══ 9. SECURITY ════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <div class="section-title">Security Requirements</div>
+    </div>
+    <div class="req-grid">
+      <div class="req-card">
+        <div class="req-icon">🔐</div>
+        <div class="req-title">Authentication</div>
+        <div class="req-desc">All 10 endpoints require Bearer JWT. No anonymous access. RBAC: <code>finance_user</code> for upload/review, <code>finance_admin</code> for all tenant invoices, <code>admin</code> for full access.</div>
+      </div>
+      <div class="req-card">
+        <div class="req-icon">🏢</div>
+        <div class="req-title">Multi-Tenant Isolation</div>
+        <div class="req-desc">Every DB query filters by <code>tenant_id = current_tenant()</code>. Cross-tenant data access = immediate security incident. Enforced at query layer, not just UI.</div>
+      </div>
+      <div class="req-card">
+        <div class="req-icon">📁</div>
+        <div class="req-title">File Storage</div>
+        <div class="req-desc">Tenant-scoped path: <code>/uploads/{tenant_id}/{upload_id}/{filename}</code>. Files served via <code>/api/invoices/{id}/file</code> with auth check — no direct storage URLs exposed to frontend.</div>
+      </div>
+      <div class="req-card">
+        <div class="req-icon">🦠</div>
+        <div class="req-title">Virus Scan</div>
+        <div class="req-desc">Every uploaded file scanned before storage (<code>python-clamd</code> or <code>clamscan</code>). Infected files rejected before any parsing or DB record creation.</div>
+      </div>
+      <div class="req-card">
+        <div class="req-icon">🔑</div>
+        <div class="req-title">ERP Credentials</div>
+        <div class="req-desc">Credentials loaded from vault at push time only. Never stored in DB. Never appear in logs. Scrubbed before any log statement (Rule 05 compliance).</div>
+      </div>
+      <div class="req-card">
+        <div class="req-icon">📜</div>
+        <div class="req-title">Audit Immutability</div>
+        <div class="req-desc"><code>invoice_push_log</code> and <code>invoice_state_log</code>: DELETE and UPDATE privileges revoked at PostgreSQL level. Append-only enforced at DB, not just application layer.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 10. NON-FUNCTIONAL REQUIREMENTS ═══════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <div class="section-title">Non-Functional Requirements</div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Scenario</th><th>Target</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Upload 10 PDFs (&lt; 2 MB each)</td><td>&lt; 5 seconds total</td><td>Async — returns immediately</td></tr>
+          <tr><td>Extraction (text-based PDF)</td><td>&lt; 3 seconds / file</td><td>pdfplumber + regex</td></tr>
+          <tr><td>Extraction (Claude Vision — scanned)</td><td>&lt; 10 seconds / file</td><td>Acceptable for async flow</td></tr>
+          <tr><td>Validation run (7 rules)</td><td>&lt; 1 second</td><td>DB + ERP lookup</td></tr>
+          <tr><td>ERP push (single invoice)</td><td>&lt; 30 seconds</td><td>BC API call + line items</td></tr>
+          <tr><td>History page initial load</td><td>&lt; 2 seconds</td><td>25 rows, paginated</td></tr>
+          <tr><td>CSV export (10,000 rows)</td><td>&lt; 10 seconds</td><td>Streaming download</td></tr>
+          <tr><td>Batch (50 files) concurrent</td><td>5 parallel parsing workers</td><td>Queued; live status per file</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-info" style="margin-top: 16px;">
+      <div class="callout-icon">⚡</div>
+      <div class="callout-body"><strong>Graceful degradation:</strong> If Claude Vision API unavailable, fallback to rule-based parser with WARN flag. If ERP push fails, invoice stays APPROVED — Finance can retry from History page. System is never stuck in a terminal state without a recovery path.</div>
+    </div>
+  </div>
+
+  <!-- ══ 11. OUT OF SCOPE ═══════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <div class="section-title">Out of Scope — Phase 1</div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>Rationale</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr><td>ERP push beyond Business Central</td><td>SAP, Oracle, Odoo, Tally — Phase 2 using pusher ABC</td><td>Phase 2</td></tr>
+          <tr><td>OCR engine (Tesseract)</td><td>Claude Vision avoids OCR setup complexity; accuracy superior</td><td>Phase 2 if needed</td></tr>
+          <tr><td>Three-way matching (PO + GRN + Invoice)</td><td>Requires PO data model not yet in scope</td><td>Phase 2</td></tr>
+          <tr><td>Multi-level approval workflow</td><td>Finance approves directly in Phase 1; manager role Phase 2</td><td>Phase 2</td></tr>
+          <tr><td>Mobile app</td><td>Web responsive only in Phase 1</td><td>Phase 2</td></tr>
+          <tr><td>Email-to-upload ingest</td><td>Mailbox polling integration — Phase 2</td><td>Phase 2</td></tr>
+          <tr><td>Currency conversion at push time</td><td>Invoice pushed in own currency; ERP handles FX</td><td>Phase 2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ══ 12. ROLLOUT PLAN ═══════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <div class="section-title">Rollout Plan</div>
+    </div>
+    <div class="sprint-grid">
+      <div class="sprint-card sprint-1">
+        <div class="sprint-header">
+          <div class="sprint-name">Sprint 1 — Foundation</div>
+          <div class="sprint-pts">18 story points</div>
+        </div>
+        <div class="sprint-rows">
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-28</span>
+            <span class="sprint-story">File Upload UI</span>
+            <span class="sprint-agent">Ananya</span>
+            <span class="sprint-sp">5</span>
+          </div>
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-29</span>
+            <span class="sprint-story">Parsing Engine + InvoiceAgent</span>
+            <span class="sprint-agent">Rohan</span>
+            <span class="sprint-sp">8</span>
+          </div>
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-30</span>
+            <span class="sprint-story">Validation Engine (7 rules)</span>
+            <span class="sprint-agent">Rohan</span>
+            <span class="sprint-sp">5</span>
+          </div>
+          <div style="padding: 10px 0 4px; font-size: 12px; color: var(--neutral-500);">
+            Exit gate: Upload → Extract → Validate working end-to-end for PDF + Excel
+          </div>
+        </div>
+      </div>
+      <div class="sprint-card sprint-2">
+        <div class="sprint-header">
+          <div class="sprint-name">Sprint 2 — Intelligence + Push</div>
+          <div class="sprint-pts">21 story points</div>
+        </div>
+        <div class="sprint-rows">
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-31</span>
+            <span class="sprint-story">Review Console (HITL)</span>
+            <span class="sprint-agent">Ananya</span>
+            <span class="sprint-sp">8</span>
+          </div>
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-32</span>
+            <span class="sprint-story">ERP Push Service (BC)</span>
+            <span class="sprint-agent">Rohan</span>
+            <span class="sprint-sp">8</span>
+          </div>
+          <div class="sprint-row">
+            <span class="sprint-ticket">IC-33</span>
+            <span class="sprint-story">Audit Trail + History Page</span>
+            <span class="sprint-agent">Both</span>
+            <span class="sprint-sp">5</span>
+          </div>
+          <div style="padding: 10px 0 4px; font-size: 12px; color: var(--neutral-500);">
+            Exit gate: Upload PDF → Agent extracts → Finance approves → BC invoice created → History = POSTED
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout-warn" style="margin-top: 16px;">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>Prerequisites before Sprint 1 kick-off:</strong> Migration 005 tested on staging DB · Claude API key in backend .env · Virus scan daemon (clamd) running in dev · BC sandbox tenant available · Feature worktree <code>feature/IC-27-invoice-upload-erp-push</code> created via <code>git worktree add</code>.</div>
+    </div>
+  </div>
+
+  <!-- ══ 13. SUCCESS METRICS ════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <div class="section-title">Success Metrics</div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-value">&lt; 2 min</div>
+        <div class="metric-label">Per Invoice</div>
+        <div class="metric-desc">avg (approved_at − uploaded_at) — Finance review time only</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">95%+</div>
+        <div class="metric-label">Extraction Accuracy</div>
+        <div class="metric-desc">fields correct without Finance edit — manually_edited = false rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">99%+</div>
+        <div class="metric-label">Push Success</div>
+        <div class="metric-desc">push_status = SUCCESS on first or retry attempt</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">80%</div>
+        <div class="metric-label">User Adoption</div>
+        <div class="metric-desc">Finance team using within 30 days of launch — daily active users</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">&lt; 0.5%</div>
+        <div class="metric-label">Error Rate</div>
+        <div class="metric-desc">duplicate / incorrect invoices vs. 3–8% baseline</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">100%</div>
+        <div class="metric-label">Audit Coverage</div>
+        <div class="metric-desc">state_log rows = expected transitions for all invoices</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 14. JIRA TRACEABILITY ══════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <div class="section-title">Jira Traceability</div>
+    </div>
+    <div class="jira-grid">
+      <div class="jira-item jira-epic">
+        <span class="jira-ticket">IC-27</span>
+        <span class="jira-title">Invoice Upload &amp; ERP Push Utility</span>
+        <span class="jira-type">Epic</span>
+        <span class="jira-points">39 pts total</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-28</span>
+        <span class="jira-title">File Upload UI (drag-drop, batch, progress)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">5 pts</span>
+        <span class="jira-sprint-badge jira-s1">Sprint 1</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-29</span>
+        <span class="jira-title">Parsing Engine (PDF / Excel / Image + InvoiceAgent)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">8 pts</span>
+        <span class="jira-sprint-badge jira-s1">Sprint 1</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-30</span>
+        <span class="jira-title">Validation Engine (7 rules + state machine)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">5 pts</span>
+        <span class="jira-sprint-badge jira-s1">Sprint 1</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-31</span>
+        <span class="jira-title">Review Console (side-by-side viewer + HITL + approve/reject)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">8 pts</span>
+        <span class="jira-sprint-badge jira-s2">Sprint 2</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-32</span>
+        <span class="jira-title">ERP Push Service (BC + retry + idempotency)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">8 pts</span>
+        <span class="jira-sprint-badge jira-s2">Sprint 2</span>
+      </div>
+      <div class="jira-item">
+        <span class="jira-ticket">IC-33</span>
+        <span class="jira-title">Audit Trail &amp; History Page (paginated, CSV export)</span>
+        <span class="jira-type">Story</span>
+        <span class="jira-points">5 pts</span>
+        <span class="jira-sprint-badge jira-s2">Sprint 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="doc-footer">
+    <div class="doc-footer-brand">i-CFO360 · i-Source Infosystems</div>
+    <div class="doc-footer-meta">PRD IC-27 · v1.0 · 2026-04-30 · INTERNAL CONFIDENTIAL</div>
+  </div>
+
+</div><!-- /doc-body -->
+
+</body>
+</html>

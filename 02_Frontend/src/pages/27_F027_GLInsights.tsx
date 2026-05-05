@@ -133,7 +133,7 @@ interface DrillState {
 export default function GLInsights() {
   // Filter panel state
   const [filterOpts, setFilterOpts] = useState<FilterOptions>({
-    companies: [], years: [], months: [], currencies: [],
+    companies: [], years: [], months: [], currencies: [], account_categories: [],
   });
   const [filters, setFilters] = useState<GLFilters>({});
   const [sectionOpen, setSectionOpen] = useState({ companies: true, year: true, period: true });

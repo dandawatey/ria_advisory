@@ -19,7 +19,9 @@ export interface Tenant {
   plan: string;
   status: string;
   user_count?: number;
+  subsidiary_count?: number;
   created_at?: string;
+  logo_url?: string | null;
 }
 
 export interface AuthState {

@@ -18,8 +18,6 @@ import {
   type MoMChangeRow,
   type PLYoYRow,
 } from '../api/client';
-import { GLFilterBar } from '../components/GLFilterBar';
-
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined, compact = false): string {
   if (n == null || isNaN(n)) return '—';
@@ -134,12 +132,9 @@ function buildStatement(rows: PLWaterfallRow[]) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PLAnalytics() {
   const [tab, setTab] = useState<Tab>('waterfall');
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [filters, setFilters] = useState<GLFilters>({});
   const [drill, setDrill] = useState<{ label: string; id?: number } | null>(null);
-  const [accountPrefix, setAccountPrefix] = useState('');
-  const [genPostType, setGenPostType] = useState('');
-
   const [kpi,      setKpi]      = useState<KPISummary | null>(null);
   const [waterfall, setWaterfall] = useState<PLWaterfallRow[]>([]);
   const [entity,   setEntity]   = useState<EntityContributionRow[]>([]);
@@ -161,15 +156,6 @@ export default function PLAnalytics() {
     if (drill?.id) return { ...filters, company_ids: [drill.id] };
     return filters;
   }, [filters, drill]);
-
-  // Sync GLFilterBar → filters
-  useEffect(() => {
-    setFilters((f) => ({
-      ...f,
-      account_prefix: accountPrefix || undefined,
-      gen_post_type: genPostType || undefined,
-    }));
-  }, [accountPrefix, genPostType]);
 
   // Filter options once
   useEffect(() => { api.analytics.filters().then(setFilterOpts).catch(() => null); }, []);
@@ -312,6 +298,27 @@ export default function PLAnalytics() {
               </div>
             </div>
 
+            {filterOpts.account_categories?.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button
+                    className={`btn btn-sm ${!filters.account_category ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: 10, padding: '2px 8px' }}
+                    onClick={() => setFilters((f) => ({ ...f, account_category: undefined }))}
+                  >All</button>
+                  {filterOpts.account_categories.map((cat) => (
+                    <button
+                      key={cat}
+                      className={`btn btn-sm ${filters.account_category === cat ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ fontSize: 10, padding: '2px 8px' }}
+                      onClick={() => setFilters((f) => ({ ...f, account_category: f.account_category === cat ? undefined : cat }))}
+                    >{cat}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {drill && (
               <div style={{ marginTop: 12, padding: '6px 10px', background: 'rgba(59,130,246,0.08)', borderRadius: 6, fontSize: 11 }}>
                 <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>Drill: {drill.label}</span>
@@ -319,14 +326,6 @@ export default function PLAnalytics() {
               </div>
             )}
 
-            <div style={{ marginTop: 14 }}>
-              <GLFilterBar
-                accountPrefix={accountPrefix}
-                onAccountPrefix={setAccountPrefix}
-                genPostType={genPostType}
-                onGenPostType={setGenPostType}
-              />
-            </div>
           </div>
         </div>
 

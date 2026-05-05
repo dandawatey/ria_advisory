@@ -1,8 +1,9 @@
 """GL Explorer endpoints — star schema edition."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional, List
 from database import query
+from auth_utils import require_auth, get_allowed_company_ids
 
 router = APIRouter(prefix="/api/gl", tags=["gl"])
 
@@ -17,7 +18,20 @@ def search_gl(
     date_to: Optional[str] = None,
     limit: int = Query(default=200, le=1000),
     offset: int = 0,
+    current: dict = Depends(require_auth),
 ):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+
+    # Merge user-requested company_ids with tenant-allowed list
+    if allowed is not None:
+        if company_id:
+            effective = [c for c in company_id if c in set(allowed)]
+            company_id = effective if effective else allowed
+        else:
+            company_id = allowed
+
     filters = ["g.account_no != '999999'"]
     params: list = []
 
@@ -81,9 +95,18 @@ def search_gl(
 
 
 @router.get("/accounts")
-def list_accounts():
+def list_accounts(current: dict = Depends(require_auth)):
     """Distinct GL accounts with entry counts."""
-    return query("""
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"AND g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT
             ac.account_no                 AS gl_account_no,
             ac.account_name               AS gl_account_name,
@@ -92,26 +115,46 @@ def list_accounts():
         FROM dim_account ac
         JOIN fact_gl_entries g ON g.account_no = ac.account_no
         WHERE ac.account_no != '999999'
+        {co_filter}
         GROUP BY ac.account_no, ac.account_name
         ORDER BY ac.account_no
-    """)
+    """, params)
 
 
 @router.get("/departments")
-def list_departments():
-    return query("""
+def list_departments(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"AND g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT DISTINCT dp.department_code, dp.vertical_code
         FROM dim_department dp
         JOIN fact_gl_entries g ON g.department_id = dp.department_id
         WHERE dp.department_code IS NOT NULL AND dp.department_code != ''
+        {co_filter}
         ORDER BY dp.department_code
-    """)
+    """, params)
 
 
 @router.get("/stats")
-def gl_stats():
+def gl_stats(current: dict = Depends(require_auth)):
     """Row counts and date range per company."""
-    return query("""
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"WHERE g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT
             CAST(co.company_id AS VARCHAR)  AS code,
             co.company_name                 AS name,
@@ -122,6 +165,7 @@ def gl_stats():
         FROM fact_gl_entries g
         JOIN dim_company co ON co.company_id = g.company_id
         JOIN dim_date    d  ON d.date_id     = g.date_id
+        {co_filter}
         GROUP BY co.company_id, co.company_name
         ORDER BY co.company_name
-    """)
+    """, params)

@@ -1,12 +1,16 @@
 """
 Tenants router — multi-org tenant + user management.
 """
+import os
+import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from auth_utils import require_auth, require_superadmin, require_tenant_admin, require_any_admin, hash_password
 from database import query
+
+LOGOS_DIR = os.path.join(os.path.dirname(__file__), "..", "static", "logos")
 
 router = APIRouter(prefix="/api/tenants", tags=["tenants"])
 
@@ -39,10 +43,12 @@ class UserRoleUpdate(BaseModel):
 @router.get("")
 def list_tenants(current: dict = Depends(require_superadmin)):
     rows = query("""
-        SELECT t.id, t.name, t.slug, t.plan, t.status, t.created_at,
-               COUNT(u.id) AS user_count
+        SELECT t.id, t.name, t.slug, t.plan, t.status, t.settings, t.created_at,
+               COUNT(DISTINCT u.id)  AS user_count,
+               COUNT(DISTINCT co.company_id) AS subsidiary_count
         FROM tenants t
-        LEFT JOIN users u ON u.tenant_id = t.id AND u.is_active = true
+        LEFT JOIN users      u  ON u.tenant_id  = t.id AND u.is_active = true
+        LEFT JOIN dim_company co ON co.tenant_id = t.id::uuid
         WHERE t.status != 'deleted'
         GROUP BY t.id
         ORDER BY t.created_at DESC
@@ -154,14 +160,20 @@ def _assert_tenant_access(current: dict, tenant_id: str):
 
 
 def _serialize_tenant(r: dict) -> dict:
+    import json as _json
+    raw = r.get("settings")
+    settings = raw if isinstance(raw, dict) else (_json.loads(raw) if raw else {})
+    branding = settings.get("branding", {}) if isinstance(settings, dict) else {}
     return {
-        "id":         str(r["id"]),
-        "name":       r["name"],
-        "slug":       r["slug"],
-        "plan":       r["plan"],
-        "status":     r["status"],
-        "user_count": r.get("user_count", 0),
-        "created_at": r["created_at"].isoformat() if r.get("created_at") else None,
+        "id":               str(r["id"]),
+        "name":             r["name"],
+        "slug":             r["slug"],
+        "plan":             r["plan"],
+        "status":           r["status"],
+        "user_count":       r.get("user_count", 0),
+        "subsidiary_count": r.get("subsidiary_count", 0),
+        "created_at":       r["created_at"].isoformat() if r.get("created_at") else None,
+        "logo_url":         branding.get("logo_url"),
     }
 
 
@@ -175,6 +187,51 @@ def _serialize_user(r: dict) -> dict:
         "created_at":   r["created_at"].isoformat() if r.get("created_at") else None,
         "last_login":   r["last_login"].isoformat() if r.get("last_login") else None,
     }
+
+
+# ── Logo Upload ──────────────────────────────────────────────────────────────
+
+@router.post("/{tenant_id}/logo")
+async def upload_logo(
+    tenant_id: str,
+    file: UploadFile = File(...),
+    current: dict = Depends(require_auth),
+):
+    """Upload tenant logo image. Saves to static/logos/ and updates branding.logo_url."""
+    _assert_tenant_access(current, tenant_id)
+
+    rows = query("SELECT id FROM tenants WHERE id=%s AND status!='deleted'", (tenant_id,))
+    if not rows:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    # Validate image type
+    allowed = {"image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"}
+    content_type = file.content_type or ""
+    if content_type not in allowed:
+        raise HTTPException(status_code=400, detail=f"File type not allowed: {content_type}")
+
+    ext = content_type.split("/")[-1].replace("svg+xml", "svg")
+    filename = f"{tenant_id}.{ext}"
+
+    os.makedirs(LOGOS_DIR, exist_ok=True)
+    dest = os.path.join(LOGOS_DIR, filename)
+    data = await file.read()
+    with open(dest, "wb") as f:
+        f.write(data)
+
+    logo_url = f"/static/logos/{filename}"
+
+    # Persist into branding settings
+    import json as _json
+    r = query("SELECT settings FROM tenants WHERE id=%s", (tenant_id,))
+    raw = r[0]["settings"]
+    settings = raw if isinstance(raw, dict) else (_json.loads(raw) if raw else {})
+    branding = settings.get("branding", {})
+    branding["logo_url"] = logo_url
+    settings["branding"] = branding
+    query("UPDATE tenants SET settings=%s WHERE id=%s", (_json.dumps(settings), tenant_id))
+
+    return {"logo_url": logo_url}
 
 
 # ── Tenant Config (branding / subsidiaries / billing) ────────────────────────

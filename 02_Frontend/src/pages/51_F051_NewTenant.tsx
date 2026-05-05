@@ -3,7 +3,7 @@
  * Full-page form, blank sidebar (no navigation).
  * Superadmin only.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { post } from '../api/client';
 import { Tenant } from '../types';
@@ -23,7 +23,6 @@ interface FormState {
   display_name:    string;
   primary_color:   string;
   secondary_color: string;
-  logo_url:        string;
   support_email:   string;
   // Billing
   max_users:       string;
@@ -39,7 +38,7 @@ interface FormState {
 const empty = (): FormState => ({
   name: '', slug: '', plan: 'trial',
   display_name: '', primary_color: '#0F3F3C', secondary_color: '#E8443B',
-  logo_url: '', support_email: '',
+  support_email: '',
   max_users: '50', max_subsidiaries: '17', billing_email: '', renewal_date: '',
   admin_email: '', admin_name: '', admin_password: '',
 });
@@ -80,13 +79,23 @@ const grid2: React.CSSProperties = {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function NewTenant() {
-  const navigate          = useNavigate();
-  const [form, setForm]   = useState<FormState>(empty());
+  const navigate            = useNavigate();
+  const [form, setForm]     = useState<FormState>(empty());
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState<string | null>(null);
+  const [logoFile, setLogoFile]     = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,12 +112,31 @@ export default function NewTenant() {
         plan: form.plan,
       });
 
-      // 2. Save branding + billing config
+      const apiBase = import.meta.env.VITE_API_URL ?? '';
+      const token   = localStorage.getItem('ria_token');
+
+      // 2. Upload logo if provided
+      let logo_url = '';
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append('file', logoFile);
+        const logoRes = await fetch(`${apiBase}/api/tenants/${tenant.id}/logo`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (logoRes.ok) {
+          const logoData = await logoRes.json();
+          logo_url = logoData.logo_url ?? '';
+        }
+      }
+
+      // 3. Save branding + billing config
       const branding = {
         display_name:    form.display_name || form.name,
         primary_color:   form.primary_color,
         secondary_color: form.secondary_color,
-        logo_url:        form.logo_url,
+        logo_url,
         support_email:   form.support_email,
       };
       const billing = {
@@ -118,22 +146,22 @@ export default function NewTenant() {
         renewal_date:     form.renewal_date,
         auto_renew:       true,
       };
-      await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api/tenants/${tenant.id}/config`, {
+      await fetch(`${apiBase}/api/tenants/${tenant.id}/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('ria_token')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ branding, billing }),
       });
 
-      // 3. Optionally create first admin user
+      // 4. Optionally create first admin user
       if (form.admin_email && form.admin_password) {
-        await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/auth/register`, {
+        await fetch(`${apiBase}/auth/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('ria_token')}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             email:        form.admin_email,
@@ -283,9 +311,37 @@ export default function NewTenant() {
             </div>
           </div>
           <div style={{ marginTop: 18 }}>
-            <label style={labelStyle}>Logo URL</label>
-            <input style={inputStyle} placeholder="https://cdn.acme.com/logo.png"
-              value={form.logo_url} onChange={set('logo_url')} />
+            <label style={labelStyle}>Logo</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              {logoPreview && (
+                <img src={logoPreview} alt="Logo preview"
+                  style={{ height: 48, maxWidth: 160, objectFit: 'contain', borderRadius: 6,
+                    border: '1px solid #e5e7eb', padding: 4, background: '#f9fafb' }} />
+              )}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  style={{
+                    padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: 7,
+                    background: '#fff', fontSize: 13, fontWeight: 600,
+                    color: '#374151', cursor: 'pointer',
+                  }}
+                >
+                  {logoFile ? 'Change logo' : 'Upload logo'}
+                </button>
+                {logoFile && (
+                  <div style={{ marginTop: 4, fontSize: 12, color: '#6b7280' }}>{logoFile.name}</div>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handleLogoChange}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

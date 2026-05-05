@@ -1,7 +1,8 @@
 """Dashboard / KPI aggregation endpoints."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from database import query
+from auth_utils import require_auth
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -11,7 +12,7 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 @router.get("/kpis")
-def get_kpis():
+def get_kpis(current: dict = Depends(require_auth)):
     rows = query("""
         SELECT
             -SUM(CASE WHEN gl_account_no LIKE '4%%' THEN amount ELSE 0 END)  AS total_revenue,
@@ -28,7 +29,7 @@ def get_kpis():
 
 
 @router.get("/entities")
-def get_entity_summary():
+def get_entity_summary(current: dict = Depends(require_auth)):
     return query("""
         SELECT
             subsidiary_code                                                           AS code,
@@ -48,7 +49,7 @@ def get_entity_summary():
 
 
 @router.get("/pl-trend")
-def get_pl_trend():
+def get_pl_trend(current: dict = Depends(require_auth)):
     return query("""
         SELECT
             TO_CHAR(DATE_TRUNC('month', posting_date), 'YYYY-MM') AS month,
@@ -64,7 +65,7 @@ def get_pl_trend():
 
 
 @router.get("/departments")
-def get_department_breakdown():
+def get_department_breakdown(current: dict = Depends(require_auth)):
     return query("""
         SELECT
             department_code,
@@ -82,7 +83,7 @@ def get_department_breakdown():
 
 
 @router.get("/pl-by-account-type")
-def pl_by_account_type():
+def pl_by_account_type(current: dict = Depends(require_auth)):
     """Consolidated P&L grouped by account category across all entities."""
     return query("""
         SELECT

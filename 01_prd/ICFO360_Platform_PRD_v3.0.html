@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>i-CFO360 Platform PRD v3.0 — i-Source Infosystems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal-50:#EEF5F4;--teal-100:#D4E6E3;--teal-200:#A9CDC8;--teal-300:#7DB3AC;
+  --teal-400:#4F948D;--teal-500:#2F7873;--teal-600:#1F6B66;--teal-700:#175551;
+  --teal-800:#0F3F3C;--teal-900:#082624;
+  --coral-300:#EE7D72;--coral-400:#E8564A;--coral-500:#E8443B;--coral-600:#C93328;
+  --neutral-0:#FFFFFF;--neutral-25:#FAFBFB;--neutral-50:#F4F6F6;
+  --neutral-100:#E8ECEC;--neutral-200:#D1D8D8;--neutral-300:#B0BABA;
+  --neutral-400:#8A9695;--neutral-500:#66726F;--neutral-600:#4A5352;
+  --neutral-700:#333938;--neutral-800:#1F2423;--neutral-900:#0E1211;
+  --success-500:#5B8A6E;--warning-500:#B88A3E;--danger-500:#B4554E;
+  --font-d:'Nunito Sans',system-ui,sans-serif;
+  --font-m:'JetBrains Mono',ui-monospace,monospace;
+  --sh-sm:0 1px 3px rgba(15,63,60,.08),0 1px 2px rgba(15,63,60,.04);
+  --sh-md:0 4px 8px rgba(15,63,60,.08),0 2px 4px rgba(15,63,60,.04);
+  --sh-lg:0 12px 24px rgba(15,63,60,.10),0 4px 8px rgba(15,63,60,.04);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:14.5px}
+body{margin:0;padding:0;font-family:var(--font-d);color:var(--neutral-900);
+  background:var(--neutral-50);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* ── COVER ─────────────────────────────────────────── */
+.cover{min-height:100vh;background:var(--teal-900);position:relative;
+  overflow:hidden;display:flex;flex-direction:column;padding:0 0 72px}
+.cv-lattice{position:absolute;inset:0;opacity:.18;z-index:0;pointer-events:none}
+.cv-scrim{position:absolute;inset:0;z-index:1;
+  background:linear-gradient(130deg,rgba(8,38,36,.96) 0%,rgba(8,38,36,.65) 55%,rgba(8,38,36,.18) 100%)}
+.cv-body{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;
+  justify-content:center;padding:112px 96px 72px;max-width:960px}
+.cv-rule{width:72px;height:4px;background:var(--coral-500);margin-bottom:24px}
+.cv-eye{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--coral-300);margin-bottom:10px}
+.cv-ticket{font-family:var(--font-m);font-size:12px;color:var(--teal-300);
+  letter-spacing:.06em;margin-bottom:8px}
+.cv-title{font-family:var(--font-d);font-size:64px;font-weight:900;
+  line-height:1.02;letter-spacing:-.025em;color:#fff;margin:0 0 8px;
+  text-shadow:0 2px 24px rgba(0,0,0,.3)}
+.cv-sub{font-size:19px;font-weight:400;line-height:1.55;
+  color:rgba(255,255,255,.88);max-width:700px;margin:0 0 44px}
+.cv-meta{display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+  border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;max-width:780px}
+.cv-mi{padding:14px 16px;border-right:1px solid rgba(255,255,255,.12)}
+.cv-mi:last-child{border-right:none}
+.cv-ml{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.42);margin-bottom:3px}
+.cv-mv{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.9)}
+.cv-footer{position:relative;z-index:2;padding:18px 96px 0;
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid rgba(255,255,255,.1)}
+.cv-brand{display:flex;align-items:center;gap:12px}
+.cv-logo{background:var(--teal-700);border:1px solid rgba(255,255,255,.15);
+  border-radius:8px;padding:6px 12px;font-size:15px;font-weight:900;color:white}
+.cv-logo span{color:var(--coral-400)}
+.cv-fname{font-size:13px;font-weight:600;color:rgba(255,255,255,.72)}
+.cv-conf{font-family:var(--font-m);font-size:11px;color:rgba(255,255,255,.38);letter-spacing:.06em}
+
+/* ── DOCUMENT ───────────────────────────────────────── */
+.doc{max-width:1000px;margin:0 auto;padding:56px 64px 120px;
+  background:white;box-shadow:var(--sh-lg)}
+
+/* ── TOC ────────────────────────────────────────────── */
+.toc-wrap{padding:0 0 52px;border-bottom:2px solid var(--neutral-100);margin-bottom:52px}
+.toc-hdr{background:linear-gradient(135deg,var(--teal-700),var(--teal-800));
+  border-radius:12px;padding:24px 28px;margin-bottom:24px;position:relative;overflow:hidden}
+.toc-hdr-svg{position:absolute;inset:0;opacity:.1;pointer-events:none}
+.toc-hdr-c{position:relative;z-index:1}
+.toc-ey{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--coral-300);margin-bottom:5px}
+.toc-ttl{font-size:22px;font-weight:800;color:white;letter-spacing:-.02em}
+.toc-list{list-style:none;margin:0;padding:0;columns:2;column-gap:28px}
+.toc-list li{display:flex;align-items:baseline;gap:6px;
+  padding:7px 0;border-bottom:1px solid var(--neutral-50);break-inside:avoid}
+.toc-n{font-family:var(--font-m);font-size:10px;color:var(--coral-500);
+  font-weight:600;min-width:24px}
+.toc-l{font-size:13px;font-weight:600;color:var(--neutral-700)}
+
+/* ── SECTION ────────────────────────────────────────── */
+.sec{margin-bottom:52px;page-break-inside:avoid}
+.sec-hdr{display:flex;align-items:flex-start;gap:14px;
+  margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--neutral-100)}
+.sec-num{font-family:var(--font-m);font-size:10px;font-weight:700;
+  background:var(--coral-500);color:white;padding:4px 7px;
+  border-radius:4px;letter-spacing:.06em;margin-top:4px;white-space:nowrap}
+.sec-ttl{font-size:24px;font-weight:800;color:var(--teal-800);letter-spacing:-.02em;line-height:1.2}
+.sub-ttl{font-size:15px;font-weight:800;color:var(--neutral-800);
+  letter-spacing:-.01em;margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+.sub-ttl::before{content:'';display:block;width:4px;height:16px;
+  background:var(--teal-500);border-radius:2px}
+
+/* ── TABLES ─────────────────────────────────────────── */
+.tw{overflow-x:auto;margin:12px 0;border-radius:10px;box-shadow:var(--sh-sm)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead tr{background:linear-gradient(135deg,var(--teal-700),var(--teal-800))}
+thead th{padding:10px 12px;text-align:left;font-size:10.5px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.92)}
+tbody tr{border-bottom:1px solid var(--neutral-100)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:nth-child(even){background:var(--neutral-25)}
+tbody td{padding:9px 12px;color:var(--neutral-700);vertical-align:top;line-height:1.4}
+tbody td:first-child{font-weight:600;color:var(--neutral-800)}
+.tc{font-family:var(--font-m);font-size:11px;color:var(--teal-700)}
+
+/* ── PILLARS ─────────────────────────────────────────── */
+.pillars{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:16px 0}
+.pillar{border:1px solid var(--neutral-100);border-top:4px solid var(--teal-500);
+  border-radius:10px;padding:16px 14px;box-shadow:var(--sh-sm)}
+.pillar:nth-child(2){border-top-color:var(--coral-500)}
+.pillar:nth-child(3){border-top-color:var(--teal-700)}
+.pillar:nth-child(4){border-top-color:var(--coral-400)}
+.pillar:nth-child(5){border-top-color:var(--teal-400)}
+.p-num{font-family:var(--font-m);font-size:10px;font-weight:700;
+  color:var(--teal-600);margin-bottom:6px}
+.pillar:nth-child(2) .p-num{color:var(--coral-600)}
+.p-name{font-size:12.5px;font-weight:800;color:var(--neutral-800);margin-bottom:6px;line-height:1.3}
+.p-desc{font-size:11px;color:var(--neutral-500);line-height:1.4}
+
+/* ── ARCH DIAGRAM ────────────────────────────────────── */
+.arch{background:var(--teal-900);border-radius:12px;padding:22px 24px;margin:14px 0;
+  position:relative;overflow:hidden}
+.arch-svg{position:absolute;inset:0;opacity:.07;pointer-events:none}
+.arch pre{margin:0;font-family:var(--font-m);font-size:11.5px;
+  color:var(--teal-200);line-height:1.7;position:relative;z-index:1}
+
+/* ── AGENT CARDS ─────────────────────────────────────── */
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.agent-card{border:1px solid var(--neutral-100);border-left:4px solid var(--teal-500);
+  border-radius:8px;padding:14px 16px;box-shadow:var(--sh-sm);page-break-inside:avoid}
+.agent-card.live{border-left-color:var(--coral-500);background:rgba(232,68,59,.02)}
+.agent-card.p2{border-left-color:var(--neutral-300);opacity:.85}
+.a-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.a-name{font-family:var(--font-m);font-size:12px;font-weight:600;color:var(--teal-800)}
+.a-model{font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;
+  background:var(--teal-50);color:var(--teal-700)}
+.a-status-live{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;
+  background:var(--coral-500);color:white}
+.a-status-p1{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;
+  background:var(--teal-100);color:var(--teal-800)}
+.a-status-p2{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;
+  background:var(--neutral-100);color:var(--neutral-600)}
+.a-caps{font-size:11.5px;color:var(--neutral-600);margin-bottom:5px;line-height:1.4}
+.a-tools{font-family:var(--font-m);font-size:10px;color:var(--teal-600);line-height:1.5}
+
+/* ── A2A FLOW ────────────────────────────────────────── */
+.flow-box{background:var(--teal-900);border-radius:10px;padding:18px 22px;margin:12px 0;
+  position:relative;overflow:hidden}
+.flow-box pre{margin:0;font-family:var(--font-m);font-size:11px;
+  color:var(--teal-200);line-height:1.75;position:relative;z-index:1}
+.flow-box-svg{position:absolute;inset:0;opacity:.07;pointer-events:none}
+
+/* ── ERP CARDS ───────────────────────────────────────── */
+.erp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:14px 0}
+.erp-card{border:1px solid var(--neutral-100);border-radius:8px;padding:12px 10px;
+  text-align:center;box-shadow:var(--sh-sm)}
+.erp-icon{font-size:20px;margin-bottom:6px}
+.erp-name{font-size:11px;font-weight:800;color:var(--teal-800);margin-bottom:2px}
+.erp-status{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 6px;border-radius:999px}
+.erp-ga{background:var(--teal-50);color:var(--teal-700)}
+.erp-p2{background:var(--neutral-100);color:var(--neutral-500)}
+
+/* ── LAKEHOUSE ────────────────────────────────────────── */
+.lake-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+.lake-card{border-radius:10px;padding:18px;box-shadow:var(--sh-sm);page-break-inside:avoid}
+.lake-bronze{background:linear-gradient(135deg,#7B5B3A,#5C3E23);color:white}
+.lake-silver{background:linear-gradient(135deg,#4A5352,#333938);color:white}
+.lake-gold{background:linear-gradient(135deg,var(--teal-700),var(--teal-800));color:white}
+.lake-lbl{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  opacity:.7;margin-bottom:6px}
+.lake-name{font-size:18px;font-weight:900;margin-bottom:8px;letter-spacing:-.01em}
+.lake-desc{font-size:11.5px;opacity:.85;line-height:1.5}
+
+/* ── PHASE TIMELINE ──────────────────────────────────── */
+.phases{display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+  border:1px solid var(--neutral-100);border-radius:12px;overflow:hidden;margin:14px 0}
+.phase{padding:16px 14px;border-right:1px solid var(--neutral-100)}
+.phase:last-child{border-right:none}
+.ph-num{font-family:var(--font-m);font-size:10px;font-weight:700;
+  color:var(--coral-500);margin-bottom:4px}
+.ph-name{font-size:12.5px;font-weight:800;color:var(--teal-800);margin-bottom:8px}
+.ph-dur{font-size:10.5px;color:var(--neutral-400);font-weight:600;margin-bottom:8px}
+.ph-del{font-size:11px;color:var(--neutral-600);line-height:1.45}
+
+/* ── KPI METRICS ─────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+.kpi-card{border:1px solid var(--neutral-100);border-radius:10px;
+  padding:14px;text-align:center;box-shadow:var(--sh-sm)}
+.kpi-val{font-size:22px;font-weight:900;color:var(--teal-600);letter-spacing:-.02em;margin-bottom:2px}
+.kpi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--neutral-500);margin-bottom:4px}
+.kpi-note{font-size:10.5px;color:var(--neutral-400);line-height:1.35}
+
+/* ── IMPACT TABLE ────────────────────────────────────── */
+.impact{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--neutral-100);border:1px solid var(--neutral-100);
+  border-radius:10px;overflow:hidden;margin:14px 0}
+.imp-cell{background:white;padding:14px 16px}
+.imp-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--neutral-400);margin-bottom:5px}
+.imp-b{font-size:12px;color:var(--danger-500);font-weight:600;margin-bottom:2px}
+.imp-b::before{content:'Before: ';font-weight:700}
+.imp-a{font-size:12px;color:var(--success-500);font-weight:600}
+.imp-a::before{content:'After: ';font-weight:700}
+
+/* ── PERSONA CARDS ────────────────────────────────────── */
+.personas{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+.persona{border:1px solid var(--neutral-100);border-top:4px solid var(--teal-500);
+  border-radius:10px;padding:14px;box-shadow:var(--sh-sm)}
+.persona:nth-child(2){border-top-color:var(--coral-500)}
+.persona:nth-child(3){border-top-color:var(--teal-700)}
+.persona:nth-child(4){border-top-color:var(--coral-400)}
+.persona:nth-child(5){border-top-color:var(--teal-300)}
+.per-role{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--teal-600);margin-bottom:4px}
+.persona:nth-child(2) .per-role{color:var(--coral-600)}
+.per-name{font-size:13px;font-weight:800;color:var(--neutral-800);margin-bottom:6px;line-height:1.3}
+.per-f{font-size:11px;color:var(--neutral-600);margin-bottom:4px;line-height:1.35}
+
+/* ── CALLOUT ──────────────────────────────────────────── */
+.callout{display:flex;gap:10px;padding:12px 14px;border-radius:8px;margin:12px 0;border:1px solid}
+.ci{background:var(--teal-50);border-color:var(--teal-200)}
+.cw{background:#FAF2E4;border-color:#E8D5B0}
+.callout-icon{font-size:16px;flex-shrink:0}
+.callout-body{font-size:13px;line-height:1.5;color:var(--neutral-700)}
+
+/* ── PROSE ───────────────────────────────────────────── */
+p{margin:0 0 10px;color:var(--neutral-700);font-size:13.5px;line-height:1.65}
+ul,ol{margin:6px 0 10px 18px;padding:0;color:var(--neutral-700);font-size:13.5px;line-height:1.6}
+li{margin-bottom:3px}
+strong{color:var(--neutral-800);font-weight:700}
+code{font-family:var(--font-m);font-size:11.5px;background:var(--neutral-50);
+  padding:2px 5px;border-radius:3px;color:var(--teal-700);border:1px solid var(--neutral-100)}
+
+/* ── BADGES ──────────────────────────────────────────── */
+.badge{font-family:var(--font-m);font-size:10px;font-weight:600;
+  padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.b-must{background:#EEF4F0;color:var(--success-500)}
+.b-should{background:#FAF2E4;color:var(--warning-500)}
+.b-could{background:var(--neutral-100);color:var(--neutral-500)}
+
+/* ── BREAK ───────────────────────────────────────────── */
+.pb{page-break-before:always;border-top:2px solid var(--neutral-100);margin:44px 0 10px}
+
+/* ── FOOTER ──────────────────────────────────────────── */
+.doc-ft{margin-top:52px;padding-top:18px;border-top:2px solid var(--neutral-100);
+  display:flex;align-items:center;justify-content:space-between}
+.doc-ft-brand{font-size:12px;font-weight:700;color:var(--teal-600)}
+.doc-ft-meta{font-family:var(--font-m);font-size:10.5px;color:var(--neutral-400)}
+
+/* ── PRINT ───────────────────────────────────────────── */
+@media print{
+  @page{size:A4;margin:0}
+  body{background:white}
+  .doc{box-shadow:none!important;padding:36px 52px 80px!important}
+  .cover{min-height:297mm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pb{page-break-before:always}
+  .sec,.agent-card,.phase,.persona,.kpi-card{page-break-inside:avoid}
+  thead tr,.arch,.flow-box,.lake-card,.phase{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  a{text-decoration:none;color:inherit!important}
+}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <svg class="cv-lattice" viewBox="0 0 1280 900" preserveAspectRatio="xMidYMid slice">
+    <defs><pattern id="hx" x="0" y="0" width="140" height="121" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#7DB3AC" stroke-width="1.6">
+        <polygon points="35,10 70,10 87,40 70,70 35,70 18,40"/>
+        <polygon points="105,10 140,10 157,40 140,70 105,70 87,40"/>
+        <polygon points="70,70 105,70 122,100 105,130 70,130 53,100"/>
+      </g></pattern></defs>
+    <rect width="100%" height="100%" fill="url(#hx)"/>
+  </svg>
+  <div class="cv-scrim"></div>
+  <div class="cv-body">
+    <div class="cv-rule"></div>
+    <div class="cv-eye">Product Requirements Document · v3.0 · 2026-04-30</div>
+    <div class="cv-ticket">i-Source i-CFO360 · Supersedes UFIP v1.0 + PRD_02</div>
+    <h1 class="cv-title">i-CFO360<br>Intelligent CFO<br>Platform</h1>
+    <p class="cv-sub">Universal multi-ERP financial intelligence, intelligent data lakehouse, and A2A agentic processing — combined into one governed, AI-native platform for any multi-entity finance organisation.</p>
+    <div class="cv-meta">
+      <div class="cv-mi"><div class="cv-ml">Version</div><div class="cv-mv">3.0 · Draft</div></div>
+      <div class="cv-mi"><div class="cv-ml">Date</div><div class="cv-mv">2026-04-30</div></div>
+      <div class="cv-mi"><div class="cv-ml">Owner</div><div class="cv-mv">Aarav_PM_001</div></div>
+      <div class="cv-mi"><div class="cv-ml">Reviewer</div><div class="cv-mv">Kabir_010</div></div>
+      <div class="cv-mi"><div class="cv-ml">Agents</div><div class="cv-mv">8 (A2A Mesh)</div></div>
+    </div>
+  </div>
+  <div class="cv-footer">
+    <div class="cv-brand">
+      <div class="cv-logo">i-<span>CFO</span>360</div>
+      <div class="cv-fname">i-Source Infosystems · Intelligent CFO Platform</div>
+    </div>
+    <div class="cv-conf">INTERNAL · PRD v3.0 · CONFIDENTIAL</div>
+  </div>
+</div>
+
+<!-- DOCUMENT BODY -->
+<div class="doc">
+
+  <!-- TOC -->
+  <div class="toc-wrap">
+    <div class="toc-hdr">
+      <svg class="toc-hdr-svg" viewBox="0 0 960 80" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="hx2" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+        </pattern></defs><rect width="100%" height="100%" fill="url(#hx2)"/>
+      </svg>
+      <div class="toc-hdr-c">
+        <div class="toc-ey">Table of Contents</div>
+        <div class="toc-ttl">i-CFO360 Platform PRD v3.0</div>
+      </div>
+    </div>
+    <ul class="toc-list">
+      <li><span class="toc-n">01</span><span class="toc-l">Executive Summary</span></li>
+      <li><span class="toc-n">02</span><span class="toc-l">Business Context & Problem Statement</span></li>
+      <li><span class="toc-n">03</span><span class="toc-l">Platform Vision — 5 Strategic Pillars</span></li>
+      <li><span class="toc-n">04</span><span class="toc-l">Objectives & Success Metrics</span></li>
+      <li><span class="toc-n">05</span><span class="toc-l">Scope (In / Out)</span></li>
+      <li><span class="toc-n">06</span><span class="toc-l">User Personas (5)</span></li>
+      <li><span class="toc-n">07</span><span class="toc-l">Platform Architecture — 5 Layers</span></li>
+      <li><span class="toc-n">08</span><span class="toc-l">Multi-ERP Integration Layer</span></li>
+      <li><span class="toc-n">09</span><span class="toc-l">Data Lakehouse & Harmonisation</span></li>
+      <li><span class="toc-n">10</span><span class="toc-l">Agentic Layer — A2A Agent Mesh ★</span></li>
+      <li><span class="toc-n">11</span><span class="toc-l">Analytics & Reporting Capabilities</span></li>
+      <li><span class="toc-n">12</span><span class="toc-l">Security, Privacy & Compliance</span></li>
+      <li><span class="toc-n">13</span><span class="toc-l">Non-Functional Requirements</span></li>
+      <li><span class="toc-n">14</span><span class="toc-l">Phased Rollout Plan</span></li>
+      <li><span class="toc-n">15</span><span class="toc-l">Risks, Assumptions & Dependencies</span></li>
+      <li><span class="toc-n">16</span><span class="toc-l">Glossary</span></li>
+    </ul>
+  </div>
+
+  <!-- §01 EXECUTIVE SUMMARY -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">01</span><div class="sec-ttl">Executive Summary</div></div>
+
+    <div class="sub-ttl">Problem</div>
+    <p>Finance teams across multi-entity organisations face three compounding problems that block strategic decision-making and create operational risk:</p>
+    <ul>
+      <li><strong>Latency</strong> — no group-level visibility between month-end cycles; CFO decisions made on 3–10 day old data</li>
+      <li><strong>Manual consolidation</strong> — Excel-based roll-ups are error-prone, unauditable, and fail to scale with acquisitions</li>
+      <li><strong>ERP fragmentation</strong> — when subsidiaries run different ERPs (BC, SAP, Odoo), a single consolidated view is impossible without a normalization layer</li>
+    </ul>
+
+    <div class="sub-ttl">The Platform — 5 Pillars</div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="p-num">Pillar 1</div>
+        <div class="p-name">Universal ERP Connectivity</div>
+        <div class="p-desc">7 major ERP connectors. Native APIs. No manual exports.</div>
+      </div>
+      <div class="pillar">
+        <div class="p-num">Pillar 2</div>
+        <div class="p-name">Intelligent Data Lakehouse</div>
+        <div class="p-desc">Bronze / Silver / Gold. Canonical CoA. IC elimination. FX translation.</div>
+      </div>
+      <div class="pillar">
+        <div class="p-num">Pillar 3</div>
+        <div class="p-name">Agentic Processing (A2A)</div>
+        <div class="p-desc">8 AI agents. A2A protocol. Human-in-the-loop at every decision.</div>
+      </div>
+      <div class="pillar">
+        <div class="p-num">Pillar 4</div>
+        <div class="p-name">Unified Analytics</div>
+        <div class="p-desc">Role-aware dashboards. Close cockpit. NL Q&amp;A. Export.</div>
+      </div>
+      <div class="pillar">
+        <div class="p-num">Pillar 5</div>
+        <div class="p-name">Governed Security</div>
+        <div class="p-desc">RBAC. Row-level security. WORM audit logs. Compliance-ready.</div>
+      </div>
+    </div>
+
+    <div class="sub-ttl">Headline Outcomes</div>
+    <div class="impact">
+      <div class="imp-cell"><div class="imp-lbl">Close Cycle</div><div class="imp-b">8–10 business days</div><div class="imp-a">≤ 3 business days</div></div>
+      <div class="imp-cell"><div class="imp-lbl">Data Freshness</div><div class="imp-b">Monthly (manual export)</div><div class="imp-a">≤ 6 hours (automated)</div></div>
+      <div class="imp-cell"><div class="imp-lbl">ERP Coverage</div><div class="imp-b">1 ERP (manual)</div><div class="imp-a">7 ERPs (native API)</div></div>
+      <div class="imp-cell"><div class="imp-lbl">Consolidation Effort</div><div class="imp-b">~180 FTE hrs/month</div><div class="imp-a">≤ 40 FTE hrs/month</div></div>
+      <div class="imp-cell"><div class="imp-lbl">Invoice Processing</div><div class="imp-b">5–15 min / invoice</div><div class="imp-a">&lt; 2 min (AI-assisted)</div></div>
+      <div class="imp-cell"><div class="imp-lbl">Reporting Error Rate</div><div class="imp-b">3–8% (manual keying)</div><div class="imp-a">&lt; 0.25% variance</div></div>
+    </div>
+  </div>
+
+  <!-- §02 BUSINESS CONTEXT -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">02</span><div class="sec-ttl">Business Context & Problem Statement</div></div>
+
+    <div class="sub-ttl">Current State — Any Multi-Entity Organisation</div>
+    <p>Each subsidiary or legal entity operates its own ERP instance with its own chart of accounts, dimension structure, fiscal calendar, and posting conventions. Consolidated reporting is produced through a manual process: subsidiary controllers export trial balances, email them to the group finance team, and a small team performs manual mapping, elimination, and aggregation in spreadsheets.</p>
+
+    <div class="tw"><table>
+      <thead><tr><th>Pain Point</th><th>Description</th><th>Business Impact</th></tr></thead>
+      <tbody>
+        <tr><td>Latency</td><td>No group-level performance visibility between period-end cycles</td><td>Decisions made on stale data; competitive disadvantage</td></tr>
+        <tr><td>Comparability</td><td>Non-standard CoA, dimension taxonomies, customer master across entities</td><td>Cross-entity comparison unreliable; board reporting requires manual reconciliation</td></tr>
+        <tr><td>Auditability</td><td>Manual spreadsheet consolidation fails traceability requirements</td><td>Regulatory risk; inability to trace report line to source journal entry</td></tr>
+        <tr><td>Scalability</td><td>Adding an acquired entity compounds manual effort linearly</td><td>Does not scale with growth; M&A integration takes 6–12 months per entity</td></tr>
+        <tr><td>Analytics gap</td><td>No governed analytical store for BI, forecasting, or AI insight</td><td>Finance team reactive, not predictive; AI initiatives blocked</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- §03 PLATFORM VISION -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">03</span><div class="sec-ttl">Platform Vision & Strategic Pillars</div></div>
+
+    <div class="sub-ttl">Pillar 1 — Universal ERP Connectivity</div>
+    <p>Connect to 7 major ERP systems via native APIs, JDBC/ODBC, or structured file import. No manual exports. Every connector implements the <code>ERPConnector</code> ABC — identical interface regardless of ERP type.</p>
+    <div class="erp-grid">
+      <div class="erp-card"><div class="erp-icon">🔵</div><div class="erp-name">Business Central</div><span class="erp-status erp-ga">GA</span></div>
+      <div class="erp-card"><div class="erp-icon">🔷</div><div class="erp-name">D365 Finance</div><span class="erp-status erp-p2">Phase 2</span></div>
+      <div class="erp-card"><div class="erp-icon">🟦</div><div class="erp-name">SAP S4/ECC</div><span class="erp-status erp-p2">Phase 2</span></div>
+      <div class="erp-card"><div class="erp-icon">🟠</div><div class="erp-name">JD Edwards</div><span class="erp-status erp-p2">Phase 2</span></div>
+      <div class="erp-card"><div class="erp-icon">🔴</div><div class="erp-name">Oracle ERP</div><span class="erp-status erp-p2">Phase 2</span></div>
+      <div class="erp-card"><div class="erp-icon">🟣</div><div class="erp-name">Odoo</div><span class="erp-status erp-ga">GA</span></div>
+      <div class="erp-card"><div class="erp-icon">🟤</div><div class="erp-name">Tally Prime</div><span class="erp-status erp-p2">Phase 2</span></div>
+    </div>
+
+    <div class="sub-ttl">Pillar 2 — Intelligent Data Lakehouse</div>
+    <div class="lake-grid">
+      <div class="lake-card lake-bronze">
+        <div class="lake-lbl">Zone 1</div>
+        <div class="lake-name">Bronze</div>
+        <div class="lake-desc">Raw, immutable Delta extracts partitioned by entity + ingest date. Full history preserved for replay and audit. WORM retention ≥ 7 years.</div>
+      </div>
+      <div class="lake-card lake-silver">
+        <div class="lake-lbl">Zone 2</div>
+        <div class="lake-name">Silver</div>
+        <div class="lake-desc">Typed, schema-enforced, SCD-2 history. Canonical CoA mapped. Deduped by natural key. Data quality rules gate promotion.</div>
+      </div>
+      <div class="lake-card lake-gold">
+        <div class="lake-lbl">Zone 3</div>
+        <div class="lake-name">Gold</div>
+        <div class="lake-desc">Conformed facts. IC-eliminated. FX-translated. DQ-gated. Consumption-optimised for dashboards, agents, and exports.</div>
+      </div>
+    </div>
+
+    <div class="sub-ttl">Pillar 3 — Agentic Processing (A2A) — See Section 10</div>
+    <p>Eight specialized AI agents communicate via the A2A (Agent-to-Agent) protocol. Each agent declares capabilities via an Agent Card manifest. The OrchestratorAgent routes tasks. Any agent can pause and ask Finance a targeted question rather than failing silently.</p>
+
+    <div class="sub-ttl">Pillar 4 — Unified Analytics</div>
+    <p>Role-aware dashboards for all five personas. Close cockpit for month-end management. Variance explorer for FP&amp;A. InsightAgent for natural-language Q&amp;A. CSV/Parquet export for external modelling.</p>
+
+    <div class="sub-ttl">Pillar 5 — Governed Security</div>
+    <p>RBAC via Entra ID or SAML IdP. Row-level security by legal entity. WORM audit logs. Column-level masking for PII. Compliance-ready for SEC 204-2, IFRS, local GAAP, GDPR.</p>
+  </div>
+
+  <div class="pb"></div>
+
+  <!-- §04 OBJECTIVES -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">04</span><div class="sec-ttl">Objectives & Success Metrics</div></div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-val">≤ 3</div><div class="kpi-lbl">Close Days</div><div class="kpi-note">down from 8–10 business days</div></div>
+      <div class="kpi-card"><div class="kpi-val">≤ 6h</div><div class="kpi-lbl">Data Freshness</div><div class="kpi-note">ERP → Gold lake, automated</div></div>
+      <div class="kpi-card"><div class="kpi-val">≤ 40h</div><div class="kpi-lbl">Manual Effort</div><div class="kpi-note">FTE hours/month consolidation</div></div>
+      <div class="kpi-card"><div class="kpi-val">99.5%</div><div class="kpi-lbl">DQ Pass Rate</div><div class="kpi-note">Silver → Gold promotion gate</div></div>
+      <div class="kpi-card"><div class="kpi-val">30 days</div><div class="kpi-lbl">Onboarding</div><div class="kpi-note">acquisition → live on platform</div></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>KPI</th><th>Baseline</th><th>Target (12 months post-GA)</th></tr></thead>
+      <tbody>
+        <tr><td>Consolidated close cycle</td><td>8–10 business days</td><td>≤ 3 business days</td></tr>
+        <tr><td>Data freshness (ERP → lake)</td><td>Monthly</td><td>≤ 6 hours (twice-daily full; hourly CDC)</td></tr>
+        <tr><td>Manual consolidation effort</td><td>~180 FTE hrs/month</td><td>≤ 40 FTE hrs/month</td></tr>
+        <tr><td>Reconciliation variance vs. source GL</td><td>Unmeasured</td><td>&lt; 0.25% absolute</td></tr>
+        <tr><td>Entity onboarding (acquisition → live)</td><td>Undefined</td><td>≤ 30 calendar days</td></tr>
+        <tr><td>Platform availability (business hours)</td><td>N/A</td><td>99.9%</td></tr>
+        <tr><td>DQ rule pass rate (Silver → Gold)</td><td>N/A</td><td>≥ 99.5%</td></tr>
+        <tr><td>Invoice processing time</td><td>5–15 min/invoice</td><td>&lt; 2 min (AI-assisted review)</td></tr>
+        <tr><td>ERP push success rate</td><td>100% manual</td><td>≥ 99% automated</td></tr>
+        <tr><td>Agent HITL resolution time</td><td>N/A</td><td>&lt; 4 business hours</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- §05 SCOPE -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">05</span><div class="sec-ttl">Scope</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="sub-ttl" style="color:var(--success-500)">✓ In Scope (Phase 1 GA)</div>
+        <ul>
+          <li>ERP connectors: BC and Odoo GA; SAP, Oracle, D365F, JDE, Tally Phase 2 hardening</li>
+          <li>Full data lakehouse: Bronze / Silver / Gold for GL, AR/AP, CoA, dimensions</li>
+          <li>Canonical CoA and dimension mapping layer (group finance-owned)</li>
+          <li>IC elimination engine (configurable rules per entity pair)</li>
+          <li>FX translation (period-end, average, historical)</li>
+          <li>React application for all 5 personas</li>
+          <li>A2A Phase 1 agents: OrchestratorAgent, ERPConnectorAgent, DataQualityAgent, InvoiceAgent</li>
+          <li>RBAC with row-level security by legal entity</li>
+          <li>Audit logging (7-year WORM retention)</li>
+          <li>Multi-tenant: one platform instance, multiple organizations; full tenant isolation</li>
+        </ul>
+      </div>
+      <div>
+        <div class="sub-ttl" style="color:var(--danger-500)">✗ Out of Scope (Phase 1)</div>
+        <ul>
+          <li>Write-back from platform into source ERPs (read-only platform)</li>
+          <li>Statutory filing generation (10-K, Form ADV) — platform supplies data, not filings</li>
+          <li>Mobile native apps (responsive web only)</li>
+          <li>CRM, portfolio accounting, payroll ingestion</li>
+          <li>ERP push targets beyond BC for InvoiceAgent</li>
+          <li>Multi-level invoice approval workflow</li>
+          <li>Phase 2 agents: ReconciliationAgent, ForecastingAgent, ComplianceAgent, InsightAgent</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- §06 PERSONAS -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">06</span><div class="sec-ttl">User Personas</div></div>
+    <div class="personas">
+      <div class="persona">
+        <div class="per-role">C-Suite</div>
+        <div class="per-name">Group CFO</div>
+        <div class="per-f"><strong>Need:</strong> Consolidated P&L, cash position, variance to plan</div>
+        <div class="per-f"><strong>Screens:</strong> Executive dashboard, KPI tiles, entity drill-down</div>
+      </div>
+      <div class="persona">
+        <div class="per-role">Finance Ops</div>
+        <div class="per-name">Group Controller</div>
+        <div class="per-f"><strong>Need:</strong> Close status, mapping exceptions, elimination review</div>
+        <div class="per-f"><strong>Screens:</strong> Close cockpit, mapping workbench, audit log</div>
+      </div>
+      <div class="persona">
+        <div class="per-role">Entity Finance</div>
+        <div class="per-name">Subsidiary Controller</div>
+        <div class="per-f"><strong>Need:</strong> Entity DQ, IC reconciliation, submission status</div>
+        <div class="per-f"><strong>Screens:</strong> Entity view, DQ exceptions, IC recon console</div>
+      </div>
+      <div class="persona">
+        <div class="per-role">FP&A</div>
+        <div class="per-name">Head of FP&A</div>
+        <div class="per-f"><strong>Need:</strong> Trend analysis, forecasting, ad-hoc slicing, export</div>
+        <div class="per-f"><strong>Screens:</strong> Explorer, InsightAgent Q&A, export API</div>
+      </div>
+      <div class="persona">
+        <div class="per-role">AP / Invoices</div>
+        <div class="per-name">Finance Clerk</div>
+        <div class="per-f"><strong>Need:</strong> Upload invoices, review AI fields, approve ERP push</div>
+        <div class="per-f"><strong>Screens:</strong> Invoice upload, review console, history</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pb"></div>
+
+  <!-- §07 ARCHITECTURE -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">07</span><div class="sec-ttl">Platform Architecture — 5 Layers</div></div>
+    <div class="arch">
+      <svg class="arch-svg" viewBox="0 0 960 300" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="hx3" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+        </pattern></defs><rect width="100%" height="100%" fill="url(#hx3)"/>
+      </svg>
+      <pre>┌──────────────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1: SOURCE ERPs                                                                │
+│  Business Central · Dynamics 365F · SAP ECC/S4H · JDE · Oracle · Odoo · Tally      │
+│  + File Upload (PDF / Excel / Image)                                                │
+└────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                     │ Native APIs / JDBC / SFTP
+┌────────────────────────────────────▼─────────────────────────────────────────────────┐
+│  LAYER 2: INGESTION — ERP Connector Framework                                        │
+│  ERPConnector ABC · Credential Vault · Health Monitor · Sync Scheduler              │
+│  Incremental CDC · Retry / Circuit Breaker · Sync Audit Log                         │
+└────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                     │ Raw extracts (Delta Lake)
+┌────────────────────────────────────▼─────────────────────────────────────────────────┐
+│  LAYER 3: INTELLIGENT LAKEHOUSE                                                      │
+│  Bronze (raw, immutable) → Silver (typed, SCD-2, CoA mapped, DQ-gated)              │
+│  → Gold (IC-eliminated, FX-translated, conformed facts + dims)                      │
+│  Unity Catalog / Purview · Column Lineage · Data Quality Rules                      │
+└────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                     │ Gold facts + REST/GraphQL API
+┌────────────────────────────────────▼─────────────────────────────────────────────────┐
+│  LAYER 4: AGENTIC LAYER — A2A Agent Mesh                                            │
+│  OrchestratorAgent · ERPConnectorAgent · DataQualityAgent · InvoiceAgent ✓          │
+│  ReconciliationAgent · ForecastingAgent · ComplianceAgent · InsightAgent            │
+│  A2A Protocol · Agent Registry (dim_agent_registry) · Human-in-the-Loop (HITL)     │
+└────────────────────────────────────┬─────────────────────────────────────────────────┘
+                                     │ API / WebSocket / SSE
+┌────────────────────────────────────▼─────────────────────────────────────────────────┐
+│  LAYER 5: EXPERIENCE — React 18 + TypeScript (Vite)                                 │
+│  Executive Dashboard · Close Cockpit · Entity View · Explorer                       │
+│  Invoice Console · InsightAgent Q&A Pane · Admin Console                           │
+│  Entra ID SSO (MSAL) · RBAC · Row-Level Security · Data Freshness Indicator        │
+└──────────────────────────────────────────────────────────────────────────────────────┘</pre>
+    </div>
+  </div>
+
+  <!-- §08 MULTI-ERP -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">08</span><div class="sec-ttl">Multi-ERP Integration Layer</div></div>
+
+    <div class="sub-ttl">ERPConnector ABC — Universal Interface</div>
+    <div class="arch" style="padding:16px 20px">
+      <pre>connect(credentials: dict) → ConnectionStatus
+test_connection()           → ConnectionStatus
+fetch_coa()                 → list[RawAccount]
+fetch_gl_entries(from, to)  → Iterator[RawGLLine]  ← async generator (never load full dataset)
+fetch_dimensions()          → list[RawDimension]
+fetch_entities()            → list[RawEntity]
+get_sync_cursor()           → SyncCursor</pre>
+    </div>
+
+    <div class="sub-ttl">ERP Connector Specifications</div>
+    <div class="tw"><table>
+      <thead><tr><th>ERP</th><th>Connection</th><th>Auth</th><th>GL Endpoint</th><th>Frequency</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Business Central</td><td>REST API v2.0 (OData)</td><td>OAuth2 — Azure AD client credentials</td><td><code>/generalLedgerEntries</code></td><td>Webhook + daily full</td><td><span class="badge b-must">GA</span></td></tr>
+        <tr><td>D365 Finance</td><td>OData REST + Business Events</td><td>OAuth2 — Azure AD service principal</td><td><code>GeneralJournalAccountEntries</code></td><td>Near-real-time events</td><td><span class="badge b-should">Phase 2</span></td></tr>
+        <tr><td>SAP S4/ECC</td><td>OData v4 (S4H); RFC/BAPI (ECC)</td><td>SAP OAuth2 / SSO / X.509</td><td>S4H: <code>API_GLACCOUNTLINEITEM_SRV</code></td><td>Configurable / event</td><td><span class="badge b-should">Phase 2</span></td></tr>
+        <tr><td>JD Edwards</td><td>JDBC + AIS REST API</td><td>Oracle DB auth / JDE token</td><td><code>F0911</code> ledger; filter <code>GLLT='AA'</code></td><td>Scheduled + DB trigger</td><td><span class="badge b-should">Phase 2</span></td></tr>
+        <tr><td>Oracle ERP Cloud</td><td>Oracle REST API</td><td>OAuth2 — Oracle IDCS</td><td><code>GeneralLedgerJournalEntries</code></td><td>Scheduled + Events</td><td><span class="badge b-should">Phase 2</span></td></tr>
+        <tr><td>Odoo</td><td>JSON-RPC v2</td><td>API key + session token</td><td><code>account.move.line</code>; filter <code>parent_state='posted'</code></td><td>Scheduled + webhook</td><td><span class="badge b-must">GA</span></td></tr>
+        <tr><td>Tally Prime</td><td>Tally XML Request/Response</td><td>Local HTTP / remote token</td><td><code>LEDGERVOUCHERS</code> XML report</td><td>Scheduled pull</td><td><span class="badge b-should">Phase 2</span></td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="callout ci">
+      <div class="callout-icon">⚡</div>
+      <div class="callout-body"><strong>Debit-positive normalization:</strong> All connectors normalize to debit-positive convention regardless of ERP native sign convention (e.g., SAP GLDC='S'→debit, 'H'→credit; JDE GLDC='D'/'C'; Oracle abs() split; Odoo/BC already normalized).</div>
+    </div>
+  </div>
+
+  <div class="pb"></div>
+
+  <!-- §09 LAKEHOUSE -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">09</span><div class="sec-ttl">Data Lakehouse & Harmonisation</div></div>
+
+    <div class="sub-ttl">Canonical CoA — 4-Level Standard</div>
+    <div class="arch" style="padding:14px 20px">
+      <pre>L1: Financial Statement  — P&L | Balance Sheet | Cash Flow
+L2: Category             — Revenue | COGS | OpEx | EBITDA | Current Assets | ...
+L3: Subcategory          — Salaries | Rent | Marketing | Cash | Receivables | ...
+L4: Source Account       — ERP-native account code (drill-down only; read-only)</pre>
+    </div>
+    <p>All reports query at L1/L2/L3. Every L4 account maps to exactly one canonical account. Mapping changes require two-person approval workflow with full history.</p>
+
+    <div class="sub-ttl">Conformed Data Model — Gold Fact Tables</div>
+    <div class="tw"><table>
+      <thead><tr><th>Table</th><th>Grain</th><th>Key Measures</th></tr></thead>
+      <tbody>
+        <tr><td class="tc">fact_gl_entry</td><td>One row per GL posting line</td><td>amount_lcy, amount_usd, debit_amount, credit_amount</td></tr>
+        <tr><td class="tc">fact_ar_invoice_line</td><td>One row per AR invoice line</td><td>line_amount, tax_amount, discount_amount, margin_amount</td></tr>
+        <tr><td class="tc">fact_ap_invoice_line</td><td>One row per AP invoice line</td><td>line_amount, tax_amount, net_amount</td></tr>
+        <tr><td class="tc">fact_bank_ledger</td><td>One row per bank ledger entry</td><td>amount_lcy, amount_usd, running_balance</td></tr>
+        <tr><td class="tc">fact_fx_rate</td><td>One row per currency/date/type</td><td>rate DECIMAL(20,8)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-ttl">Dimension Tables (SCD-2)</div>
+    <div class="tw"><table>
+      <thead><tr><th>Table</th><th>Grain</th><th>SCD</th></tr></thead>
+      <tbody>
+        <tr><td class="tc">dim_entity</td><td>Legal entity / subsidiary</td><td>SCD-2</td></tr>
+        <tr><td class="tc">dim_account_canonical</td><td>Canonical CoA node (L1–L3)</td><td>SCD-2</td></tr>
+        <tr><td class="tc">dim_account_local</td><td>ERP-native account mapped to canonical</td><td>SCD-2</td></tr>
+        <tr><td class="tc">dim_erp_source</td><td>ERP connector config per tenant</td><td>SCD-2</td></tr>
+        <tr><td class="tc">dim_customer / dim_vendor</td><td>Group-harmonised master data</td><td>SCD-2</td></tr>
+        <tr><td class="tc">dim_date</td><td>Calendar + fiscal calendar</td><td>Static</td></tr>
+        <tr><td class="tc">dim_currency</td><td>ISO currencies</td><td>Static</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- §10 AGENTIC LAYER ★ -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">10</span><div class="sec-ttl">Agentic Layer — A2A Agent Mesh ★</div></div>
+
+    <div class="callout cw">
+      <div class="callout-icon">🧠</div>
+      <div class="callout-body"><strong>Why Agentic?</strong> Static pipelines cannot handle real-world financial ambiguity: vendor names that don't match ERP masters, OCR failures on scanned invoices, multi-step IC reconciliation requiring contextual judgment, compliance interpretation across jurisdictions. AI agents reason, adapt, coordinate with each other, and ask Finance targeted questions — rather than failing with a generic error.</div>
+    </div>
+
+    <div class="sub-ttl">A2A Protocol — Core Concepts</div>
+    <div class="tw"><table>
+      <thead><tr><th>Concept</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Agent Card</td><td>JSON manifest declaring name, capabilities[], inputSchema, outputSchema, endpoint_url, model. Published to Agent Registry on startup.</td></tr>
+        <tr><td>Task</td><td>Unit of work: task_id, context, messages[], artifacts[], state (submitted → working → completed / failed). Passed between agents via HTTP POST.</td></tr>
+        <tr><td>Agent Registry</td><td>Central DB table <code>dim_agent_registry</code>. OrchestratorAgent queries it to find the agent capable of a requested capability.</td></tr>
+        <tr><td>OrchestratorAgent</td><td>Routing hub. Receives user intent, looks up Agent Registry, creates Task, dispatches to capable agent, aggregates result.</td></tr>
+        <tr><td>HITL</td><td>Human-in-the-Loop. Any agent calls <code>request_human_input(field, question, options[])</code> → pauses tool loop → Finance answers via UI → agent resumes.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-ttl">A2A Communication Flow</div>
+    <div class="flow-box">
+      <svg class="flow-box-svg" viewBox="0 0 960 150" preserveAspectRatio="xMidYMid slice">
+        <defs><pattern id="hx4" x="0" y="0" width="70" height="60" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="#7DB3AC" stroke-width="1"><polygon points="18,5 35,5 44,20 35,35 18,35 9,20"/></g>
+        </pattern></defs><rect width="100%" height="100%" fill="url(#hx4)"/>
+      </svg>
+      <pre>User Intent → OrchestratorAgent
+  → query dim_agent_registry for matching capability
+  → create Task { task_id, context, capability }
+  → POST to target agent's A2A endpoint
+  → target agent runs tool loop:
+      if ambiguous field:
+        call request_human_input(field, question, options[])
+        → pending_question stored in DB
+        → agent PAUSES (returns PENDING token)
+        → Finance answers via Review Console
+        → POST /api/{resource}/{id}/answer
+        → agent RESUMES with confirmed answer
+  → agent returns Task result (state: completed / failed)
+  → OrchestratorAgent aggregates → responds to user
+  → every step logged in fact_agent_task (immutable append-only)</pre>
+    </div>
+
+    <div class="sub-ttl">Agent Roster — 8 Agents</div>
+    <div class="agent-grid">
+      <div class="agent-card">
+        <div class="a-hdr">
+          <span class="a-name">OrchestratorAgent</span>
+          <span class="a-model">claude-sonnet-4-6</span>
+          <span class="a-status-p1">Phase 1</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> route_task · aggregate_results · manage_hitl</div>
+        <div class="a-tools">Tools: dispatch_task · get_agent_registry · request_human_input</div>
+      </div>
+      <div class="agent-card">
+        <div class="a-hdr">
+          <span class="a-name">ERPConnectorAgent</span>
+          <span class="a-model">claude-haiku-4-5</span>
+          <span class="a-status-p1">Phase 1</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> sync_erp · test_connection · schedule_sync · health_check</div>
+        <div class="a-tools">Tools: connect_erp · fetch_gl · run_sync · get_health_status</div>
+      </div>
+      <div class="agent-card">
+        <div class="a-hdr">
+          <span class="a-name">DataQualityAgent</span>
+          <span class="a-model">claude-haiku-4-5</span>
+          <span class="a-status-p1">Phase 1</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> validate_data · flag_exception · request_remediation</div>
+        <div class="a-tools">Tools: run_dq_rules · flag_exception · block_silver_promotion</div>
+      </div>
+      <div class="agent-card live">
+        <div class="a-hdr">
+          <span class="a-name">InvoiceAgent</span>
+          <span class="a-model">claude-sonnet-4-6</span>
+          <span class="a-status-live">GA · IC-27</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> extract_invoice · validate_invoice · push_to_erp</div>
+        <div class="a-tools">Tools: extract_fields · validate_invoice · lookup_vendor · check_duplicate · request_human_input · push_to_erp · log_audit_event</div>
+      </div>
+      <div class="agent-card p2">
+        <div class="a-hdr">
+          <span class="a-name">ReconciliationAgent</span>
+          <span class="a-model">claude-sonnet-4-6</span>
+          <span class="a-status-p2">Phase 2</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> reconcile_ic · detect_variance · alert_controller</div>
+        <div class="a-tools">Tools: match_ic_entries · compute_variance · create_alert · request_human_input</div>
+      </div>
+      <div class="agent-card p2">
+        <div class="a-hdr">
+          <span class="a-name">ForecastingAgent</span>
+          <span class="a-model">claude-sonnet-4-6</span>
+          <span class="a-status-p2">Phase 2</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> forecast_revenue · model_scenario · detect_trend</div>
+        <div class="a-tools">Tools: query_gold_facts · run_forecast_model · generate_scenario</div>
+      </div>
+      <div class="agent-card p2">
+        <div class="a-hdr">
+          <span class="a-name">ComplianceAgent</span>
+          <span class="a-model">claude-haiku-4-5</span>
+          <span class="a-status-p2">Phase 2</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> audit_trail · check_retention · flag_regulatory</div>
+        <div class="a-tools">Tools: query_audit_log · check_retention_policy · generate_compliance_report</div>
+      </div>
+      <div class="agent-card p2">
+        <div class="a-hdr">
+          <span class="a-name">InsightAgent</span>
+          <span class="a-model">claude-sonnet-4-6</span>
+          <span class="a-status-p2">Phase 2</span>
+        </div>
+        <div class="a-caps"><strong>Capabilities:</strong> natural_language_query · generate_sql · explain_variance</div>
+        <div class="a-tools">Tools: nl_to_sql · query_gold · explain_result · visualize_result</div>
+      </div>
+    </div>
+
+    <div class="sub-ttl">A2A DB Schema (3 new tables)</div>
+    <div class="tw"><table>
+      <thead><tr><th>Table</th><th>Purpose</th><th>Mutable?</th></tr></thead>
+      <tbody>
+        <tr><td class="tc">dim_agent_registry</td><td>Stores all Agent Cards (name, endpoint_url, capabilities_json, model, version, status)</td><td>Yes — updated on agent version change</td></tr>
+        <tr><td class="tc">fact_agent_task</td><td>Every A2A task dispatch: from_agent, to_agent, capability, input/output payload, state, duration_ms</td><td>Append-only (state finalize allowed)</td></tr>
+        <tr><td class="tc">fact_agent_hitl_log</td><td>Every HITL interaction: task_id, agent_id, question, options, answer, answered_by, timestamps</td><td>Immutable (no UPDATE, no DELETE)</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-ttl">Agent Communication Scenarios</div>
+    <div class="tw"><table>
+      <thead><tr><th>Trigger</th><th>Agent Flow</th></tr></thead>
+      <tbody>
+        <tr><td>Finance Clerk uploads invoice</td><td>InvoiceAgent → (vendor ambiguous?) → request_human_input → Finance confirms → push_to_erp → log_audit_event</td></tr>
+        <tr><td>ERP sync fails after 3 retries</td><td>ERPConnectorAgent → OrchestratorAgent → notify Finance admin via alert</td></tr>
+        <tr><td>Silver data fails DQ rule</td><td>DataQualityAgent → flag_exception → block Gold promotion → alert Controller</td></tr>
+        <tr><td>IC reconciliation mismatch</td><td>ReconciliationAgent → compute_variance → (if > threshold) → request_human_input from Controller</td></tr>
+        <tr><td>CFO asks "What is our Q1 margin?"</td><td>InsightAgent → nl_to_sql → query_gold → explain_result → visualize</td></tr>
+        <tr><td>Compliance audit check</td><td>ComplianceAgent → query_audit_log → check_retention → generate_compliance_report</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="pb"></div>
+
+  <!-- §11 ANALYTICS -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">11</span><div class="sec-ttl">Analytics & Reporting Capabilities</div></div>
+    <div class="tw"><table>
+      <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+      <tbody>
+        <tr><td>FR-APP-01</td><td>React 18 + TypeScript SPA; SSO via Entra ID / SAML-compatible IdP</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-02</td><td>Executive dashboard: consolidated P&L, cash, AR/AP aging, KPI tiles, entity drill-through</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-03</td><td>Close cockpit: per-entity status, mapping exceptions queue, elimination review, sign-off workflow</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-04</td><td>Entity view: single-entity scope for subsidiary controller; DQ exceptions, IC recon</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-05</td><td>Explorer: pivot-style over Gold facts; saved views; CSV/Parquet export</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-06</td><td>Invoice console: drag-drop upload, batch, AI extraction review, HITL widget, ERP push, history</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-07</td><td>Data freshness indicator on every dashboard (last sync time per ERP source)</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-08</td><td>InsightAgent Q&A pane: NL query → answer + underlying SQL for audit</td><td><span class="badge b-should">Should</span></td></tr>
+        <tr><td>FR-APP-09</td><td>All data via versioned REST API; UI never queries lake directly</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-APP-10</td><td>Accessibility: WCAG 2.1 AA; responsive down to tablet (768px)</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-ADM-01</td><td>Admin console: ERP registration, mapping maintenance, agent management, pipeline health</td><td><span class="badge b-must">Must</span></td></tr>
+        <tr><td>FR-ADM-02</td><td>Entity onboarding wizard: register ERP, configure auth, map accounts, validate, go live</td><td><span class="badge b-should">Should</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- §12 SECURITY -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">12</span><div class="sec-ttl">Security, Privacy & Compliance</div></div>
+    <div class="sub-ttl">Regulatory Framing</div>
+    <p>The platform is designed to support common financial regulatory requirements. Applicable obligations vary by jurisdiction and must be confirmed by the customer:</p>
+    <ul>
+      <li><strong>SEC Rule 204-2</strong> (US RIAs) — books and records retention (7 years), immutability, accessibility</li>
+      <li><strong>IFRS / local GAAP</strong> — audit trail from source journal entry to consolidated report</li>
+      <li><strong>Reg S-P / GDPR</strong> — PII safeguarding, data residency controls, right to erasure (where applicable)</li>
+      <li><strong>SOX-equivalent</strong> — segregation of duties, change controls, financial control environment</li>
+    </ul>
+    <div class="sub-ttl">Security Controls</div>
+    <div class="tw"><table>
+      <thead><tr><th>Control</th><th>Implementation</th></tr></thead>
+      <tbody>
+        <tr><td>Encryption at rest</td><td>Customer-managed keys (CMK); no platform-managed key exposure to data</td></tr>
+        <tr><td>Encryption in transit</td><td>TLS 1.2+ on all API, DB, and storage connections</td></tr>
+        <tr><td>Network isolation</td><td>No inbound public access to storage or compute; Private Link / Private Endpoints</td></tr>
+        <tr><td>Identity</td><td>Single IdP (Entra ID or SAML); no local accounts except emergency break-glass</td></tr>
+        <tr><td>Row-level security</td><td>Enforced at SQL/API layer; users query only entities their role grants access to</td></tr>
+        <tr><td>Column masking</td><td>PII fields masked except narrowly authorised roles; unmask requires elevated role + audit log</td></tr>
+        <tr><td>Immutable audit logs</td><td>WORM storage; DELETE/UPDATE revoked at DB privilege level on audit tables</td></tr>
+        <tr><td>Secrets management</td><td>Vault service (Azure Key Vault / AWS Secrets Manager / HashiCorp Vault); no credentials in code</td></tr>
+        <tr><td>Agent isolation</td><td>Every agent query includes tenant_id filter; cross-tenant data access = security incident</td></tr>
+        <tr><td>HITL audit</td><td>Every agent question + Finance answer logged in fact_agent_hitl_log (immutable)</td></tr>
+        <tr><td>Penetration testing</td><td>Annual third-party pen test; quarterly vulnerability scans; SAST + dependency scanning in CI</td></tr>
+        <tr><td>SOC 2</td><td>Year 1: readiness assessment; Year 2: Type II target</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- §13 NFRs -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">13</span><div class="sec-ttl">Non-Functional Requirements</div></div>
+    <div class="tw"><table>
+      <thead><tr><th>Category</th><th>Requirement</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td>Availability</td><td>Application (business hours 07:00–20:00 local)</td><td>99.9%</td></tr>
+        <tr><td>Availability</td><td>Data pipeline (scheduled run success rate)</td><td>≥ 99.5%</td></tr>
+        <tr><td>Performance</td><td>Executive dashboard P95 load</td><td>&lt; 2.5 seconds</td></tr>
+        <tr><td>Performance</td><td>Explorer query P95 (12 months data)</td><td>&lt; 6 seconds</td></tr>
+        <tr><td>Performance</td><td>OrchestratorAgent task routing</td><td>&lt; 2 seconds</td></tr>
+        <tr><td>Performance</td><td>Agent tool loop (single invoice end-to-end)</td><td>&lt; 30 seconds</td></tr>
+        <tr><td>Scalability</td><td>Legal entities supported</td><td>Architected for 100+; linear scale</td></tr>
+        <tr><td>Scalability</td><td>Concurrent application users</td><td>250 (no degradation)</td></tr>
+        <tr><td>Recoverability</td><td>RPO (pipeline data)</td><td>≤ 6 hours</td></tr>
+        <tr><td>Recoverability</td><td>RTO (application)</td><td>≤ 4 hours</td></tr>
+        <tr><td>Auditability</td><td>Retention of source extracts and logs</td><td>≥ 7 years, WORM</td></tr>
+        <tr><td>Observability</td><td>End-to-end trace: UI query → Gold row → Bronze source → ERP</td><td>Available on demand</td></tr>
+        <tr><td>Maintainability</td><td>Infrastructure as code; zero manual console changes in production</td><td>100% IaC</td></tr>
+        <tr><td>Agent SLA</td><td>HITL question answered by Finance</td><td>&lt; 4 business hours</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="pb"></div>
+
+  <!-- §14 ROLLOUT -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">14</span><div class="sec-ttl">Phased Rollout Plan</div></div>
+    <div class="phases">
+      <div class="phase">
+        <div class="ph-num">Phase 0</div>
+        <div class="ph-name">Foundation</div>
+        <div class="ph-dur">Month 1–2 · No entities</div>
+        <div class="ph-del">Cloud landing zone · IdP groups · Lakehouse infra · CI/CD · Connector framework · Canonical CoA draft · Agent Registry · A2A protocol baseline · Security review</div>
+      </div>
+      <div class="phase">
+        <div class="ph-num">Phase 1</div>
+        <div class="ph-name">Pilot</div>
+        <div class="ph-dur">Month 3–4 · 1–2 entities</div>
+        <div class="ph-del">BC + Odoo connectors · Silver/Gold for pilot entities · Executive Dashboard v1 · Close Cockpit v1 · Orchestrator + ERPConnector + DataQuality agents · InvoiceAgent GA</div>
+      </div>
+      <div class="phase">
+        <div class="ph-num">Phase 2</div>
+        <div class="ph-name">Scale</div>
+        <div class="ph-dur">Month 5–7 · 5–10 entities</div>
+        <div class="ph-del">All 7 ERP connectors hardened · Onboarding runbook · DQ rule library · ReconciliationAgent · Explorer v1 · Elimination engine GA</div>
+      </div>
+      <div class="phase">
+        <div class="ph-num">Phase 3</div>
+        <div class="ph-name">Intelligence</div>
+        <div class="ph-dur">Month 8–10 · All entities</div>
+        <div class="ph-del">ForecastingAgent · InsightAgent · ComplianceAgent · Audit evidence pack · Formal GA announcement</div>
+      </div>
+      <div class="phase">
+        <div class="ph-num">Phase 4</div>
+        <div class="ph-name">Full GA</div>
+        <div class="ph-dur">Month 11–12</div>
+        <div class="ph-del">Full A2A mesh (8 agents active) · HITL polished · External agent connectors · Ops handover · Training programme complete</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- §15 RISKS -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">15</span><div class="sec-ttl">Risks, Assumptions & Dependencies</div></div>
+    <div class="tw"><table>
+      <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>CoA harmonisation underestimated — entity CoAs diverge more than assumed</td><td>High</td><td>High</td><td>Run CoA discovery in Phase 0; assign finance lead with veto authority on canonical CoA</td></tr>
+        <tr><td>ERP API access provisioning delays</td><td>Medium</td><td>High</td><td>Executive directive; central SecOps contact per entity; 10-day SLA</td></tr>
+        <tr><td>ERP rate limits constrain historical backfill</td><td>Medium</td><td>Medium</td><td>Staged backfill; off-hours scheduling; vendor quota dialogue</td></tr>
+        <tr><td>Source data quality weaker than assumed</td><td>Medium</td><td>High</td><td>DQ rule library; remediation SLA with each controller; DQ blocks Silver→Gold</td></tr>
+        <tr><td>LLM API latency in production financial workflows</td><td>Medium</td><td>Medium</td><td>Async agent execution; tool loops non-blocking; SLA monitoring; fallback to rule-based</td></tr>
+        <tr><td>Agent hallucination in financial calculations</td><td>Low</td><td>High</td><td>Agents use tools for all numbers — never direct LLM reasoning for amounts; every calc via SQL/code tool</td></tr>
+        <tr><td>A2A protocol immaturity</td><td>Low</td><td>Medium</td><td>HTTP + JSON contract; protocol-agnostic interface layer; no hard lock-in to A2A spec version</td></tr>
+        <tr><td>Key-person concentration on canonical model design</td><td>Medium</td><td>Medium</td><td>Two-person rule on canonical mappings; documented decision log; bus-factor mitigation</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-ttl">Assumptions</div>
+    <ul>
+      <li>Each entity will grant an app registration / API credentials within 10 business days of request</li>
+      <li>Group finance will own and staff the canonical CoA and dimension framework</li>
+      <li>Legal entity structure is stable during initial rollout; major re-orgs trigger re-planning</li>
+      <li>Claude API (claude-sonnet-4-6 / claude-haiku-4-5) available and stable for production agent workloads</li>
+    </ul>
+
+    <div class="sub-ttl">Dependencies</div>
+    <ul>
+      <li>Cloud platform subscription (Azure / AWS / GCP) with sufficient quota for lakehouse + compute</li>
+      <li>IdP (Entra ID or SAML provider) configured and Entra groups mapped to platform roles</li>
+      <li>Vault service available for ERP credential storage</li>
+      <li>ERP sandbox tenants for connector development and integration testing</li>
+      <li>Finance leadership availability for canonical CoA sessions (~40 hours in Phase 0)</li>
+    </ul>
+  </div>
+
+  <!-- §16 GLOSSARY -->
+  <div class="sec">
+    <div class="sec-hdr"><span class="sec-num">16</span><div class="sec-ttl">Glossary</div></div>
+    <div class="tw"><table>
+      <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+      <tbody>
+        <tr><td>A2A</td><td>Agent-to-Agent — Google's open protocol for AI agent communication via HTTP + JSON Task / Agent Card semantics. Each agent is an A2A-compatible HTTP server.</td></tr>
+        <tr><td>Agent Card</td><td>JSON manifest declaring an agent's name, capabilities[], inputSchema, outputSchema, and endpoint URL. Published to Agent Registry on startup.</td></tr>
+        <tr><td>Bronze / Silver / Gold</td><td>Medallion architecture zones: raw (Bronze) · conformed (Silver) · consumption-ready (Gold).</td></tr>
+        <tr><td>Canonical CoA</td><td>Standard 4-level chart of accounts used across all entities regardless of native ERP CoA. Owned by group finance.</td></tr>
+        <tr><td>CDC</td><td>Change Data Capture — propagating only changed rows since the last extract (incremental ingestion).</td></tr>
+        <tr><td>HITL</td><td>Human-in-the-Loop — an agent pauses its tool loop to ask Finance a targeted question; resumes when Finance answers via the UI.</td></tr>
+        <tr><td>IC</td><td>Intercompany — transactions between legal entities within the same group; must be eliminated in consolidated reporting.</td></tr>
+        <tr><td>InvoiceAgent</td><td>The first live A2A agent (IC-27, Phase 1 GA): extracts invoice fields from PDF/Excel/Image, validates against 7 rules, and pushes to ERP with human review.</td></tr>
+        <tr><td>OrchestratorAgent</td><td>The routing hub of the A2A mesh: receives user intents, queries the Agent Registry, creates Tasks, dispatches to capable agents, aggregates results.</td></tr>
+        <tr><td>RPO / RTO</td><td>Recovery Point Objective / Recovery Time Objective — disaster recovery parameters.</td></tr>
+        <tr><td>SCD-2</td><td>Slowly Changing Dimension Type 2 — preserves full history of dimensional attributes via effective-date rows.</td></tr>
+        <tr><td>Task (A2A)</td><td>Unit of work in the A2A protocol: task_id, context, messages[], artifacts[], state (submitted → working → completed / failed).</td></tr>
+        <tr><td>WORM</td><td>Write Once Read Many — immutable storage policy required for regulated financial records.</td></tr>
+        <tr><td>ERP</td><td>Enterprise Resource Planning — business management software (BC, SAP, Oracle ERP Cloud, D365F, JDE, Odoo, Tally).</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-ft">
+    <div class="doc-ft-brand">i-CFO360 · i-Source Infosystems · Intelligent CFO Platform</div>
+    <div class="doc-ft-meta">PRD v3.0 · 2026-04-30 · Supersedes UFIP v1.0 + PRD_02 · INTERNAL CONFIDENTIAL</div>
+  </div>
+
+</div><!-- /doc -->
+</body>
+</html>

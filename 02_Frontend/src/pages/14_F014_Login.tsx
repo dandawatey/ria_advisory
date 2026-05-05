@@ -75,7 +75,7 @@ export default function Login() {
             i-CFO<span style={{ color: '#1f6b66' }}>360</span>
           </h1>
           <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-            RIA Advisory · Financial Intelligence Platform
+            ISource Financial Intelligence Platform
           </p>
         </div>
 

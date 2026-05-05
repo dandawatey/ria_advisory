@@ -112,12 +112,13 @@ function addRolling3(rows: IncomeMonthRow[]): (IncomeMonthRow & { rolling3: numb
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function MonthlyIncome() {
   // Filter state
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [monthFrom, setMonthFrom] = useState<string>('');
   const [monthTo, setMonthTo] = useState<string>('');
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [incomeType, setIncomeType] = useState<IncomeType>('all');
+  const [accountCategory, setAccountCategory] = useState<string>('');
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [tab, setTab] = useState<TabKey>('monthly');
 
@@ -139,13 +140,14 @@ export default function MonthlyIncome() {
 
   // Args builder
   const apiArgs = useCallback(
-    (): [number[], number | null, string | undefined, string | undefined] => [
+    (): [number[], number | null, string | undefined, string | undefined, Record<string, string> | undefined] => [
       selectedCompanies,
       selectedYear,
       monthFrom || undefined,
       monthTo || undefined,
+      accountCategory ? { account_category: accountCategory } : undefined,
     ],
-    [selectedCompanies, selectedYear, monthFrom, monthTo]
+    [selectedCompanies, selectedYear, monthFrom, monthTo, accountCategory]
   );
 
   // Load filter options once
@@ -194,6 +196,7 @@ export default function MonthlyIncome() {
       .catch(() => setErrEnt(true))
       .finally(() => setLoadEnt(false));
   }, [tab, apiArgs]);
+  // Note: apiArgs includes accountCategory in its extra param for future backend support
 
   // Helpers
   const toggleCompany = (id: number) => {
@@ -209,6 +212,7 @@ export default function MonthlyIncome() {
     setMonthTo('');
     setSelectedCompanies([]);
     setIncomeType('all');
+    setAccountCategory('');
     setDrill(null);
   };
 
@@ -372,6 +376,28 @@ export default function MonthlyIncome() {
                 </div>
               )}
             </div>
+
+            {/* GL Group */}
+            {filterOpts.account_categories?.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 6 }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button
+                    className={`btn btn-sm ${accountCategory === '' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: 10, padding: '2px 8px' }}
+                    onClick={() => setAccountCategory('')}
+                  >All</button>
+                  {filterOpts.account_categories.map((cat) => (
+                    <button
+                      key={cat}
+                      className={`btn btn-sm ${accountCategory === cat ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ fontSize: 10, padding: '2px 8px' }}
+                      onClick={() => setAccountCategory(accountCategory === cat ? '' : cat)}
+                    >{cat}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Active drill indicator */}
             {drill && (

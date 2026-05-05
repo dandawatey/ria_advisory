@@ -8,9 +8,10 @@ Filter params (shared across endpoints):
   month_from  : str        — 'YYYY-MM' inclusive start
   month_to    : str        — 'YYYY-MM' inclusive end
 """
-from fastapi import APIRouter, Query
-from typing import Optional, List
+from fastapi import APIRouter, Depends, Query
+from typing import List, Optional
 from database import query
+from auth_utils import require_auth, get_allowed_company_ids
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -24,13 +25,31 @@ _BASE = """
 """
 
 def _where(company_ids=None, year=None, month_from=None, month_to=None,
-           extra=None, account_prefix=None, doc_type=None):
+           extra=None, account_prefix=None, doc_type=None, account_category=None,
+           allowed_ids=None):
     """Build WHERE + params for the standard GL query pattern.
 
-    New params:
-      account_prefix : str  — e.g. '4' → ac.account_no LIKE '4%'
-      doc_type       : str  — e.g. 'Invoice' → dim_document.document_type match
+    allowed_ids: tenant-scoped company restriction (from get_allowed_company_ids)
+      None  → superadmin, no restriction
+      []    → no data (tenant has no subsidiary_access)
+      [1,2] → restrict to these company_ids
+
+    account_prefix   : str  — e.g. '4' → ac.account_no LIKE '4%'
+    doc_type         : str  — e.g. 'Invoice' → dim_document.document_type match
+    account_category : str  — e.g. 'Revenue' → ac.account_category exact match
     """
+    # ── Tenant enforcement ────────────────────────────────────────────────────
+    if allowed_ids is not None:                     # None = superadmin (unrestricted)
+        if len(allowed_ids) == 0:
+            return "WHERE 1=0", []                  # tenant has no access at all
+        if company_ids:
+            effective = [c for c in company_ids if c in set(allowed_ids)]
+            if not effective:
+                return "WHERE 1=0", []              # requested companies outside tenant scope
+            company_ids = effective
+        else:
+            company_ids = allowed_ids               # restrict to tenant's companies
+
     clauses = ["ac.account_no != '999999'"]
     params: list = []
     if company_ids:
@@ -54,6 +73,9 @@ def _where(company_ids=None, year=None, month_from=None, month_to=None,
     if doc_type:
         clauses.append("TRIM(COALESCE(doc.document_type, '')) = %s")
         params.append(doc_type)
+    if account_category:
+        clauses.append("ac.account_category = %s")
+        params.append(account_category)
     if extra:
         clauses.append(extra)
     return "WHERE " + " AND ".join(clauses), params
@@ -61,21 +83,53 @@ def _where(company_ids=None, year=None, month_from=None, month_to=None,
 
 # ── 0. Filter options (dropdown data for the filter panel) ────────────────────
 @router.get("/filters")
-def get_filters():
-    companies = query("SELECT company_id, company_name FROM dim_company ORDER BY company_name")
-    periods   = query("""
+def get_filters(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return {"companies": [], "years": [], "months": [], "currencies": []}
+
+    company_filter = ""
+    cp: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        company_filter = f"WHERE company_id IN ({ph})"
+        cp = list(allowed)
+
+    companies = query(f"SELECT company_id, company_name FROM dim_company {company_filter} ORDER BY company_name", cp)
+
+    period_where = ""
+    pp: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        period_where = f"WHERE g.company_id IN ({ph})"
+        pp = list(allowed)
+
+    periods = query(f"""
         SELECT DISTINCT d.year,
                d.month,
                TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS month_key,
                d.month_name
         FROM dim_date d
         JOIN fact_gl_entries g ON g.date_id = d.date_id
+        {period_where}
         GROUP BY d.year, d.month, d.month_name
         ORDER BY d.year, d.month
-    """)
+    """, pp)
     years = sorted({p["year"] for p in periods}, reverse=True)
     currencies = query("SELECT currency_code, currency_name FROM dim_currency ORDER BY currency_code")
-    return {"companies": companies, "years": years, "months": periods, "currencies": currencies}
+    categories = query("""
+        SELECT DISTINCT account_category
+        FROM dim_account
+        WHERE account_category IS NOT NULL AND account_category != ''
+        ORDER BY account_category
+    """)
+    return {
+        "companies": companies,
+        "years": years,
+        "months": periods,
+        "currencies": currencies,
+        "account_categories": [r["account_category"] for r in categories],
+    }
 
 
 # ── 0b. KPI summary tiles ─────────────────────────────────────────────────────
@@ -87,8 +141,11 @@ def kpi_summary(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     rows = query(f"""
         SELECT
             -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)  AS revenue,
@@ -117,8 +174,11 @@ def pl_waterfall(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM')                                AS month,
@@ -150,8 +210,11 @@ def entity_contribution(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             co.company_id,
@@ -186,8 +249,11 @@ def department_heatmap(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, extra="dp.department_code IS NOT NULL", account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, extra="dp.department_code IS NOT NULL", account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             dp.department_code,
@@ -216,8 +282,11 @@ def rolling_trend(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             co.company_id,
@@ -242,10 +311,13 @@ def top_accounts(
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
     limit: int = Query(default=20, le=50),
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    allowed = get_allowed_company_ids(current)
     prefix = account_prefix.strip()
     extra  = f"ac.account_no LIKE '{prefix}%%'" if prefix else None
-    wh, params = _where(company_id, year, month_from, month_to, extra=extra)
+    wh, params = _where(company_id, year, month_from, month_to, extra=extra, account_category=account_category, allowed_ids=allowed)
     params.append(limit)
     return query(f"""
         SELECT
@@ -272,8 +344,11 @@ def doc_type_mix(
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(doc.document_type), ''), 'Unspecified') AS document_type,
@@ -289,8 +364,17 @@ def doc_type_mix(
 
 # ── 7. Suspense Monitor ───────────────────────────────────────────────────────
 @router.get("/suspense-monitor")
-def suspense_monitor():
-    return query("""
+def suspense_monitor(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    extra_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        extra_filter = f"AND g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT
             co.company_id,
             co.company_name,
@@ -302,9 +386,10 @@ def suspense_monitor():
         JOIN dim_company co ON co.company_id = g.company_id
         JOIN dim_date    d  ON d.date_id     = g.date_id
         WHERE g.account_no = '999999'
+        {extra_filter}
         GROUP BY co.company_id, co.company_name
         ORDER BY ABS(SUM(g.amount)) DESC
-    """)
+    """, params)
 
 
 # ── 8. Month-over-Month Change ────────────────────────────────────────────────
@@ -312,6 +397,7 @@ def suspense_monitor():
 def mom_change(
     current_month: Optional[str] = None,
     prior_month: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
     if not current_month or not prior_month:
         recent = query("""
@@ -326,8 +412,18 @@ def mom_change(
         current_month = months[0] if months else "2026-03"
         prior_month   = months[1] if len(months) > 1 else "2026-02"
 
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    co_params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"AND g.company_id IN ({ph})"
+        co_params = list(allowed)
+
     def _ym(s): y, m = s.split("-"); return int(y) * 100 + int(m)
-    return query("""
+    return query(f"""
         WITH cur AS (
             SELECT co.company_id, co.company_name,
                    -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
@@ -337,6 +433,7 @@ def mom_change(
             JOIN dim_account ac ON ac.account_no = g.account_no
             JOIN dim_company co ON co.company_id = g.company_id
             WHERE ac.account_no != '999999' AND d.year * 100 + d.month = %s
+            {co_filter}
             GROUP BY co.company_id, co.company_name
         ),
         pri AS (
@@ -348,6 +445,7 @@ def mom_change(
             JOIN dim_account ac ON ac.account_no = g.account_no
             JOIN dim_company co ON co.company_id = g.company_id
             WHERE ac.account_no != '999999' AND d.year * 100 + d.month = %s
+            {co_filter}
             GROUP BY co.company_id
         )
         SELECT c.company_id, c.company_name,
@@ -362,7 +460,7 @@ def mom_change(
                c.opex - COALESCE(p.opex, 0)         AS opex_delta
         FROM cur c LEFT JOIN pri p USING (company_id)
         ORDER BY revenue_delta DESC
-    """, [_ym(current_month), _ym(prior_month)])
+    """, [_ym(current_month)] + co_params + [_ym(prior_month)] + co_params)
 
 
 # ── 9. Vertical / BU P&L ─────────────────────────────────────────────────────
@@ -374,8 +472,11 @@ def vertical_pl(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(dp.vertical_code), ''), 'Unassigned') AS vertical_code,
@@ -401,8 +502,11 @@ def account_summary(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, year, month_from, month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             COALESCE(ac.account_category, 'Other')            AS category,
@@ -419,8 +523,17 @@ def account_summary(
 
 # ── 11. Completeness Summary ──────────────────────────────────────────────────
 @router.get("/completeness-summary")
-def completeness_summary():
-    rows = query("""
+def completeness_summary(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return {}
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"AND g.company_id IN ({ph})"
+        params = list(allowed)
+    rows = query(f"""
         SELECT
             COUNT(*)                                                                     AS total_entries,
             COUNT(*) FILTER (WHERE g.account_no = '999999')                             AS suspense_entries,
@@ -431,14 +544,24 @@ def completeness_summary():
         FROM fact_gl_entries g
         JOIN dim_account    ac ON ac.account_no    = g.account_no
         JOIN dim_department dp ON dp.department_id = g.department_id
-    """)
+        WHERE 1=1 {co_filter}
+    """, params)
     return rows[0] if rows else {}
 
 
 # ── 12. Entity Coverage ───────────────────────────────────────────────────────
 @router.get("/entity-coverage")
-def entity_coverage():
-    return query("""
+def entity_coverage(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"WHERE g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT
             co.company_id,
             co.company_name,
@@ -450,15 +573,25 @@ def entity_coverage():
         FROM fact_gl_entries g
         JOIN dim_company co ON co.company_id = g.company_id
         JOIN dim_date    d  ON d.date_id     = g.date_id
+        {co_filter}
         GROUP BY co.company_id, co.company_name
         ORDER BY months_present DESC, co.company_name
-    """)
+    """, params)
 
 
 # ── 13. Monthly Entry Volume ──────────────────────────────────────────────────
 @router.get("/monthly-volume")
-def monthly_volume():
-    return query("""
+def monthly_volume(current: dict = Depends(require_auth)):
+    allowed = get_allowed_company_ids(current)
+    if allowed is not None and len(allowed) == 0:
+        return []
+    co_filter = ""
+    params: list = []
+    if allowed:
+        ph = ", ".join(["%s"] * len(allowed))
+        co_filter = f"WHERE g.company_id IN ({ph})"
+        params = list(allowed)
+    return query(f"""
         SELECT
             TO_CHAR(MIN(d.full_date), 'YYYY-MM') AS month,
             d.year,
@@ -466,9 +599,10 @@ def monthly_volume():
             COUNT(*)                              AS entry_count
         FROM fact_gl_entries g
         JOIN dim_date d ON d.date_id = g.date_id
+        {co_filter}
         GROUP BY d.year, d.month
         ORDER BY d.year, d.month
-    """)
+    """, params)
 
 
 # ── 14. Expense Accounts ──────────────────────────────────────────────────────
@@ -480,9 +614,12 @@ def expense_accounts(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    allowed = get_allowed_company_ids(current)
     extra = "(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"
-    wh, params = _where(company_id, year, month_from, month_to, extra=extra, account_prefix=account_prefix, doc_type=doc_type)
+    wh, params = _where(company_id, year, month_from, month_to, extra=extra, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             ac.account_no       AS gl_account_no,
@@ -504,9 +641,12 @@ def pl_yoy(
     company_id: Optional[List[int]] = Query(default=None),
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
     """Year-over-Year P&L summary — one row per calendar year."""
-    wh, params = _where(company_id, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(company_id, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             d.year,
@@ -536,8 +676,11 @@ def currency_split(
     month_to: Optional[str] = None,
     account_prefix: Optional[str] = None,
     doc_type: Optional[str] = None,
+    account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _where(year=year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type)
+    allowed = get_allowed_company_ids(current)
+    wh, params = _where(year=year, month_from=month_from, month_to=month_to, account_prefix=account_prefix, doc_type=doc_type, account_category=account_category, allowed_ids=allowed)
     return query(f"""
         SELECT
             cu.currency_code,

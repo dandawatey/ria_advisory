@@ -59,6 +59,7 @@ export default function ProjectFinancials() {
   const [filters, setFilters]       = useState<FilterOptions | null>(null);
   const [companyIds, setCompanyIds] = useState<number[]>([]);
   const [year, setYear]             = useState<number | ''>('');
+  const [accountCategory, setAccountCategory] = useState<string>('');
   const [rows, setRows]             = useState<ProjectRow[]>([]);
   const [summary, setSummary]       = useState<Summary | null>(null);
   const [search, setSearch]         = useState('');
@@ -76,7 +77,8 @@ export default function ProjectFinancials() {
     try {
       const qs = new URLSearchParams();
       companyIds.forEach(id => qs.append('company_id', String(id)));
-      if (year) qs.set('year', String(year));
+      if (year)            qs.set('year',             String(year));
+      if (accountCategory) qs.set('account_category', accountCategory);
       const [r, s] = await Promise.all([
         get<ProjectRow[]>(`/api/reports/project-financials?${qs}`),
         get<Summary>(`/api/reports/project-financials/summary?${qs}`),
@@ -88,7 +90,7 @@ export default function ProjectFinancials() {
     } finally {
       setLoading(false);
     }
-  }, [companyIds, year]);
+  }, [companyIds, year, accountCategory]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -135,136 +137,174 @@ export default function ProjectFinancials() {
   const arrow = (key: keyof ProjectRow) =>
     sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : '';
 
-  return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 4, fontSize: 22, fontWeight: 700 }}>Project-wise Financials</h1>
-      <p style={{ color: '#6b7280', marginBottom: 20, fontSize: 13 }}>
-        Revenue, COGS, OpEx and net income breakdown by project
-      </p>
+  const chip = (active: boolean) => ({
+    padding: '3px 10px', borderRadius: 10, fontSize: 11, cursor: 'pointer',
+    border: '1px solid', borderColor: active ? '#3b82f6' : 'var(--color-border)',
+    background: active ? 'rgba(59,130,246,0.12)' : 'transparent',
+    color: active ? '#3b82f6' : 'inherit', fontWeight: active ? 600 : 400,
+    whiteSpace: 'nowrap' as const,
+  });
 
-      {/* ── Filters ── */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-        {filters?.companies?.map(c => (
-          <button
-            key={c.company_id}
-            onClick={() => toggleCompany(c.company_id)}
-            style={{
-              padding: '4px 10px', fontSize: 12, borderRadius: 20, cursor: 'pointer',
-              background: companyIds.includes(c.company_id) ? '#1d4ed8' : '#f3f4f6',
-              color: companyIds.includes(c.company_id) ? '#fff' : '#374151',
-              border: 'none',
-            }}
-          >{c.company_name}</button>
-        ))}
-        <select
-          value={year}
-          onChange={e => setYear(e.target.value ? Number(e.target.value) : '')}
-          style={{ padding: '4px 10px', fontSize: 12, borderRadius: 20, border: '1px solid #d1d5db' }}
-        >
-          <option value="">All Years</option>
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
+  return (
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Project Financials</h1>
+        <p className="page-subtitle">P&L breakdown by project — revenue, COGS, OpEx, net</p>
       </div>
 
-      {loading && <p style={{ color: '#6b7280' }}>Loading…</p>}
-      {err     && <p style={{ color: '#ef4444' }}>Error: {err}</p>}
+      {/* KPI Tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
+        {summary ? (
+          <>
+            <Tile label="Projects"      value={fmtN(summary.project_count)} sub="with GL data" />
+            <Tile label="Total Revenue" value={fmt(summary.total_revenue)}  sub="across projects" />
+            <Tile label="Total Spend"   value={fmt(summary.total_spend)}    sub="COGS + OpEx" />
+            <Tile label="GL Entries"    value={fmtN(summary.entry_count)}   sub="total entries" />
+            <Tile
+              label="Avg Spend / Project"
+              value={summary.project_count ? fmt(summary.total_spend / summary.project_count) : '—'}
+            />
+          </>
+        ) : null}
+      </div>
 
-      {/* ── KPI Tiles ── */}
-      {summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 28 }}>
-          <Tile label="Projects"      value={fmtN(summary.project_count)} sub="with GL data" />
-          <Tile label="Total Revenue" value={fmt(summary.total_revenue)}  sub="across projects" />
-          <Tile label="Total Spend"   value={fmt(summary.total_spend)}    sub="COGS + OpEx" />
-          <Tile label="GL Entries"    value={fmtN(summary.entry_count)}   sub="total entries" />
-          <Tile
-            label="Avg Spend / Project"
-            value={summary.project_count ? fmt(summary.total_spend / summary.project_count) : '—'}
-          />
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* Filter Sidebar */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
 
-      {/* ── Top 15 Chart ── */}
-      {top15.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 28 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Top 15 Projects by Spend (USD M)</h2>
-          <ResponsiveContainer width="100%" height={Math.max(320, top15.length * 26 + 40)}>
-            <BarChart
-              data={top15}
-              layout="vertical"
-              margin={{ left: 100, right: 20, top: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `$${v}M`} />
-              <YAxis type="category" dataKey="project_no" tick={{ fontSize: 11 }} width={96} />
-              <Tooltip
-                formatter={(v: number, name: string) => [`$${v.toFixed(2)}M`, name]}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Bar dataKey="cogs"    name="COGS"    stackId="spend" fill="#ef4444" />
-              <Bar dataKey="opex"    name="OpEx"    stackId="spend" fill="#f59e0b" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+            {/* Entity filter chips */}
+            {filters?.companies && filters.companies.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>Entity</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {filters.companies.map(c => (
+                    <button
+                      key={c.company_id}
+                      onClick={() => toggleCompany(c.company_id)}
+                      style={chip(companyIds.includes(c.company_id))}
+                    >{c.company_name}</button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-      {/* ── Detail Table ── */}
-      <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 16px 12px', display: 'flex', gap: 12, alignItems: 'center', borderBottom: '1px solid #f3f4f6' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0, flex: 1 }}>
-            All Projects — {filtered.length} shown
-          </h2>
-          <input
-            placeholder="Search project…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{ padding: '5px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #d1d5db', width: 180 }}
-          />
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f9fafb' }}>
-                <th style={{ ...thStyle, textAlign: 'left' }}>Project No</th>
-                {(
-                  [
-                    ['revenue',     'Revenue'],
-                    ['cogs',        'COGS'],
-                    ['opex',        'OpEx'],
-                    ['net',         'Net Income'],
-                    ['entry_count', 'Entries'],
-                  ] as [keyof ProjectRow, string][]
-                ).map(([key, label]) => (
-                  <th key={key} style={thStyle} onClick={() => handleSort(key)}>
-                    {label}{arrow(key)}
-                  </th>
+            {/* Year filter chips */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>Year</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setYear('')} style={chip(year === '')}>All</button>
+                {years.map(y => (
+                  <button key={y} onClick={() => setYear(y)} style={chip(year === y)}>{y}</button>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r, i) => {
-                const netColor = r.net < 0 ? '#ef4444' : r.net > 0 ? '#166534' : 'inherit';
-                return (
-                  <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
-                    <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500, fontFamily: 'monospace', fontSize: 12 }}>
-                      {r.project_no}
-                    </td>
-                    <td style={tdStyle}>{fmt(r.revenue)}</td>
-                    <td style={tdStyle}>{fmt(r.cogs)}</td>
-                    <td style={tdStyle}>{fmt(r.opex)}</td>
-                    <td style={{ ...tdStyle, color: netColor, fontWeight: 600 }}>{fmt(r.net)}</td>
-                    <td style={tdStyle}>{fmtN(r.entry_count)}</td>
+              </div>
+            </div>
+
+            {/* GL Group filter chips */}
+            {(filters?.account_categories ?? []).length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 500 }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button onClick={() => setAccountCategory('')} style={chip(accountCategory === '')}>All</button>
+                  {(filters?.account_categories ?? []).map(cat => (
+                    <button key={cat} onClick={() => setAccountCategory(cat === accountCategory ? '' : cat)} style={chip(accountCategory === cat)}>{cat}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading && <p style={{ color: '#6b7280' }}>Loading…</p>}
+          {err     && <p style={{ color: '#ef4444' }}>Error: {err}</p>}
+
+          {/* Top 15 Chart */}
+          {top15.length > 0 && (
+            <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', marginBottom: 28 }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Top 15 Projects by Spend (USD M)</h2>
+              <ResponsiveContainer width="100%" height={Math.max(320, top15.length * 26 + 40)}>
+                <BarChart
+                  data={top15}
+                  layout="vertical"
+                  margin={{ left: 100, right: 20, top: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `$${v}M`} />
+                  <YAxis type="category" dataKey="project_no" tick={{ fontSize: 11 }} width={96} />
+                  <Tooltip
+                    formatter={(v: number, name: string) => [`$${v.toFixed(2)}M`, name]}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                  <Bar dataKey="cogs"    name="COGS"    stackId="spend" fill="#ef4444" />
+                  <Bar dataKey="opex"    name="OpEx"    stackId="spend" fill="#f59e0b" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Detail Table */}
+          <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 16px 12px', display: 'flex', gap: 12, alignItems: 'center', borderBottom: '1px solid #f3f4f6' }}>
+              <h2 style={{ fontSize: 14, fontWeight: 600, margin: 0, flex: 1 }}>
+                All Projects — {filtered.length} shown
+              </h2>
+              <input
+                placeholder="Search project…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ padding: '5px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #d1d5db', width: 180 }}
+              />
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    <th style={{ ...thStyle, textAlign: 'left' }}>Project No</th>
+                    {(
+                      [
+                        ['revenue',     'Revenue'],
+                        ['cogs',        'COGS'],
+                        ['opex',        'OpEx'],
+                        ['net',         'Net Income'],
+                        ['entry_count', 'Entries'],
+                      ] as [keyof ProjectRow, string][]
+                    ).map(([key, label]) => (
+                      <th key={key} style={thStyle} onClick={() => handleSort(key)}>
+                        {label}{arrow(key)}
+                      </th>
+                    ))}
                   </tr>
-                );
-              })}
-              {filtered.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#9ca3af' }}>
-                    No projects match your filters
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {filtered.map((r, i) => {
+                    const netColor = r.net < 0 ? '#ef4444' : r.net > 0 ? '#166534' : 'inherit';
+                    return (
+                      <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
+                        <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500, fontFamily: 'monospace', fontSize: 12 }}>
+                          {r.project_no}
+                        </td>
+                        <td style={tdStyle}>{fmt(r.revenue)}</td>
+                        <td style={tdStyle}>{fmt(r.cogs)}</td>
+                        <td style={tdStyle}>{fmt(r.opex)}</td>
+                        <td style={{ ...tdStyle, color: netColor, fontWeight: 600 }}>{fmt(r.net)}</td>
+                        <td style={tdStyle}>{fmtN(r.entry_count)}</td>
+                      </tr>
+                    );
+                  })}
+                  {filtered.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: '#9ca3af' }}>
+                        No projects match your filters
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>

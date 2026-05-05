@@ -84,9 +84,10 @@ function RatioTile({ label, value, colorKey, raw }: {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function KPIDashboard() {
-  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [] });
+  const [filterOpts, setFilterOpts] = useState<FilterOptions>({ companies: [], years: [], months: [], currencies: [], account_categories: [] });
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [year, setYear] = useState<number | null>(null);
+  const [accountCategory, setAccountCategory] = useState<string>('');
   const [tab, setTab] = useState<'overview' | 'trend' | 'entity'>('overview');
 
   const [ratios, setRatios]     = useState<Ratios | null>(null);
@@ -103,9 +104,10 @@ export default function KPIDashboard() {
   const buildQS = useCallback(() => {
     const qs = new URLSearchParams();
     selectedCompanies.forEach((id) => qs.append('company_id', String(id)));
-    if (year) qs.set('year', String(year));
+    if (year)            qs.set('year',             String(year));
+    if (accountCategory) qs.set('account_category', accountCategory);
     return qs;
-  }, [selectedCompanies, year]);
+  }, [selectedCompanies, year, accountCategory]);
 
   useEffect(() => {
     setLoadR(true);
@@ -152,161 +154,204 @@ export default function KPIDashboard() {
   }));
 
   return (
-    <div className="page-content">
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 700 }}>KPI Ratio Dashboard</div>
-        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-          Profitability · Liquidity · Leverage · Efficiency — colour-coded by industry thresholds
-        </div>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Financial KPI Dashboard</h1>
+        <p className="page-subtitle">Profitability · Liquidity · Leverage ratios across entities</p>
       </div>
 
-      {/* Filters */}
-      <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entity</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
-              {filterOpts.companies.map((c) => (
-                <button key={c.company_id} onClick={() => setSelectedCompanies((p) => p.includes(c.company_id) ? p.filter((x) => x !== c.company_id) : [...p, c.company_id])} style={chip(selectedCompanies.includes(c.company_id))}>{c.company_name}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Year</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              <button onClick={() => setYear(null)} style={chip(year === null)}>All</button>
-              {filterOpts.years.map((y) => <button key={y} onClick={() => setYear(y === year ? null : y)} style={chip(year === y)}>{y}</button>)}
-            </div>
-          </div>
-        </div>
+      {/* KPI Tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
+        <RatioTile label="Gross Margin"  value={fmtPct(ratios?.gross_margin_pct)}  colorKey="gross_margin_pct"  raw={ratios?.gross_margin_pct ?? null} />
+        <RatioTile label="Net Margin"    value={fmtPct(ratios?.net_margin_pct)}    colorKey="net_margin_pct"    raw={ratios?.net_margin_pct ?? null} />
+        <RatioTile label="EBITDA Margin" value={fmtPct(ratios?.ebitda_margin_pct)} colorKey="ebitda_margin_pct" raw={ratios?.ebitda_margin_pct ?? null} />
+        <RatioTile label="OpEx Ratio"    value={fmtPct(ratios?.opex_ratio_pct)}    colorKey="opex_ratio_pct"    raw={ratios?.opex_ratio_pct ?? null} />
+        <RatioTile label="Current Ratio" value={fmtX(ratios?.current_ratio)}       colorKey="current_ratio"     raw={ratios?.current_ratio ?? null} />
+        <RatioTile label="Debt / Equity" value={fmtX(ratios?.debt_equity)}          colorKey="debt_equity"       raw={ratios?.debt_equity ?? null} />
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button style={tabStyle('overview')} onClick={() => setTab('overview')}>Overview</button>
-        <button style={tabStyle('trend')}    onClick={() => setTab('trend')}>Margin Trend</button>
-        <button style={tabStyle('entity')}   onClick={() => setTab('entity')}>By Entity</button>
-      </div>
-
-      {/* ── Overview ── */}
-      {tab === 'overview' && (
-        <>
-          {/* Profitability */}
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Profitability</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
-            <RatioTile label="Gross Margin"  value={fmtPct(ratios?.gross_margin_pct)}  colorKey="gross_margin_pct"  raw={ratios?.gross_margin_pct ?? null} />
-            <RatioTile label="Net Margin"    value={fmtPct(ratios?.net_margin_pct)}    colorKey="net_margin_pct"    raw={ratios?.net_margin_pct ?? null} />
-            <RatioTile label="EBITDA Margin" value={fmtPct(ratios?.ebitda_margin_pct)} colorKey="ebitda_margin_pct" raw={ratios?.ebitda_margin_pct ?? null} />
-            <RatioTile label="OpEx Ratio"    value={fmtPct(ratios?.opex_ratio_pct)}    colorKey="opex_ratio_pct"    raw={ratios?.opex_ratio_pct ?? null} />
-          </div>
-          {/* Balance Sheet */}
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Liquidity & Leverage</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
-            <RatioTile label="Current Ratio"     value={fmtX(ratios?.current_ratio)}      colorKey="current_ratio" raw={ratios?.current_ratio ?? null} />
-            <RatioTile label="Debt / Equity"     value={fmtX(ratios?.debt_equity)}         colorKey="debt_equity"   raw={ratios?.debt_equity ?? null} />
-            <RatioTile label="Revenue / Entity"  value={fmt(ratios?.revenue_per_entity)}   colorKey="" raw={null} />
-            <RatioTile label="Expense / Entity"  value={fmt(ratios?.expense_per_entity)}   colorKey="" raw={null} />
-          </div>
-          {/* Raw numbers */}
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Absolutes</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12 }}>
-            {[
-              { label: 'Revenue',    value: fmt(ratios?.revenue),    color: '#10b981' },
-              { label: 'COGS',       value: fmt(ratios?.cogs),       color: '#ef4444' },
-              { label: 'OpEx',       value: fmt(ratios?.opex),       color: '#f59e0b' },
-              { label: 'Net Income', value: fmt(ratios?.net_income), color: '#3b82f6' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="card" style={{ padding: '12px 14px', borderTop: `3px solid ${color}` }}>
-                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color }}>{loadR ? '…' : value}</div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* Filter Sidebar */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entity</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setSelectedCompanies([])} style={chip(selectedCompanies.length === 0)}>All</button>
+                {filterOpts.companies.map((c) => (
+                  <button key={c.company_id} onClick={() => setSelectedCompanies((p) => p.includes(c.company_id) ? p.filter((x) => x !== c.company_id) : [...p, c.company_id])} style={chip(selectedCompanies.includes(c.company_id))}>{c.company_name}</button>
+                ))}
               </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ── Margin Trend ── */}
-      {tab === 'trend' && (
-        <div className="card">
-          <div className="card-title">Gross Margin % &amp; Net Margin % — Monthly</div>
-          {loadT ? (
-            <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
-          ) : (
-            <div style={{ height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendWithRatios} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month_name" tick={{ fontSize: 10 }} />
-                  <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => `${v}%`} />
-                  <Legend />
-                  <Line dataKey="gross_margin_pct" name="Gross Margin %" stroke="#10b981" dot={false} strokeWidth={2} />
-                  <Line dataKey="net_margin_pct"   name="Net Margin %"   stroke="#3b82f6" dot={false} strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
             </div>
-          )}
-        </div>
-      )}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Year</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button onClick={() => setYear(null)} style={chip(year === null)}>All</button>
+                {filterOpts.years.map((y) => <button key={y} onClick={() => setYear(y === year ? null : y)} style={chip(year === y)}>{y}</button>)}
+              </div>
+            </div>
 
-      {/* ── By Entity ── */}
-      {tab === 'entity' && (
-        <>
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-title">Revenue &amp; Net Income by Entity</div>
-            {loadE ? (
-              <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
-            ) : (
-              <div style={{ height: Math.max(240, entities.length * 28 + 50) }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={entities} layout="vertical" margin={{ left: 130, right: 20, top: 5, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
-                    <XAxis type="number" tickFormatter={(v) => fmt(v)} tick={{ fontSize: 10 }} />
-                    <YAxis type="category" dataKey="company_name" width={125} tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: number) => fmt(v)} />
-                    <Legend />
-                    <Bar dataKey="revenue"    name="Revenue"    fill="#10b981" />
-                    <Bar dataKey="net_income" name="Net Income" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
+            {filterOpts.account_categories?.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>GL Group</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <button onClick={() => setAccountCategory('')} style={chip(accountCategory === '')}>All</button>
+                  {filterOpts.account_categories.map((cat) => (
+                    <button key={cat} onClick={() => setAccountCategory(cat === accountCategory ? '' : cat)} style={chip(accountCategory === cat)}>{cat}</button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+        </div>
 
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Net Income</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Gross Margin</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Net Margin</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>OpEx Ratio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entities.map((r, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '5px 12px', fontWeight: 500 }}>{r.company_name}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right' }}>{fmt(r.revenue)}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', color: (r.net_income ?? 0) < 0 ? '#ef4444' : '#10b981' }}>{fmt(r.net_income)}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('gross_margin_pct', r.gross_margin_pct ?? null) }}>{fmtPct(r.gross_margin_pct)}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('net_margin_pct', r.net_margin_pct ?? null) }}>{fmtPct(r.net_margin_pct)}</td>
-                      <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('opex_ratio_pct', r.opex_ratio_pct ?? null) }}>{fmtPct(r.opex_ratio_pct)}</td>
-                    </tr>
-                  ))}
-                  {entities.length === 0 && !loadE && (
-                    <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+        {/* Main Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <button style={tabStyle('overview')} onClick={() => setTab('overview')}>Overview</button>
+            <button style={tabStyle('trend')}    onClick={() => setTab('trend')}>Margin Trend</button>
+            <button style={tabStyle('entity')}   onClick={() => setTab('entity')}>By Entity</button>
           </div>
-        </>
-      )}
+
+          {/* ── Overview ── */}
+          {tab === 'overview' && (
+            <>
+              {/* Liquidity & Leverage */}
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Liquidity & Leverage</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
+                <RatioTile label="Revenue / Entity"  value={fmt(ratios?.revenue_per_entity)}   colorKey="" raw={null} />
+                <RatioTile label="Expense / Entity"  value={fmt(ratios?.expense_per_entity)}   colorKey="" raw={null} />
+              </div>
+              {/* Raw numbers */}
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Absolutes</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12 }}>
+                {[
+                  { label: 'Revenue',    value: fmt(ratios?.revenue),    color: '#10b981' },
+                  { label: 'COGS',       value: fmt(ratios?.cogs),       color: '#ef4444' },
+                  { label: 'OpEx',       value: fmt(ratios?.opex),       color: '#f59e0b' },
+                  { label: 'Net Income', value: fmt(ratios?.net_income), color: '#3b82f6' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="card" style={{ padding: '12px 14px', borderTop: `3px solid ${color}` }}>
+                    <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color }}>{loadR ? '…' : value}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ── Margin Trend ── */}
+          {tab === 'trend' && (
+            <div className="card">
+              <div className="card-title">Gross Margin % &amp; Net Margin % — Monthly</div>
+              {loadT ? (
+                <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
+              ) : (
+                <div style={{ height: 320 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendWithRatios} margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <XAxis dataKey="month_name" tick={{ fontSize: 10 }} />
+                      <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => `${v}%`} />
+                      <Legend />
+                      <Line dataKey="gross_margin_pct" name="Gross Margin %" stroke="#10b981" dot={false} strokeWidth={2} />
+                      <Line dataKey="net_margin_pct"   name="Net Margin %"   stroke="#3b82f6" dot={false} strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+              <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600 }}>Month</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Net Income</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Gross Margin %</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600 }}>Net Margin %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trendWithRatios.map((row, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td style={{ padding: '5px 10px' }}>{row.month_key}</td>
+                        <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(row.revenue)}</td>
+                        <td style={{ padding: '5px 10px', textAlign: 'right' }}>{fmt(row.net_income)}</td>
+                        <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.gross_margin_pct != null ? row.gross_margin_pct.toFixed(1) + '%' : '—'}</td>
+                        <td style={{ padding: '5px 10px', textAlign: 'right' }}>{row.net_margin_pct != null ? row.net_margin_pct.toFixed(1) + '%' : '—'}</td>
+                      </tr>
+                    ))}
+                    {trendWithRatios.length === 0 && !loadT && (
+                      <tr><td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── By Entity ── */}
+          {tab === 'entity' && (
+            <>
+              <div className="card" style={{ marginBottom: 16 }}>
+                <div className="card-title">Revenue &amp; Net Income by Entity</div>
+                {loadE ? (
+                  <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>Loading…</div>
+                ) : (
+                  <div style={{ height: Math.max(240, entities.length * 28 + 50) }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={entities} layout="vertical" margin={{ left: 130, right: 20, top: 5, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v) => fmt(v)} tick={{ fontSize: 10 }} />
+                        <YAxis type="category" dataKey="company_name" width={125} tick={{ fontSize: 10 }} />
+                        <Tooltip formatter={(v: number) => fmt(v)} />
+                        <Legend />
+                        <Bar dataKey="revenue"    name="Revenue"    fill="#10b981" />
+                        <Bar dataKey="net_income" name="Net Income" fill="#3b82f6" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--color-surface-alt)', borderBottom: '2px solid var(--color-border)' }}>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600 }}>Entity</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Revenue</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Net Income</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Gross Margin</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>Net Margin</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>OpEx Ratio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entities.map((r, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '5px 12px', fontWeight: 500 }}>{r.company_name}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right' }}>{fmt(r.revenue)}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', color: (r.net_income ?? 0) < 0 ? '#ef4444' : '#10b981' }}>{fmt(r.net_income)}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('gross_margin_pct', r.gross_margin_pct ?? null) }}>{fmtPct(r.gross_margin_pct)}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('net_margin_pct', r.net_margin_pct ?? null) }}>{fmtPct(r.net_margin_pct)}</td>
+                          <td style={{ padding: '5px 12px', textAlign: 'right', color: ratioColor('opex_ratio_pct', r.opex_ratio_pct ?? null) }}>{fmtPct(r.opex_ratio_pct)}</td>
+                        </tr>
+                      ))}
+                      {entities.length === 0 && !loadE && (
+                        <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)' }}>No data</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

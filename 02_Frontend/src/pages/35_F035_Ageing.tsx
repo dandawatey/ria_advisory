@@ -14,8 +14,6 @@ import {
   type AgeingCustomerRow,
   type AgeingEntityRow,
 } from '../api/client';
-import { GLFilterBar } from '../components/GLFilterBar';
-
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
   if (n == null || isNaN(n)) return '—';
@@ -100,9 +98,6 @@ export default function Ageing() {
   const [monthFrom, setMonthFrom]           = useState('');
   const [monthTo, setMonthTo]               = useState('');
   const [tab, setTab]                       = useState<Tab>('buckets');
-  const [accountPrefix, setAccountPrefix]   = useState('');
-  const [genPostType, setGenPostType]       = useState('');
-
   // ── Data state ───────────────────────────────────────────────────────────────
   const [summary, setSummary]         = useState<AgeingSummary | null>(null);
   const [customers, setCustomers]     = useState<AgeingCustomerRow[]>([]);
@@ -124,15 +119,13 @@ export default function Ageing() {
   const mt   = monthTo   || undefined;
 
   // ── Load summary + KPIs ───────────────────────────────────────────────────────
-  const gpt = genPostType || undefined;
-
   const loadSummary = useCallback(() => {
     setLoading(true); setError(false);
-    api.ageing.summary(ids, yr, mf, mt, gpt)
+    api.ageing.summary(ids, yr, mf, mt)
       .then(setSummary)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -140,21 +133,21 @@ export default function Ageing() {
   useEffect(() => {
     if (tab !== 'customer') return;
     setLoadingCustomers(true);
-    api.ageing.byCustomer(ids, yr, mf, mt, 25, gpt)
+    api.ageing.byCustomer(ids, yr, mf, mt, 25)
       .then(setCustomers)
       .catch(() => {})
       .finally(() => setLoadingCustomers(false));
-  }, [tab, ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load by-entity ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (tab !== 'entity') return;
     setLoadingEntities(true);
-    api.ageing.byEntity(ids, yr, mf, mt, gpt)
+    api.ageing.byEntity(ids, yr, mf, mt)
       .then(setEntities)
       .catch(() => {})
       .finally(() => setLoadingEntities(false));
-  }, [tab, ids, yr, mf, mt, gpt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, ids, yr, mf, mt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Bucket chart data ─────────────────────────────────────────────────────────
   const bucketData = summary
@@ -179,93 +172,10 @@ export default function Ageing() {
     );
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1400, margin: '0 auto' }}>
-      {/* ── Header ── */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>AR Ageing</h1>
-        <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginTop: 4 }}>
-          Accounts Receivable ageing by invoice date buckets
-        </p>
-      </div>
-
-      {/* ── Filters ── */}
-      <div className="card" style={{ marginBottom: 20, padding: '14px 16px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
-          {/* Year chips */}
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Year</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[null, ...years].map((y) => (
-                <button
-                  key={y ?? 'all'}
-                  onClick={() => setYear(y)}
-                  style={{
-                    padding: '3px 10px', borderRadius: 12, fontSize: 12, cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: year === y ? '#3b82f6' : 'var(--color-border)',
-                    background: year === y ? '#3b82f6' : 'transparent',
-                    color: year === y ? '#fff' : 'inherit',
-                  }}
-                >
-                  {y ?? 'All'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Month range */}
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Month From</div>
-            <select value={monthFrom} onChange={(e) => setMonthFrom(e.target.value)}
-              style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit' }}>
-              <option value="">All</option>
-              {years.flatMap((y) => MONTHS.map((m, i) => ({ key: `${y}-${String(i + 1).padStart(2, '0')}`, label: `${m} ${y}` })))
-                .map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Month To</div>
-            <select value={monthTo} onChange={(e) => setMonthTo(e.target.value)}
-              style={{ fontSize: 12, padding: '4px 8px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit' }}>
-              <option value="">All</option>
-              {years.flatMap((y) => MONTHS.map((m, i) => ({ key: `${y}-${String(i + 1).padStart(2, '0')}`, label: `${m} ${y}` })))
-                .map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-            </select>
-          </div>
-
-          {/* Company checkboxes */}
-          {companies.length > 0 && (
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-                Companies ({selectedCompanies.length === 0 ? 'All' : selectedCompanies.length})
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 600 }}>
-                {companies.map((c) => (
-                  <label key={c.company_id}
-                    style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
-                      padding: '2px 8px', borderRadius: 10,
-                      border: `1px solid ${selectedCompanies.includes(c.company_id) ? '#3b82f6' : 'var(--color-border)'}`,
-                      background: selectedCompanies.includes(c.company_id) ? 'rgba(59,130,246,0.1)' : 'transparent' }}>
-                    <input type="checkbox" style={{ width: 11, height: 11 }}
-                      checked={selectedCompanies.includes(c.company_id)}
-                      onChange={() => toggleCompany(c.company_id)} />
-                    {c.company_name}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* GL Account + Gen Post Type */}
-          <div style={{ paddingTop: 8 }}>
-            <GLFilterBar
-              accountPrefix={accountPrefix}
-              onAccountPrefix={setAccountPrefix}
-              genPostType={genPostType}
-              onGenPostType={setGenPostType}
-            />
-          </div>
-        </div>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">AR Ageing</h1>
+        <p className="page-subtitle">Accounts Receivable ageing by invoice date buckets</p>
       </div>
 
       {/* ── KPI Tiles ── */}
@@ -278,21 +188,74 @@ export default function Ageing() {
         <KPITile label="120+ Days"   value={fmt(summary?.bucket_120_plus)} sub={summary ? pct(summary.bucket_120_plus, total): ''} color="#ef4444" loading={loading} />
       </div>
 
-      {/* ── Tabs ── */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {(['buckets', 'customer', 'entity'] as Tab[]).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            style={{
-              padding: '7px 18px', borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-              border: '1px solid',
-              borderColor: tab === t ? '#3b82f6' : 'var(--color-border)',
-              background: tab === t ? '#3b82f6' : 'transparent',
-              color: tab === t ? '#fff' : 'inherit',
-            }}>
-            {t === 'buckets' ? 'Bucket Summary' : t === 'customer' ? 'By Customer' : 'By Entity'}
-          </button>
-        ))}
-      </div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {/* ── Filter Sidebar ── */}
+        <div style={{ width: 220, flexShrink: 0, alignSelf: 'start', position: 'sticky', top: 16 }}>
+          <div className="card">
+            <div className="card-title" style={{ fontSize: 12 }}>Filters</div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Year</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {[null, ...years].map((y) => (
+                  <button key={y ?? 'all'} onClick={() => setYear(y)}
+                    style={{ padding: '3px 9px', borderRadius: 10, fontSize: 11, cursor: 'pointer', border: '1px solid', borderColor: year === y ? '#3b82f6' : 'var(--color-border)', background: year === y ? 'rgba(59,130,246,0.12)' : 'transparent', color: year === y ? '#3b82f6' : 'inherit', fontWeight: year === y ? 600 : 400 }}>
+                    {y ?? 'All'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Month From</div>
+              <select value={monthFrom} onChange={(e) => setMonthFrom(e.target.value)}
+                style={{ width: '100%', fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit' }}>
+                <option value="">All</option>
+                {years.flatMap((y) => MONTHS.map((m, i) => ({ key: `${y}-${String(i + 1).padStart(2, '0')}`, label: `${m} ${y}` })))
+                  .map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>Month To</div>
+              <select value={monthTo} onChange={(e) => setMonthTo(e.target.value)}
+                style={{ width: '100%', fontSize: 11, padding: '4px 6px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'inherit' }}>
+                <option value="">All</option>
+                {years.flatMap((y) => MONTHS.map((m, i) => ({ key: `${y}-${String(i + 1).padStart(2, '0')}`, label: `${m} ${y}` })))
+                  .map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+              </select>
+            </div>
+
+            {companies.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+                  Entities {selectedCompanies.length > 0 && `(${selectedCompanies.length})`}
+                </div>
+                <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                  {companies.map((c) => (
+                    <label key={c.company_id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, cursor: 'pointer', padding: '3px 0' }}>
+                      <input type="checkbox" style={{ accentColor: 'var(--color-primary)' }}
+                        checked={selectedCompanies.includes(c.company_id)}
+                        onChange={() => toggleCompany(c.company_id)} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.company_name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Main Content ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* ── Tabs ── */}
+          <div className="tabs" style={{ marginBottom: 16 }}>
+            {(['buckets', 'customer', 'entity'] as Tab[]).map((t) => (
+              <button key={t} className={`tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
+                {t === 'buckets' ? 'Bucket Summary' : t === 'customer' ? 'By Customer' : 'By Entity'}
+              </button>
+            ))}
+          </div>
 
       {/* ── Tab: Bucket Summary ── */}
       {tab === 'buckets' && (
@@ -480,6 +443,8 @@ export default function Ageing() {
           </div>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 }

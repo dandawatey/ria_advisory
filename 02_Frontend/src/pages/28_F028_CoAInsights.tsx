@@ -150,7 +150,7 @@ const PAGE_SIZE = 50;
 export default function CoAInsights() {
   // Filter panel
   const [filterOpts, setFilterOpts] = useState<FilterOptions>({
-    companies: [], years: [], months: [], currencies: [],
+    companies: [], years: [], months: [], currencies: [], account_categories: [],
   });
   const [selectedCompany, setSelectedCompany] = useState<number | null>(null);
   const [selectedYear,    setSelectedYear]    = useState<number | null>(null);

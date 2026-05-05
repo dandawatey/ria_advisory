@@ -10,8 +10,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { GLFilterBar } from '../components/GLFilterBar';
-
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 const PIE_COLORS = [
@@ -178,8 +176,6 @@ export default function InvoiceInsights() {
   const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [year, setYear] = useState<number | null>(null);
   const [drill, setDrill] = useState<{ label: string; filter: Record<string, string> } | null>(null);
-  const [accountPrefix, setAccountPrefix] = useState('');
-  const [genPostType, setGenPostType] = useState('');
   const [verticalCode, setVerticalCode] = useState('');
   const [month, setMonth] = useState<number | null>(null);
   const [client, setClient] = useState('');
@@ -226,11 +222,9 @@ export default function InvoiceInsights() {
     if (year)          qs.set('year',          String(year));
     if (month)         qs.set('month',         String(month));
     if (client.trim()) qs.set('client',        client.trim());
-    if (accountPrefix) qs.set('account_prefix', accountPrefix);
-    if (genPostType)   qs.set('doc_type',      genPostType);
     if (verticalCode)  qs.set('vertical_code', verticalCode);
     return qs;
-  }, [selectedCompanies, year, month, client, accountPrefix, genPostType, verticalCode]);
+  }, [selectedCompanies, year, month, client, verticalCode]);
 
   // Summary
   useEffect(() => {
@@ -467,14 +461,6 @@ export default function InvoiceInsights() {
               </div>
             )}
 
-            <div style={{ marginTop: 14 }}>
-              <GLFilterBar
-                accountPrefix={accountPrefix}
-                onAccountPrefix={setAccountPrefix}
-                genPostType={genPostType}
-                onGenPostType={setGenPostType}
-              />
-            </div>
           </div>
         </div>
 
