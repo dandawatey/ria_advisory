@@ -1,159 +1,164 @@
-# CFO360 — On-Premises Pricing & Server Requirements
+# i-finsights — On-Premises Pricing & Server Requirements
 
+**Product:** i-finsights  
 **Document Type:** Pricing — On-Premises  
 **Version:** 1.0.0  
-**Status:** Draft  
+**Status:** Draft — For Review  
 **Date:** 2026-05-05  
-**Owner:** Aarav_PM_001  
-**Reviewers:** Meera_Architect_002, Kabir_Reviewer_010  
+**Prepared by:** i-Source Infosystems  
+**Prepared for:** RIA Advisory  
 **Related:** [05_ConceptNote.md](05_ConceptNote.md) | [06_Pricing_Cloud.md](06_Pricing_Cloud.md)
 
 ---
 
 ## 1. Overview
 
-CFO360 On-Premises (Self-Hosted) is deployed entirely within the customer's own data center or private cloud. The vendor supplies the software, container images, deployment runbooks, and support — the customer owns and operates the infrastructure.
+i-finsights On-Premises (Self-Hosted) is deployed entirely within RIA Advisory's own data center or private Azure subscription. i-Source Infosystems supplies the software container images, deployment runbooks, migration scripts, and ongoing support — RIA Advisory owns and operates the infrastructure.
 
-This model is preferred by:
-- Banks and NBFCs with strict data residency requirements
-- Government and public sector entities
-- Defence and regulated industries
-- Enterprises with existing data center investments
+**When to choose this model:**
+- Strict data residency — financial data must not leave RIA Advisory's own infrastructure
+- Group IT policy requires self-hosted software
+- RIA Advisory has existing data center or Azure private subscription capacity
+- Regulatory requirement (banking, government, regulated financial services)
+
+> Note: For most organisations at RIA Advisory's scale, the **Cloud (SaaS) model is recommended** — lower TCO in Year 1, zero infrastructure management, Azure-native for BC API access. See [06_Pricing_Cloud.md](06_Pricing_Cloud.md).
 
 ---
 
 ## 2. On-Premises Architecture
 
 ```
-Internal Corporate Network
-         │
-         ▼
-  Internal DNS / Hardware Load Balancer
-         │
-         ▼
-  Docker Host or Kubernetes Cluster
-  ┌──────────────────────────────────┐
-  │  iaf-nginx       port 80 / 443   │
-  │  iaf-frontend    port 5173        │
-  │  iaf-backend     port 8000        │
-  │  iaf-postgres    port 5432        │
-  │  iaf-minio       port 9000 / 9001 │
-  │  iaf-redis       port 6379        │
-  └──────────────────────────────────┘
-         │
-  Internal AD / LDAP  │  Internal SMTP
-  ERP RFC / API endpoints (internal network)
+RIA Advisory Internal Network or Private Azure VNet
+        │
+        ▼
+Internal DNS / Load Balancer (Nginx or hardware LB)
+        │
+        ▼
+Docker Host or Azure Container Instance (Customer-managed)
+┌──────────────────────────────────────────┐
+│  nginx             port 80 / 443          │
+│  Frontend (React)  port 5173              │
+│  Backend (FastAPI) port 8000              │
+│  PostgreSQL        port 5432              │
+│  MinIO (storage)   port 9000 / 9001       │
+│  Redis (cache)     port 6379              │
+└──────────────────────────────────────────┘
+        │
+Azure Entra ID (external — MSAL SSO still works via outbound HTTPS)
+        │
+17 BC Tenants (OData API — intranet or Azure VNet peered)
 ```
 
 ---
 
 ## 3. On-Premises License Model
 
-On-premises licenses are **perpetual with annual maintenance**, or available as **annual subscription**.
+On-premises licenses are **perpetual with annual maintenance**, or available as **annual subscription** (no large upfront payment).
 
 ### 3.1 License Tiers
 
-| Tier | Users | Entities | License Fee | Annual Maintenance |
+| Tier | BC Tenants | Users | Perpetual License | Annual Maintenance (20%) |
 |---|---|---|---|---|
-| **Small** | Up to 20 | Up to 3 | ₹15,00,000 one-time | ₹3,00,000 / year (20%) |
-| **Medium** | Up to 100 | Up to 10 | ₹35,00,000 one-time | ₹7,00,000 / year (20%) |
-| **Enterprise** | Unlimited | Unlimited | ₹75,00,000 one-time | ₹15,00,000 / year (20%) |
+| **Growth** | Up to 5 | Up to 20 | ₹10,00,000 | ₹2,00,000 / year |
+| **Professional** | Up to 17 | Up to 100 | ₹25,00,000 | ₹5,00,000 / year |
+| **Enterprise** | Unlimited | Unlimited | ₹55,00,000 | ₹11,00,000 / year |
 
-**Annual subscription alternative** (includes support + updates, no large upfront):
+### 3.2 Annual Subscription Alternative
 
-| Tier | Annual Subscription |
+For organisations preferring OpEx over CapEx (no large upfront):
+
+| Tier | Annual Subscription (includes updates + support) |
 |---|---|
-| Small | ₹6,00,000 / year |
-| Medium | ₹14,00,000 / year |
-| Enterprise | ₹30,00,000 / year |
+| Growth | ₹4,50,000 / year |
+| Professional | ₹11,00,000 / year |
+| Enterprise | ₹24,00,000 / year |
 
-### 3.2 What Annual Maintenance Covers
+### 3.3 What Annual Maintenance Covers
 
-- Software version upgrades (quarterly releases)
-- Security patches and hotfixes
-- Access to deployment runbooks and upgrade scripts
+- Quarterly software version upgrades
+- Security patches and hotfixes (monthly delivery)
+- Access to deployment runbooks, upgrade scripts, and migration files
 - Support portal access (ticket-based)
-- 8×5 email support (standard); 24×7 available as add-on
+- 8×5 email support (standard); 24×7 available as add-on (see Section 8)
 
 ---
 
 ## 4. Server Requirements
 
-### 4.1 Small Deployment
-**Scope:** 1–3 legal entities, up to 20 finance users
+### 4.1 Growth Deployment
+**Scope:** Up to 5 BC subsidiaries, up to 20 finance users
 
 | Component | Minimum | Recommended |
 |---|---|---|
-| **CPU** | 8 vCPU | 16 vCPU |
-| **RAM** | 16 GB | 32 GB |
-| **Application Disk (OS + Docker)** | 100 GB SSD | 200 GB NVMe SSD |
-| **Data Disk (PostgreSQL + MinIO)** | 500 GB SSD | 1 TB NVMe SSD |
+| **CPU** | 4 vCPU | 8 vCPU |
+| **RAM** | 8 GB | 16 GB |
+| **Application Disk (OS + Docker + app)** | 50 GB SSD | 100 GB NVMe SSD |
+| **Data Disk (PostgreSQL + MinIO)** | 200 GB SSD | 500 GB NVMe SSD |
 | **Network** | 100 Mbps | 1 Gbps |
 | **OS** | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
 | **Docker Engine** | v26+ | v26+ |
 | **Topology** | Single host | 1 primary + 1 standby |
 
-**Estimated infrastructure cost (customer-owned):** ₹3–6L one-time (server hardware)  
-**Estimated cloud VM cost if on private cloud:** ₹15,000–25,000 / month (AWS/Azure equivalent)
+**Estimated Azure VM cost (customer subscription):** ~₹8,000–15,000 / month (B4ms equivalent)  
+**Estimated bare-metal server cost:** ₹2–4L one-time
 
 ---
 
-### 4.2 Medium Deployment
-**Scope:** 3–10 legal entities, up to 100 finance users
+### 4.2 Professional Deployment
+**Scope:** All 17 BC subsidiaries, up to 100 finance users — full RIA Advisory scope
 
 | Component | Minimum | Recommended |
 |---|---|---|
-| **CPU** | 16 vCPU | 32 vCPU |
-| **RAM** | 32 GB | 64 GB |
-| **Application Disk** | 200 GB SSD | 500 GB NVMe SSD |
-| **Data Disk (PostgreSQL + MinIO)** | 2 TB SSD | 4 TB NVMe SSD |
-| **Network** | 1 Gbps | 10 Gbps |
+| **CPU** | 8 vCPU | 16 vCPU |
+| **RAM** | 16 GB | 32 GB |
+| **Application Disk** | 100 GB SSD | 200 GB NVMe SSD |
+| **Data Disk (PostgreSQL + MinIO)** | 500 GB SSD | 1 TB NVMe SSD |
+| **Network** | 1 Gbps | 1 Gbps |
 | **OS** | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
-| **Orchestration** | Docker Compose | Kubernetes 3-node |
-| **Topology** | 2 nodes (app + DB separate) | 3+ node cluster |
-| **Load Balancer** | Nginx | HAProxy or F5 |
+| **Docker / Container** | Docker Compose | Docker Compose or ACI |
+| **Topology** | 1 application host | 2 nodes: app + DB separate |
+| **Load Balancer** | Nginx (included) | Nginx or Azure App Gateway |
 
-**Estimated infrastructure cost (customer-owned):** ₹12–20L one-time  
-**Estimated cloud VM cost if on private cloud:** ₹50,000–90,000 / month
+**Estimated Azure VM cost (customer subscription):** ~₹20,000–35,000 / month (D8s_v3 equivalent)  
+**Estimated bare-metal server cost:** ₹6–10L one-time
 
 ---
 
-### 4.3 Large / Enterprise Deployment
-**Scope:** 10+ legal entities, 100+ users, full group consolidation
+### 4.3 Enterprise Deployment
+**Scope:** Unlimited subsidiaries, 100+ users, HA required
 
 | Component | Specification |
 |---|---|
-| **Application Cluster** | 4–8 nodes, 32 vCPU / 64 GB RAM each |
-| **Database Cluster** | PostgreSQL HA (Patroni) — 3 nodes (primary + 2 replicas), 32 vCPU / 128 GB RAM |
-| **Object Storage (MinIO)** | Distributed mode — 4+ nodes, 8+ drives each, 20 TB+ raw |
-| **Redis** | Redis Sentinel or Cluster — 3 nodes |
-| **Load Balancer** | Dedicated hardware LB or HA Nginx pair |
-| **Network** | 10 Gbps internal; isolated VLAN for DB |
-| **Backup Storage** | Secondary NAS / tape + offsite / cloud cold storage |
-| **DR Site** | Hot standby (secondary DC), RPO < 1h, RTO < 4h |
-| **Orchestration** | Kubernetes v1.29+ |
+| **Application Nodes** | 2–4 nodes, 16 vCPU / 32 GB RAM each |
+| **Database** | PostgreSQL HA (Patroni or Azure PostgreSQL Flexible Server) — 1 primary + 1–2 replicas |
+| **Object Storage** | MinIO distributed or Azure Blob Storage (private endpoint) |
+| **Redis** | Redis Sentinel — 2 nodes |
+| **Load Balancer** | Azure Application Gateway or HA Nginx pair |
+| **Network** | Isolated VNet/VLAN for DB nodes |
+| **Backup** | Daily automated snapshots → Azure Blob cold tier |
+| **DR** | Secondary region or standby, RPO < 1h, RTO < 4h |
+| **Orchestration** | Docker Compose (standard) or AKS (large) |
 
-**Estimated infrastructure cost (customer-owned):** ₹60–120L+ depending on HA requirements  
-**Estimated private cloud cost:** ₹2,50,000–5,00,000 / month
+**Estimated Azure cost (customer subscription):** ₹60,000–1,20,000 / month  
+**Estimated bare-metal cost:** ₹20–40L one-time infrastructure
 
 ---
 
 ## 5. Software Prerequisites
 
+All software is open source or community edition — no additional third-party licensing.
+
 | Software | Version | Purpose |
 |---|---|---|
 | Ubuntu Server | 22.04 LTS | Host operating system |
 | Docker Engine | 26.x | Container runtime |
-| Docker Compose | v2.x | Orchestration (small deployments) |
-| Kubernetes | 1.29+ | Orchestration (medium / enterprise) |
-| PostgreSQL | 16.x | Primary relational database |
-| Redis | 7.x | Cache and Celery task queue |
+| Docker Compose | v2.x | Service orchestration (Growth / Professional) |
+| PostgreSQL | 16.x | Primary star schema database |
+| Redis | 7.x | API response cache |
 | MinIO | Latest stable | Object and document storage |
-| Nginx | 1.25+ | Reverse proxy |
-| Python | 3.11+ | Backend application runtime |
-| Node.js | 20 LTS | Frontend asset build |
-
-All software is open source or community edition — no additional third-party license costs.
+| Nginx | 1.25+ | Reverse proxy and SSL termination |
+| Python | 3.11+ | FastAPI backend runtime |
+| Node.js | 20 LTS | React frontend build (build-time only) |
 
 ---
 
@@ -161,96 +166,101 @@ All software is open source or community edition — no additional third-party l
 
 | Requirement | Detail |
 |---|---|
-| **TLS / SSL** | Valid certificate required; internal CA accepted |
-| **External exposure** | Only ports 80 / 443 exposed; all inter-container traffic stays internal |
-| **ERP access** | App server must reach ERP API / RFC endpoints on internal network |
-| **Bank API access** | Outbound HTTPS to banking APIs (if treasury module active) |
-| **LDAP / AD** | Port 389 / 636 accessible for SSO and user sync |
-| **SMTP relay** | Internal SMTP relay for report delivery and alerts |
-| **Air-gapped option** | Available — requires offline AI model endpoint (additional setup fee) |
+| **TLS / SSL** | Valid certificate required; Azure-issued or internal CA accepted |
+| **External exposure** | Only ports 80 / 443 exposed; inter-container traffic stays internal |
+| **BC API access** | App server must reach BC OData endpoints — outbound HTTPS to `api.businesscentral.dynamics.com` |
+| **Azure Entra ID** | Outbound HTTPS to `login.microsoftonline.com` for MSAL SSO (even on-prem) |
+| **SMTP relay** | Internal or external SMTP for system notifications and alerts |
+| **Firewall** | Inbound: 80/443 only. Outbound: BC API + Entra ID endpoints |
+| **Air-gapped** | Not recommended — BC and Entra ID require outbound internet. Contact i-Source if fully air-gapped. |
 
 ---
 
-## 7. Implementation Services (On-Prem)
+## 7. Implementation Services
 
-| Service | Small | Medium | Enterprise |
+| Service | Growth | Professional | Enterprise |
 |---|---|---|---|
-| **Infrastructure Assessment** | Self-service checklist | 1-week engagement | 2-week architecture review |
-| **Deployment & Configuration** | Runbook + remote support | On-site 1 week | On-site 2–3 weeks |
-| **ERP Integration Setup** | 1 connector, remote | Up to 3, guided | All connectors, managed |
-| **Data Migration** | Not included | 1 year historical | 3 years historical |
-| **User Acceptance Testing** | Not included | Supported | Fully managed |
-| **Go-Live Hypercare** | 1 week remote | 2 weeks (mixed) | 4 weeks on-site |
-| **Training** | Video + docs | 4 live sessions | Unlimited + ToT |
-| **Implementation Fee** | ₹75,000 | ₹2,50,000 | Custom |
+| **Infrastructure Assessment** | Self-service checklist | 3-day remote review | 1-week architecture review |
+| **Deployment & Configuration** | Runbook + remote support | Remote — 1 week | On-site — 2 weeks |
+| **BC Tenant Connection Setup** | Up to 5, self-serve | All 17, guided | All, managed |
+| **CoA and Dimension Mapping** | Self-serve via console | Guided by i-Source | Fully managed |
+| **Historical Data Migration** | Not included | 1 year | 3 years |
+| **User and Role Configuration** | Self-serve | Guided | Managed |
+| **UAT Support** | Not included | Remote support | Fully managed UAT |
+| **Go-Live Hypercare** | 1 week remote | 2 weeks remote | 4 weeks (on-site + remote) |
+| **Training** | Video + docs | 4 live sessions | Unlimited + train-the-trainer |
+| **One-time Implementation Fee** | ₹60,000 | ₹2,00,000 | Custom |
 
 ---
 
 ## 8. Ongoing Support Tiers (Annual)
 
-| Support Tier | Coverage | SLA | Price |
+| Tier | Coverage | Response SLA | Annual Price |
 |---|---|---|---|
-| **Standard** | 8×5, ticket portal, email | 24h response | Included in maintenance |
-| **Premium** | 8×5, phone + email + remote | 4h response | ₹2,00,000 / year |
-| **Enterprise 24×7** | 24×7, dedicated engineer | 1h critical / 4h major | ₹5,00,000 / year |
+| **Standard** | 8×5, ticket portal + email | 24h response | Included in maintenance |
+| **Premium** | 8×5, phone + email + remote | 4h response | ₹1,50,000 / year |
+| **Enterprise 24×7** | 24×7, dedicated engineer | 1h critical / 4h major | ₹4,00,000 / year |
 
 ---
 
-## 9. Upgrade & Patch Process
+## 9. Upgrade & Maintenance Process
 
 | Activity | Frequency | Who | How |
 |---|---|---|---|
-| Security patches | Monthly | Customer IT | Vendor-supplied patch package |
-| Minor version upgrades | Quarterly | Customer IT + vendor support | Docker image pull + restart |
-| Major version upgrades | Annually | Vendor-led | On-site or remote upgrade sprint |
-| Database migrations | With each release | Automated (Alembic) | Run via deployment script |
-| Health monitoring | 24×7 | Customer IT | Vendor-supplied runbook + Grafana dashboards |
+| Security patches | Monthly | Customer IT | i-Source-supplied Docker image update |
+| Minor version upgrades | Quarterly | Customer IT + i-Source support | Docker pull + compose up + migration scripts |
+| Major version upgrades | Annually | i-Source-led | On-site or remote upgrade sprint |
+| DB schema migrations | With each release | Automated (Alembic) | Executed by deployment script |
+| Pipeline ETL updates | With each release | Automated | Part of Docker image |
+| BC API compatibility | As Microsoft releases | i-Source patches | Security update channel |
 
 ---
 
-## 10. Total Cost of Ownership — Indicative 3-Year TCO
+## 10. 3-Year Total Cost of Ownership
 
-### Small Deployment (20 users, 2 entities, perpetual license)
+### Growth — 5 BC Subsidiaries, 10 Users
 
 | Item | Cost |
 |---|---|
-| License (one-time) | ₹15,00,000 |
-| Annual maintenance (yr 1–3) | ₹9,00,000 |
-| Implementation | ₹75,000 |
-| Server hardware (estimated) | ₹5,00,000 |
-| **3-Year TCO** | **₹29,75,000** |
+| Perpetual license | ₹10,00,000 |
+| Annual maintenance (yr 1–3) | ₹6,00,000 |
+| Implementation | ₹60,000 |
+| Azure VM (₹12K/month × 36) | ₹4,32,000 |
+| **3-Year On-Prem TCO** | **₹20,92,000** |
 
-*vs Cloud (Starter, 20 users × ₹8K × 36 months): ₹57,60,000 — **On-prem saves ~₹28L over 3 years***
+*vs Cloud Starter (10 users × ₹6K × 36 months): ₹21,60,000 — roughly equivalent.*
 
 ---
 
-### Medium Deployment (50 users, 5 entities, perpetual license)
+### Professional — All 17 BC Subsidiaries, 20 Users
 
 | Item | Cost |
 |---|---|
-| License (one-time) | ₹35,00,000 |
-| Annual maintenance (yr 1–3) | ₹21,00,000 |
-| Implementation | ₹2,50,000 |
-| Server hardware (estimated) | ₹15,00,000 |
-| **3-Year TCO** | **₹73,50,000** |
+| Perpetual license | ₹25,00,000 |
+| Annual maintenance (yr 1–3) | ₹15,00,000 |
+| Implementation | ₹2,00,000 |
+| Azure VM (₹30K/month × 36) | ₹10,80,000 |
+| **3-Year On-Prem TCO** | **₹52,80,000** |
 
-*vs Cloud (Professional, 50 users × ₹18K × 36 months): ₹3,24,00,000 — **On-prem saves ~₹2.5Cr over 3 years***
+*vs Cloud Professional (20 users × ₹14K × 36 months): ₹1,00,80,000 — **On-prem saves ~₹48L over 3 years***
 
 ---
 
-## 11. Decision Guide: Cloud vs On-Prem
+## 11. Cloud vs On-Premises — Decision Guide
 
 | Factor | Choose Cloud | Choose On-Prem |
 |---|---|---|
-| IT team size | Small / no dedicated team | Dedicated IT / infra team |
-| Data residency | Flexible | Strict — data cannot leave premises |
-| Budget type | OpEx preferred | CapEx available |
-| Time to go-live | Fast (days) | Longer (weeks) |
-| Customization | Configuration only | Deep customization possible |
-| Internet dependency | Acceptable | Cannot depend on internet |
-| Sector | Private sector, SME | Banking, Govt, Defence, Regulated |
-| 3-year cost | Higher | Lower (after Year 1) |
+| Data residency | Flexible | Must stay within RIA premises |
+| IT team | Small or none | Dedicated IT team available |
+| Budget type | OpEx preferred | CapEx budget available |
+| Time to go-live | Days (self-serve) | Weeks |
+| Maintenance | i-Source managed | Customer IT managed |
+| BC API latency | Lowest (Azure-to-Azure) | Acceptable if VNet-peered |
+| Entra ID SSO | Native, zero config | Works (requires outbound internet) |
+| 3-year cost (20 users, 17 BC) | ~₹1,00,80,000 | ~₹52,80,000 |
+| Year 1 cash outlay | Lower (OpEx) | Higher (licence + impl) |
+| Upgrade effort | Zero | Quarterly IT effort |
 
 ---
 
-*Document Owner: Aarav_PM_001 | Reviewer: Kabir_Reviewer_010 | Next Review: 2026-06-05*
+*Document prepared by i-Source Infosystems for RIA Advisory | Version 1.0.0 | 2026-05-05*

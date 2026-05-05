@@ -1,355 +1,404 @@
-# CFO360 — Concept Note
+# i-finsights — Concept Note
 
+**Product:** i-finsights (Unified Financial Intelligence Platform)  
 **Document Type:** Concept Note  
 **Version:** 1.0.0  
-**Status:** Draft  
+**Status:** Draft — For Review  
 **Date:** 2026-05-05  
-**Owner:** Aarav_PM_001  
-**Reviewers:** Meera_Architect_002, Kiran_Data_008, Kabir_Reviewer_010
+**Prepared by:** i-Source Infosystems  
+**Prepared for:** RIA Advisory  
+**Related:** [06_Pricing_Cloud.md](06_Pricing_Cloud.md) | [07_Pricing_OnPrem.md](07_Pricing_OnPrem.md)
 
 ---
 
 ## 1. Executive Summary
 
-**CFO360** is an AI-powered Chief Financial Officer intelligence platform built on the i-AgentForce multi-agent framework. It gives finance leaders a single, unified command center to monitor, analyze, forecast, and act on every dimension of organizational financial health — in real time, across all connected ERP systems, banks, and data sources.
+**i-finsights** is a real-time financial intelligence platform built specifically for multi-entity organisations running on **Microsoft Dynamics 365 Business Central**. It connects directly to all BC tenants via certificate-based OAuth, consolidates GL data through an automated Bronze → Silver → Gold pipeline, eliminates intercompany transactions, translates currencies, and delivers live dashboards and reports to the CFO, Controller, and finance teams — without a single manual export.
 
-CFO360 is not a reporting tool. It is an **AI agent workforce** purpose-built for the Office of the CFO — capable of autonomously executing financial workflows, surfacing anomalies, generating board-ready narratives, and triggering downstream actions across the enterprise stack.
+For RIA Advisory — operating 17 independent BC tenants across multiple geographies and currencies — i-finsights replaces the current 8–10 day Excel-driven close process with a **real-time, auditable, single source of financial truth**.
 
----
-
-## 2. Problem Statement
-
-Finance teams at mid-to-large enterprises face a convergence of pressures:
-
-| Problem | Impact |
-|---------|--------|
-| Data locked in multiple ERPs (SAP, Oracle, BC, NetSuite) | No single version of truth; reconciliation takes days |
-| Month-end close takes 10–15 business days | Delayed decisions, stale data in board packs |
-| Manual FP&A reporting | High error rate, analyst burnout |
-| No real-time cash visibility | Reactive treasury management |
-| Compliance reporting is manual and fragmented | Audit risk, regulatory exposure |
-| CFOs rely on junior analysts to surface exceptions | Slow escalation, missed risk signals |
-
-CFO360 eliminates each of these pain points through AI agent automation, real-time data pipelines, and a conversational CFO command interface.
+> **"One number. Real-time. From 17 subsidiaries. Down to a single GL entry."**
 
 ---
 
-## 3. What is CFO360?
+## 2. The Problem
 
-CFO360 is a **multi-layer AI platform** with three core layers:
+RIA Advisory operates **17 independent Business Central SaaS tenants** — one per subsidiary — across multiple geographies, currencies, and business verticals.
+
+Every month, the Group Controller spends **8–10 business days** on:
+
+| Pain Point | Business Impact |
+|---|---|
+| Manual Excel extraction from 17 BC tenants | Error-prone, hours of analyst time wasted |
+| VLOOKUP-based consolidation across entities | Zero audit trail, version control nightmares |
+| Email-driven intercompany reconciliation and sign-off | No accountability, missed deadlines |
+| No intra-month P&L visibility | Leadership flies blind until close completes |
+| No programmatic access to BC APIs | Manual exports, no automation possible |
+| No data quality monitoring | Dirty data silently reaches board reports |
+| No drill-through from group totals to GL entries | Analysts re-extract data on every leadership query |
+
+**The result:** The board receives financial statements 8–10 days after month-end — by which point decisions based on stale data have already been made.
+
+---
+
+## 3. What is i-finsights?
+
+i-finsights is a **three-layer financial intelligence platform**:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CFO COMMAND INTERFACE                        │
-│         (Chat, Dashboard, Voice, Mobile, Board Pack Gen)         │
-├─────────────────────────────────────────────────────────────────┤
-│                     AI AGENT WORKFORCE                           │
-│   Cash Agent │ FP&A Agent │ Close Agent │ Risk Agent │ Tax Agent │
-├─────────────────────────────────────────────────────────────────┤
-│                   DATA & INTEGRATION LAYER                       │
-│     SAP │ Oracle │ BC │ D365 │ NetSuite │ Odoo │ JDE │ Banks     │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     INTELLIGENCE LAYER                            │
+│    CFO Dashboard · Close Cockpit · GL Explorer · 22 Reports      │
+│    Multi-Dim Analytics · Natural Language Query · Annotations     │
+├──────────────────────────────────────────────────────────────────┤
+│                     DATA PROCESSING LAYER                         │
+│  Bronze (Raw) → Silver (Conformed) → Gold (Star Schema)          │
+│  IC Elimination · FX Translation · Data Quality Gates            │
+├──────────────────────────────────────────────────────────────────┤
+│                     SOURCE LAYER                                  │
+│  17 Business Central Tenants (OData API v2.0, Certificate OAuth) │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.1 Guiding Principles
 
-- **Zero-lag financial intelligence** — real-time, not batch
-- **Agent-first, human-in-the-loop** — AI executes, humans approve exceptions
-- **ERP-agnostic** — works with any mix of ERP systems simultaneously
-- **Audit-grade** — every agent action is hash-chained and tamper-evident
-- **Governance-native** — RBAC, maker-checker, and approval workflows baked in
+- **No manual exports** — every data point flows automatically from BC via API
+- **One canonical truth** — single Chart of Accounts and dimension framework across all 17 entities
+- **Drill-through guaranteed** — every group number traces back to a source GL entry
+- **Audit-grade** — full lineage from BC source field to dashboard KPI
+- **Role-aware** — each user sees only the subsidiaries they are authorised to access
+- **Close-first** — the platform is built around the monthly close cycle, not just reporting
 
 ---
 
-## 4. Core Features
+## 4. How the Application Works
 
-### 4.1 CFO Command Center (Dashboard)
-
-The primary interface for the CFO and finance leadership team.
-
-- **Real-time P&L** — live revenue, cost, and margin tracking against budget
-- **Cash Position Map** — consolidated view across all bank accounts and entities
-- **Working Capital Tracker** — AR aging, AP aging, DSO, DPO, CCC in one view
-- **KPI Tiles** — configurable financial KPIs with traffic-light RAG status
-- **Exception Feed** — AI-surfaced anomalies ranked by financial materiality
-- **Board Pack Preview** — live board-ready slides auto-generated from live data
-- **Drill-down Engine** — click any number to trace it to source transaction
-
-### 4.2 AI Agent Workforce
-
-Each agent is a specialized autonomous worker deployed on the i-AgentForce platform:
-
-| Agent | Responsibility |
-|-------|---------------|
-| **CashAgent** | Real-time cash position, 13-week cash flow forecast, sweep recommendations |
-| **FPAAgent** | Budget vs actual variance analysis, rolling forecast updates, scenario modeling |
-| **CloseAgent** | Month-end close orchestration, intercompany eliminations, reconciliation automation |
-| **RiskAgent** | Credit risk monitoring, FX exposure, counterparty risk, covenant tracking |
-| **TaxAgent** | GST/VAT compliance, TDS computation, advance tax scheduling, e-filing preparation |
-| **ReportAgent** | Board packs, investor reports, regulatory filings, narrative generation |
-| **AuditAgent** | Internal audit sampling, control testing, anomaly detection, evidence packaging |
-| **TreasuryAgent** | Debt schedule management, investment portfolio tracking, hedging recommendations |
-
-### 4.3 Conversational CFO Interface
-
-A natural language interface allowing the CFO to query, command, and explore:
-
-- "What is our net cash position across all entities today?"
-- "Show me the top 10 revenue variances vs budget this quarter"
-- "Why did our gross margin drop 3% in March?"
-- "Generate the board pack for May 2026"
-- "Flag all invoices over ₹50L that are overdue by more than 60 days"
-- "What is our FX exposure in USD and EUR this week?"
-
-The interface supports chat, voice input, and scheduled briefings delivered to email or Slack.
-
-### 4.4 Financial Close Automation
-
-- Automated intercompany reconciliation with variance tolerance rules
-- Journal entry generation and approval workflow
-- Pre-close checklist with agent-monitored task completion
-- Close calendar with SLA tracking per entity and GL account
-- Auto-escalation when close milestones are breached
-
-### 4.5 FP&A and Forecasting
-
-- Driver-based rolling forecast updated automatically from ERP actuals
-- Scenario modeling (base / bull / bear) with sensitivity analysis
-- Budget upload via Excel or API; version-controlled budget store
-- Variance commentary auto-drafted by FPAAgent; reviewed by analyst
-- Headcount and payroll forecast integration
-
-### 4.6 Treasury and Cash Management
-
-- Multi-bank, multi-entity consolidated cash position (intraday and EOD)
-- 13-week cash flow forecast with confidence intervals
-- Payment run optimization — batch, prioritize, and schedule payments
-- Overdraft early-warning alerts
-- FX deal tracking and hedge effectiveness reporting
-
-### 4.7 Risk and Compliance
-
-- Customer credit limit monitoring with AI scoring
-- Vendor payment terms compliance
-- Covenant compliance dashboard (DSCR, leverage ratios, interest coverage)
-- GST/VAT reconciliation and e-filing readiness
-- CARO, IND AS, IFRS, and SOX control monitoring
-
-### 4.8 ERP Integration Hub
-
-CFO360 connects natively to:
-
-| ERP / System | Integration Type | Data Fetched |
-|---|---|---|
-| SAP S/4 HANA | RFC / OData API | GL, AP, AR, Cost Centers, Profit Centers |
-| Oracle Fusion | REST API | Financials, Projects, Procurement |
-| Microsoft Dynamics 365 | Graph API / Dataverse | Finance, Sales, Operations |
-| Business Central | OData v4 / REST | GL, Journals, Dimensions |
-| NetSuite | SuiteQL / REST | Financials, Subsidiaries, Consolidation |
-| Odoo | JSON-RPC | Accounting, Invoices, Payments |
-| JD Edwards (JDE) | Orchestrator REST | Business Functions, UBE Reports |
-| Bank APIs | ISO 20022 / OFX | Account statements, payment status |
-| Excel / CSV | File upload / email parse | Budget templates, ad-hoc uploads |
-
-### 4.9 Reporting and Board Pack Generation
-
-- Auto-generated board packs in PowerPoint or PDF from live data
-- Customizable slide templates with company branding
-- Narrative paragraphs generated by ReportAgent, editable by the analyst
-- Scheduled delivery to distribution lists
-- Version history and approval workflow before distribution
-
-### 4.10 Multi-Entity and Multi-Currency Consolidation
-
-- Automatic currency translation at defined rates (spot, average, historical)
-- Elimination of intercompany transactions at group level
-- Minority interest and equity method accounting support
-- Consolidated P&L, Balance Sheet, and Cash Flow Statement
-
----
-
-## 5. How the Application Works
-
-### 5.1 User Journey
+### 4.1 Data Flow — Source to Dashboard
 
 ```
-User logs in → Tenant-specific CFO360 workspace loads
-     │
-     ├── Dashboard renders: live KPIs from all connected ERPs
-     │
-     ├── Exception Feed: AI agents surface top 5 anomalies
-     │
-     ├── User clicks anomaly → drill-down to source transaction
-     │
-     ├── User types query in CFO Chat → FPAAgent responds with analysis
-     │
-     ├── User requests board pack → ReportAgent generates → user reviews → sends
-     │
-     └── Close cycle starts → CloseAgent orchestrates all close tasks → notifies
+17 Business Central Tenants
+        │
+        │ Certificate-based OAuth (per tenant)
+        ▼
+BC OData API v2.0
+        │  GL Entries · Chart of Accounts
+        │  Customers · Vendors · Posted Sales
+        ▼
+BRONZE ZONE — Raw append-only store
+        │  No transformations. Full historical audit trail.
+        ▼
+SILVER LAYER — Conformation
+        │  Type casting · Null handling · Deduplication
+        │  Canonical CoA mapping (474 group accounts)
+        │  Date normalisation
+        ▼
+IC ELIMINATION ENGINE
+        │  Remove intercompany transaction pairs
+        │  Configurable counterparty rules
+        │  Elimination entries posted to elimination entity
+        ▼
+FX TRANSLATION ENGINE
+        │  All amounts → USD
+        │  Period-average and period-end rates
+        │  Historical rates stored in dim_currency
+        ▼
+DATA QUALITY GATES
+        │  Completeness · Referential integrity
+        │  Range checks · Duplicate detection
+        │  Exceptions block Gold promotion
+        ▼
+GOLD LAYER — Star Schema (Analytics-ready)
+        │  fact_gl_entries      (188,380 rows)
+        │  fact_coa_balances    (7,892 rows)
+        │  fact_posted_sales    (3,094 rows)
+        │  12 dimension tables
+        ▼
+FastAPI REST API → React Dashboard
 ```
 
-### 5.2 Agent Execution Flow
+### 4.2 User Journey
 
 ```
-Trigger (schedule / user / event)
-     │
-     ▼
-i-AgentForce Orchestration Engine (Temporal)
-     │
-     ├── Agent assigned + capabilities validated
-     ├── ERP data fetched via integration connectors
-     ├── AI model processes data (Anthropic Claude / OpenAI)
-     ├── Output generated (analysis / journal / report / alert)
-     ├── Human checkpoint (if approval required)
-     ├── Action executed (post journal / send email / update forecast)
-     └── Audit log written (hash-chained JSONL)
+User logs in (Azure Entra ID SSO or email/password)
+        │
+        ├── Role determined → subsidiaries authorised
+        │
+        ├── CFO → Executive Dashboard
+        │         Live group P&L · KPI tiles · Entity grid · AR/AP aging
+        │
+        ├── Controller → Close Cockpit
+        │         Entity sign-off · IC reconciliation · Close timeline
+        │
+        ├── Subsidiary Controller → Entity Detail
+        │         Entity P&L · Trial Balance · Balance Sheet · GL drill-through
+        │
+        ├── Finance Analyst → GL Explorer + Reports + Analytics
+        │         Full-text GL search · 22 standard reports · Multi-dim workbench
+        │
+        └── Admin → Pipeline Health + Mapping Console
+                  Pipeline runs · DQ exceptions · CoA mapping · Entity onboarding
 ```
 
-### 5.3 Data Refresh Cadence
+### 4.3 Data Refresh Cadence
 
-| Data Type | Refresh Frequency |
+| Data | Frequency |
 |---|---|
-| Bank balances / cash position | Real-time (webhook) or every 15 min |
-| AR / AP aging | Hourly |
-| GL trial balance | Every 4 hours |
-| Budget vs actuals | Daily at 06:00 |
-| Forecasts | On-demand + daily |
-| Board packs | On-demand |
+| BC GL entries | On-demand trigger + scheduled runs |
+| Dashboard KPIs | Live from star schema (< 2s query) |
+| IC elimination | Recalculated on each pipeline run |
+| FX rates | Updated per pipeline run from dim_currency |
+| Close status | Real-time as entities complete sign-off |
 
 ---
 
-## 6. Deployment Options
+## 5. Core Features
 
-CFO360 can be deployed in two models depending on the organization's security posture, IT capability, and regulatory requirements.
+### 5.1 Automated Data Pipeline (13 features)
+
+The backbone of the platform. Zero human intervention in the data flow.
+
+| Capability | Detail |
+|---|---|
+| BC Tenant Authentication | Certificate-based OAuth for all 17 BC SaaS tenants. Auto-rotates tokens. Credentials stored per-tenant. |
+| Data Extraction Engine | Pulls GL Entries, CoA, Customers, Vendors, Posted Sales via BC OData API v2.0. Parameterised by date range and entity. |
+| Pipeline Orchestration | Dependency graph (BC extract → Bronze → Silver → Gold). Retry with exponential backoff. |
+| Ingestion Resilience | Fallback to last-known-good snapshot if BC API unavailable. Dead-letter queue for failed rows. |
+| Canonical CoA | Single group-level Chart of Accounts (474 accounts). All 17 entity CoAs mapped. Console to manage exceptions. |
+| Dimension Framework | Canonical dimensions: Company (17), Department (32), Project (44), Vertical, Geography (3), Currency (8). |
+| IC Elimination Engine | Configurable counterparty rules. Balances posted to elimination entity. Auditable per run. |
+| FX Translation | All amounts translated to USD. Period-average and period-end rates. Historical rates persisted. |
+| Data Quality Engine | Rule-based DQ: completeness, referential integrity, range checks, duplicate detection. Exceptions block Gold promotion. |
+| Data Lineage | Column-level lineage from BC source field → Silver transform → Gold fact. Impact analysis for schema changes. |
+
+### 5.2 Executive Dashboards
+
+The primary daily interface for CFO and finance leadership.
+
+| Dashboard | What It Shows |
+|---|---|
+| **Executive Dashboard** | Consolidated group P&L · 5 KPI tiles (Revenue, COGS, OpEx, Net Income, Entries) · P&L trend chart · AR/AP aging · Subsidiary performance grid · Department heatmap |
+| **Close Cockpit** | Monthly close management · Entity sign-off tracking · IC reconciliation status · Close timeline with SLA · Controller approval workflow · Close % complete |
+| **Entity Detail** | Subsidiary drill-through · Entity P&L · Trial Balance · Balance Sheet · GL entries (up to 500/page) · Entity KPI summary |
+| **GL Explorer** | Full-text search across 188,380+ GL entries · Filters: company, account, department, document type, date range · < 2 second response |
+
+### 5.3 Financial Reports (22 reports)
+
+All reports pull from the Gold layer star schema. No raw BC data dependency.
+
+| Report | Description |
+|---|---|
+| P&L Analytics | Monthly waterfall: Revenue → COGS → Gross Profit → OpEx → EBITDA → Net Income. YoY and rolling 12-month. |
+| Trial Balance | Account-level Debit / Credit / Net. Entity and date filters. Export-ready. |
+| Balance Sheet | Assets · Liabilities · Equity. Three-column layout. Sub-totals and net assets. |
+| AR / AP Aging | Aging buckets: Current, 30, 60, 90, 90+ days. Entity filter. Total overdue summary. |
+| Cash Flow Statement | Operating · Investing · Financing activities. Net cash movement. Free cash flow. |
+| KPI Dashboard | Current Ratio · Quick Ratio · EBITDA Margin · DSO · Debt-to-Equity · ROA. Trend sparklines. |
+| Financial Health Score | Composite score (0–100) weighted from liquidity, profitability, efficiency, leverage. Benchmark comparisons. |
+| Expense Analysis | OpEx breakdown by account and department. Trend and composition charts. |
+| Department Spend | Cross-entity heatmap. Cost concentration by vertical or department. |
+| Project Financials | Project-level P&L. Revenue, cost, margin per project code. 44 active projects. |
+| Vertical Analytics | Business unit P&L. Cross-entity view by vertical dimension. |
+| Entity Comparison | Side-by-side subsidiary benchmarking. Revenue, gross margin, OpEx ratio. Ranked table. |
+| Collections | AR aging by customer. Days outstanding. Collection risk flags. |
+| Customer Insights | Top customers by revenue from GL entries. |
+| Posted Sales Insights | 3,094 invoice records. Sales trends by customer and entity. |
+
+### 5.4 Multi-Dimensional Analytics
+
+Interactive analysis workbench for finance analysts.
+
+- Filter panel: company, year, month, currency
+- P&L waterfall, entity contribution, department heatmap, rolling trend
+- Top accounts by volume and amount, document type mix, MoM change, currency split
+- Suspense account monitor — flags unclassified entries automatically
+
+### 5.5 Monthly Close Automation
+
+End-to-end orchestration of the monthly close cycle.
+
+- Task assignment per entity with due dates
+- IC reconciliation tracking — pair completeness, sign-off status
+- Entity controller sign-off workflow
+- Group Controller approval gate before final close
+- Close timeline with SLA tracking per entity
+- Auto-escalation on missed deadlines
+- **Target: 10-day close → 3-day close**
+
+### 5.6 Administration and Governance
+
+| Tool | Purpose |
+|---|---|
+| Mapping Console | Map subsidiary CoA accounts to canonical CoA. Bulk upload via Excel. Manage exceptions. |
+| Onboarding Wizard | Step-by-step new subsidiary onboarding: BC connection → CoA mapping → Dimension mapping → Pipeline test run. Target: < 1 hour per entity. |
+| Pipeline Health Monitor | Run history, status, duration, row counts, alert thresholds, retry controls. |
+| Security and Compliance | Audit log of all data access. RBAC enforcement audit. Data retention policy config. |
+| Tenant Configuration | Branding, BC OAuth credentials, subsidiary access, plan and billing per tenant. |
+
+### 5.7 Multi-Tenancy and Access Control
+
+- Each organisation (RIA Advisory, iSource) has its own isolated tenant
+- Users see only their authorised subsidiaries
+- Role hierarchy enforces least-privilege access
+
+| Role | Scope |
+|---|---|
+| `superadmin` | All tenants — CRUD, user management, billing |
+| `ria_admin` | RIA Advisory tenant — all reports, pipeline, users, mappings |
+| `isource_admin` | iSource tenant — tenant config, users, all reports |
+| `finance_user` | Assigned subsidiaries — dashboards, reports, GL Explorer |
+| `viewer` | Assigned subsidiaries — read-only dashboards |
 
 ---
 
-### 6.1 Option A — Cloud (SaaS)
+## 6. Technology Stack
 
-CFO360 is hosted, managed, and operated by the vendor on a secure cloud infrastructure (AWS / Azure). Customers access it via browser with SSO.
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | React 18 + TypeScript + Vite | SPA dashboard, 51 pages |
+| **Charts** | Recharts | Bar, line, waterfall, heatmap — no licensing cost |
+| **Auth (SSO)** | Azure Entra ID (MSAL) | Enterprise SSO, no password management |
+| **Auth (local)** | JWT + bcrypt | Stateless API auth, role-based access |
+| **Backend** | FastAPI + Python 3.11 | 9 routers, ~65 REST endpoints |
+| **Database** | PostgreSQL — Star Schema | 3 fact tables, 12 dimensions, ~200K analytical rows |
+| **BC Integration** | OData API v2.0 + OAuth | Microsoft's supported BC API — no screen scraping |
+| **Data Pipeline** | Python ETL (pandas) | Bronze → Silver → Gold transformations |
+| **Frontend Deploy** | Netlify | Zero frontend ops, global CDN, instant deploys |
+| **Backend Deploy** | Azure Container Apps (target) | Scalable, managed, close to BC tenants |
 
-**Architecture:**
+**Total cost of ownership:** Dramatically lower than Cognos, Hyperion, or OneStream — with full source code ownership and no per-user BI licensing.
+
+---
+
+## 7. Current State
+
+| Metric | Value |
+|---|---|
+| Features built | 51 of 51 (100%) |
+| GL entries indexed | 188,380 |
+| Subsidiaries connected | 17 |
+| Canonical accounts mapped | 474 |
+| Dimensions defined | 7 frameworks (company, dept, project, vertical, geo, currency, doc type) |
+| API endpoints | ~65 across 9 routers |
+| Test coverage | 20 Playwright E2E tests across 4 spec files |
+| Frontend deployment | Live at https://i-finsights.netlify.app |
+| Dashboard query performance | < 2 seconds (P95) |
+
+---
+
+## 8. Deployment Options
+
+i-finsights can be deployed in two models. Detailed pricing for each is documented separately.
+
+### 8.1 Cloud (SaaS) — Recommended
+
+i-finsights is hosted, managed, and operated on a secure cloud infrastructure (Azure, co-located with BC tenants for low-latency API access). RIA Advisory accesses it via browser with existing Azure Entra ID SSO — no new credentials required.
 
 ```
-Customer Browser / Mobile
-         │
-         ▼
-    CDN (CloudFront / Azure CDN)
-         │
-         ▼
-    Load Balancer (SSL termination)
-         │
-     ┌───┴───┐
-     │ Nginx  │  ← Port 80/443
-     └───┬───┘
-         │
-    ┌────┴─────┐
-    │ Frontend  │  React/Vite
-    │ Backend   │  FastAPI
-    │ PostgreSQL│  RDS / Azure DB
-    │ Redis     │  ElastiCache / Azure Cache
-    │ MinIO     │  S3 / Azure Blob (compatible)
-    └──────────┘
+RIA Advisory Users (Browser / Mobile)
+        │
+        ▼
+Azure CDN + Load Balancer (SSL)
+        │
+        ▼
+Netlify (React Frontend)   +   Azure Container Apps (FastAPI Backend)
+        │                                    │
+        └───────────────┬────────────────────┘
+                        │
+                   Azure PostgreSQL
+                        │
+        17 BC Tenants (OData API — Azure-to-Azure, low latency)
 ```
 
-**Pros:**
-- Zero infrastructure investment
-- Instant provisioning (new tenant live in < 24 hours)
-- Automatic updates and security patches
-- 99.9% SLA with multi-AZ redundancy
-- Disaster recovery managed by vendor
-- Pay-as-you-grow model
+**Key advantages for RIA Advisory:**
+- Azure-native — backend co-located with BC tenants, minimal latency on API calls
+- Existing Azure Entra ID — users log in with their Microsoft 365 credentials, no new passwords
+- No infrastructure investment — i-Source manages hosting, monitoring, and upgrades
+- Instant access — live at https://i-finsights.netlify.app today
 
-**Cons:**
-- Data leaves customer premises (mitigated by encryption + SOC 2 + ISO 27001)
-- Customization limited to configuration
-- Dependent on internet connectivity
+→ **Full pricing details:** [06_Pricing_Cloud.md](06_Pricing_Cloud.md)
 
 ---
 
-### 6.2 Option B — On-Premises (Self-Hosted)
+### 8.2 On-Premises (Self-Hosted)
 
-CFO360 is deployed entirely within the customer's data center on customer-managed infrastructure. The vendor provides the software, deployment runbooks, and support.
-
-**Architecture:**
+i-finsights is deployed entirely within RIA Advisory's own data center or private Azure subscription. i-Source provides the software packages, Docker images, deployment runbooks, and support.
 
 ```
-Internal Network
-      │
-      ▼
-  Internal DNS / Load Balancer
-      │
-      ▼
-  Docker Host (bare metal or VM cluster)
-      │
-  ┌───┴──────────────────────────┐
-  │ iaf-nginx   (port 80)        │
-  │ iaf-frontend (port 5173)     │
-  │ iaf-backend  (port 8000)     │
-  │ iaf-postgres (port 5432)     │
-  │ iaf-minio    (port 9000)     │
-  │ iaf-redis    (port 6379)     │
-  └──────────────────────────────┘
+RIA Advisory Internal Network
+        │
+        ▼
+Docker Host or Azure Private Container (Customer-managed)
+  ┌───────────────────────────────────┐
+  │  nginx           port 80 / 443    │
+  │  Frontend        port 5173         │
+  │  FastAPI Backend port 8000         │
+  │  PostgreSQL      port 5432         │
+  │  MinIO (docs)    port 9000 / 9001  │
+  │  Redis (cache)   port 6379         │
+  └───────────────────────────────────┘
+        │
+  17 BC Tenants (OData API — internal or Azure VNet peered)
 ```
 
-**Pros:**
-- Data never leaves the organization
-- Full control over infrastructure, upgrades, and security
-- Can integrate with on-premises AD / LDAP
-- No dependency on internet for internal usage
-- Preferred for banking, government, defense sectors
+**When to choose on-premises:**
+- Strict data residency — financial data must not leave RIA Advisory's own infrastructure
+- Regulatory or group policy requirement for self-hosted software
+- RIA Advisory has an existing IT team and data center capacity
 
-**Cons:**
-- Customer bears infrastructure cost and maintenance
-- Customer IT team must manage uptime and patching
-- Upgrades are manual (vendor provides update packages)
+→ **Full pricing, server sizing, and TCO details:** [07_Pricing_OnPrem.md](07_Pricing_OnPrem.md)
 
 ---
 
-## 7. Pricing & Deployment Costs
+## 9. Value Delivered to RIA Advisory
 
-Detailed pricing is documented separately by deployment model:
-
-- **Cloud (SaaS) Pricing** → [06_Pricing_Cloud.md](06_Pricing_Cloud.md)
-  Subscription tiers (Starter / Professional / Enterprise), add-ons, implementation fees, SLA, billing terms, and indicative annual cost examples.
-
-- **On-Premises Pricing & Server Requirements** → [07_Pricing_OnPrem.md](07_Pricing_OnPrem.md)
-  Perpetual + subscription license models, hardware sizing (small / medium / enterprise), software prerequisites, network requirements, support tiers, and 3-year TCO comparison.
-
----
-
-## 8. Competitive Positioning
-
-| Dimension | CFO360 | Anaplan | Workday Adaptive | BlackLine | Oracle EPBCS |
-|---|---|---|---|---|---|
-| AI Agent workforce | Yes | Partial | No | No | No |
-| ERP-agnostic | Yes | Yes | Partial | Partial | Oracle only |
-| Real-time cash | Yes | No | No | No | No |
-| Conversational CFO | Yes | No | No | No | No |
-| On-prem option | Yes | No | No | Limited | Yes |
-| India SME pricing | Yes | No | No | No | No |
-| Open API | Yes | Yes | Limited | Limited | Limited |
+| Metric | Before i-finsights | After i-finsights |
+|---|---|---|
+| Monthly close duration | 8–10 business days | **3 business days (target)** |
+| Data extraction from BC | Manual, per tenant, per analyst | **Automated — zero manual exports** |
+| Intercompany reconciliation | Email chain, manual VLOOKUP | **Automated engine, sign-off tracked** |
+| Intra-month P&L visibility | Not available | **Real-time, always-on** |
+| Drill-through to GL | Re-export required | **One click from group total to GL entry** |
+| Audit trail | None (Excel) | **Column-level lineage, full access log** |
+| New entity onboarding | Days (IT project) | **< 1 hour via onboarding wizard** |
+| Report generation | 2–3 days analyst effort | **Instant, from live star schema** |
+| Data quality | Unknown — discovered post-close | **DQ gates block bad data before Gold** |
 
 ---
 
-## 9. Indicative Roadmap
+## 10. Competitive Context
+
+| Capability | Excel + Email | Generic BI Tool | i-finsights |
+|---|---|---|---|
+| BC API integration | Manual export | Custom connector needed | Native — certificate OAuth |
+| IC elimination | Manual VLOOKUP | Manual configuration | Automated engine |
+| Multi-tenant isolation | None | None | Built-in, role-enforced |
+| Close workflow | Email chain | Out of scope | Close Cockpit |
+| GL drill-through | None | Depends on data model | 188K entries, < 2s |
+| Time to first report | 10 days post-close | 5+ days post-close | Real-time |
+| Data lineage | None | Limited | Column-level |
+| Azure Entra ID SSO | None | Varies | Native MSAL integration |
+| Total cost | Low upfront, high labour | High licensing | Competitive, source-owned |
+
+---
+
+## 11. Roadmap
 
 | Phase | Timeline | Capabilities |
 |---|---|---|
-| **Phase 1 — Foundation** | Q2 2026 | Dashboard, CashAgent, FPAAgent, BC + D365 connectors |
-| **Phase 2 — Automation** | Q3 2026 | CloseAgent, RiskAgent, SAP + Oracle connectors, Board Pack Gen |
-| **Phase 3 — Intelligence** | Q4 2026 | TaxAgent, AuditAgent, multi-entity consolidation, conversational interface |
-| **Phase 4 — Scale** | Q1 2027 | TreasuryAgent, all ERP connectors, mobile app, WhatsApp briefings |
-| **Phase 5 — Platform** | Q2 2027 | Partner marketplace, custom agent builder, open API for customer agents |
+| **Phase 1 — Foundation** | Completed | All 51 features — pipeline, dashboards, reports, close, admin, multi-tenancy |
+| **Phase 2 — Intelligence** | Q3 2026 | AI-generated variance commentary, anomaly detection, natural language query (full) |
+| **Phase 3 — Expansion** | Q4 2026 | Additional ERP connectors (Dynamics 365 Finance, NetSuite), mobile app |
+| **Phase 4 — Platform** | Q1 2027 | Multi-client SaaS — onboard additional group clients, partner reseller model |
 
 ---
 
-## 10. Summary
+## 12. Summary
 
-CFO360 transforms the Office of the CFO from a reactive reporting function into a **proactive, AI-powered financial command center**. Built on the proven i-AgentForce multi-agent platform, it is enterprise-grade, audit-ready, and deployable either as a managed SaaS or fully self-hosted on-premises solution.
+i-finsights gives RIA Advisory what no off-the-shelf BI tool or ERP report can: a **real-time, auditable, fully automated financial intelligence platform** that is native to Business Central, built around the monthly close cycle, and owned entirely by RIA Advisory.
 
-The platform is designed for CFOs who need answers in seconds, not days — and for finance teams who want AI to do the heavy lifting while humans retain control of every material decision.
+It eliminates the parallel Excel universe that currently costs 8–10 business days of high-value finance talent every month — replacing it with a platform that surfaces the same answers in under 2 seconds, with a full audit trail from board dashboard to source GL journal.
 
 ---
 
-*Document Owner: Aarav_PM_001 | Reviewer: Kabir_Reviewer_010 | Next Review: 2026-06-05*
+*Document prepared by i-Source Infosystems for RIA Advisory | Version 1.0.0 | 2026-05-05*  
+*Next Review: 2026-06-05*
