@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import riaLogo from '../assets/ria-advisory-logo.svg';
 import isourceLogo from '../assets/isource-logo.png';
@@ -56,9 +56,15 @@ const STATS = [
 
 export default function Landing() {
   const navigate  = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Auto-forward authenticated users — don't make them click a button
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function handleCTA() {
+    if (isLoading) return;   // wait for auth hydration
     navigate(isAuthenticated ? '/dashboard' : '/login');
   }
 
@@ -99,16 +105,16 @@ export default function Landing() {
           <span style={{ fontSize: 13, color: 'var(--neutral-500)' }}>
             Unified Financial Intelligence Platform
           </span>
-          <button onClick={handleCTA} style={{
+          <button onClick={handleCTA} disabled={isLoading} style={{
             padding: '8px 20px', borderRadius: 8, border: 'none',
-            background: 'var(--coral-500)', color: '#fff',
-            fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            background: isLoading ? 'var(--neutral-300)' : 'var(--coral-500)', color: '#fff',
+            fontSize: 13, fontWeight: 700, cursor: isLoading ? 'default' : 'pointer',
             transition: 'background 120ms ease',
           }}
-            onMouseOver={e => (e.currentTarget.style.background = 'var(--coral-600)')}
-            onMouseOut={e  => (e.currentTarget.style.background = 'var(--coral-500)')}
+            onMouseOver={e => { if (!isLoading) e.currentTarget.style.background = 'var(--coral-600)'; }}
+            onMouseOut={e  => { if (!isLoading) e.currentTarget.style.background = 'var(--coral-500)'; }}
           >
-            {isAuthenticated ? 'Go to Dashboard' : 'Sign In'}
+            {isLoading ? '...' : 'Sign In'}
           </button>
         </div>
       </nav>

@@ -55,6 +55,17 @@ import FieldMapping            from './pages/56_F056_FieldMapping';
 import CrossERPPL              from './pages/57_F057_CrossERPPL';
 import ConsolidatedDashboard   from './pages/58_F058_ConsolidatedDashboard';
 import RBACConsole             from './pages/60_F060_RBACConsole';
+import DataExtraction          from './pages/02_F002_DataExtraction';
+import PipelineOrchestration   from './pages/03_F003_PipelineOrchestration';
+import IngestionResilience     from './pages/04_F004_IngestionResilience';
+import BronzeZone              from './pages/05_F005_BronzeZone';
+import SilverLayer             from './pages/06_F006_SilverLayer';
+import DimensionFramework      from './pages/08_F008_DimensionFramework';
+import GoldLayer               from './pages/09_F009_GoldLayer';
+import FXTranslation           from './pages/11_F011_FXTranslation';
+import DataLineage             from './pages/13_F013_DataLineage';
+import OnboardingWizard        from './pages/22_F022_OnboardingWizard';
+import SecurityCompliance      from './pages/24_F024_SecurityCompliance';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -160,6 +171,21 @@ export default function App() {
                 <Route path="/admin/coa"            element={<CanonicalCoA />} />
                 <Route path="/admin/dq"             element={<DataQuality />} />
                 <Route path="/admin/ic-elimination" element={<ICElimination />} />
+
+                {/* Data Pipeline */}
+                <Route path="/pipeline/extraction"    element={<DataExtraction />} />
+                <Route path="/pipeline/orchestration" element={<PipelineOrchestration />} />
+                <Route path="/pipeline/resilience"    element={<IngestionResilience />} />
+                <Route path="/pipeline/bronze"        element={<BronzeZone />} />
+                <Route path="/pipeline/silver"        element={<SilverLayer />} />
+                <Route path="/pipeline/gold"          element={<GoldLayer />} />
+                <Route path="/pipeline/lineage"       element={<DataLineage />} />
+
+                {/* Configuration */}
+                <Route path="/admin/dimensions"   element={<DimensionFramework />} />
+                <Route path="/admin/fx"           element={<FXTranslation />} />
+                <Route path="/admin/onboarding"   element={<OnboardingWizard />} />
+                <Route path="/admin/security"     element={<SecurityCompliance />} />
 
                 {/* System */}
                 <Route path="/admin/api"  element={<APIStatus />} />
