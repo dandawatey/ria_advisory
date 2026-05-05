@@ -1,19 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" fill="none">
-  <!-- Icon mark: stacked bar chart in teal circle -->
-  <circle cx="24" cy="24" r="22" fill="#0F3F3C"/>
-  <!-- Bar chart bars -->
-  <rect x="10" y="28" width="6" height="10" rx="1.5" fill="#4ECDC4"/>
-  <rect x="19" y="20" width="6" height="18" rx="1.5" fill="#6EE7B7"/>
-  <rect x="28" y="14" width="6" height="24" rx="1.5" fill="#FBBF24"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 48" fill="none">
+  <!-- Icon mark: open ring with ascending bars + coral insight dot -->
+  <circle cx="24" cy="24" r="21" stroke="#0F3F3C" stroke-width="2.5"/>
+  <!-- Ascending data bars -->
+  <rect x="11"   y="28" width="6"   height="9"  rx="1.5" fill="#0F3F3C" opacity="0.38"/>
+  <rect x="20"   y="21" width="6"   height="16" rx="1.5" fill="#0F3F3C" opacity="0.68"/>
+  <rect x="29"   y="15" width="6"   height="22" rx="1.5" fill="#0F3F3C"/>
   <!-- Trend line -->
-  <polyline points="13,28 22,20 31,14" stroke="#E8443B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="31" cy="14" r="2.5" fill="#E8443B"/>
+  <polyline points="14,28 23,21 32,15"
+            stroke="#1F6B66" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Coral insight dot -->
+  <circle cx="32" cy="12" r="3.2" fill="#E8443B"/>
 
   <!-- Wordmark -->
-  <!-- "i-" prefix in accent red -->
-  <text x="54" y="33" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" letter-spacing="-0.5" fill="#E8443B">i-</text>
-  <!-- "finsights" in teal -->
-  <text x="74" y="33" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-weight="800" font-size="22" letter-spacing="-0.5" fill="#0F3F3C">finsights</text>
-  <!-- tagline -->
-  <text x="54" y="43" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-weight="400" font-size="9" letter-spacing="0.8" fill="#6B7280">UNIFIED FINANCIAL INTELLIGENCE</text>
+  <text x="58" y="30"
+        font-family="'Nunito Sans','Segoe UI',system-ui,sans-serif"
+        font-weight="900" font-size="22" letter-spacing="-0.5"
+        fill="#0F3F3C">i-CFO</text>
+  <text x="117" y="30"
+        font-family="'Nunito Sans','Segoe UI',system-ui,sans-serif"
+        font-weight="900" font-size="22" letter-spacing="-0.5"
+        fill="#E8443B">360</text>
+  <!-- Tagline -->
+  <text x="58" y="41"
+        font-family="'Segoe UI',system-ui,sans-serif"
+        font-weight="500" font-size="8" letter-spacing="0.85"
+        fill="#9CA3AF">CFO-GRADE FINANCIAL INTELLIGENCE</text>
 </svg>

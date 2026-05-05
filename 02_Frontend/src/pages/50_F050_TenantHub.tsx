@@ -7,9 +7,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth }     from '../contexts/AuthContext';
 import { useTenant }   from '../contexts/TenantContext';
 import { Tenant }      from '../types';
-import riaLogo      from '../assets/ria-advisory-logo.svg';
-import isourceLogo  from '../assets/isource-logo.png';
+import riaLogo        from '../assets/ria-advisory-logo.svg';
+import isourceLogo    from '../assets/isource-logo.png';
 import ifinsightsLogo from '../assets/ifinsights-logo.svg';
+import icfo360Mark    from '../assets/icfo360-mark.svg';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -66,14 +67,9 @@ export default function TenantHub() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: 'var(--teal-800, #0F3F3C)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 15, fontWeight: 900, color: '#fff',
-          }}>i</div>
-          <span style={{ fontSize: 17, fontWeight: 900, letterSpacing: '-0.02em', color: '#111' }}>
-            i-CFO<span style={{ color: 'var(--coral-500, #E8443B)' }}>360</span>
+          <img src={icfo360Mark} alt="i-CFO360" style={{ width: 34, height: 34 }} />
+          <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em', color: '#0F3F3C' }}>
+            i-CFO<span style={{ color: '#E8443B' }}>360</span>
           </span>
         </div>
         <span style={{ fontSize: 13, color: '#6b7280' }}>

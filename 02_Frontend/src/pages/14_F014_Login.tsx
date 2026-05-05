@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import icfo360Mark from '../assets/icfo360-mark.svg';
 
 type Tab = 'sso' | 'email';
 
@@ -54,7 +55,7 @@ export default function Login() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e40af 100%)',
+      background: 'linear-gradient(145deg, #071c1a 0%, #0F3F3C 50%, #1a5c58 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
@@ -63,19 +64,16 @@ export default function Login() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 16,
-            background: 'linear-gradient(135deg, #1e3a8a, #1e40af)',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 16,
-          }}>
-            <span style={{ color: 'white', fontWeight: 900, fontSize: 24 }}>RI</span>
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
-            i-CFO<span style={{ color: '#1f6b66' }}>360</span>
+          <img
+            src={icfo360Mark}
+            alt="i-CFO360"
+            style={{ width: 64, height: 64, marginBottom: 14, display: 'inline-block' }}
+          />
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0F3F3C', margin: 0, letterSpacing: '-0.03em' }}>
+            i-CFO<span style={{ color: '#E8443B' }}>360</span>
           </h1>
-          <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>
-            ISource Financial Intelligence Platform
+          <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 5, letterSpacing: '0.07em', textTransform: 'uppercase', fontWeight: 600 }}>
+            CFO-Grade Financial Intelligence
           </p>
         </div>
 
