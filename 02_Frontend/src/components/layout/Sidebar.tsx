@@ -37,9 +37,10 @@ const nav: NavSection[] = [
   {
     label: 'Performance',
     items: [
-      { label: 'KPI Dashboard',     path: '/reports/kpi',      icon: '◈' },
-      { label: 'Analytics',         path: '/analytics',        icon: '◉' },
-      { label: 'Entity Comparison', path: '/reports/entities', icon: '⊜' },
+      { label: 'KPI Dashboard',     path: '/reports/kpi',         icon: '◈' },
+      { label: 'CFO Ratios',        path: '/reports/cfo-ratios',  icon: '⊛' },
+      { label: 'Analytics',         path: '/analytics',           icon: '◉' },
+      { label: 'Entity Comparison', path: '/reports/entities',    icon: '⊜' },
     ],
   },
   {

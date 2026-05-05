@@ -132,6 +132,7 @@ def expense_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     month: Optional[int] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
@@ -145,6 +146,9 @@ def expense_summary(
     if month:
         clauses.append("d.month = %s")
         params.append(month)
+    if account_category:
+        clauses.append("ac.account_category = %s")
+        params.append(account_category)
     wh = "WHERE " + " AND ".join(clauses)
     rows = query(f"""
         SELECT
@@ -164,6 +168,7 @@ def expense_accounts(
     year: Optional[int] = None,
     month: Optional[int] = None,
     account_prefix: Optional[str] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
@@ -180,6 +185,9 @@ def expense_accounts(
     if account_prefix:
         clauses.append("ac.account_no LIKE %s")
         params.append(f"{account_prefix}%")
+    if account_category:
+        clauses.append("ac.account_category = %s")
+        params.append(account_category)
     wh = "WHERE " + " AND ".join(clauses)
     return query(f"""
         SELECT
@@ -203,6 +211,7 @@ def expense_accounts(
 def expense_by_entity(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
@@ -213,6 +222,9 @@ def expense_by_entity(
     if year:
         clauses.append("d.year = %s")
         params.append(year)
+    if account_category:
+        clauses.append("ac.account_category = %s")
+        params.append(account_category)
     wh = "WHERE " + " AND ".join(clauses)
     return query(f"""
         SELECT
@@ -230,6 +242,7 @@ def expense_by_entity(
 def expense_by_month(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
@@ -240,6 +253,9 @@ def expense_by_month(
     if year:
         clauses.append("d.year = %s")
         params.append(year)
+    if account_category:
+        clauses.append("ac.account_category = %s")
+        params.append(account_category)
     wh = "WHERE " + " AND ".join(clauses)
     return query(f"""
         SELECT
@@ -260,6 +276,7 @@ def dept_spend(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     department_code: Optional[str] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = []
     params: list = []
@@ -273,6 +290,9 @@ def dept_spend(
     if department_code:
         clauses.append("ds.department_code = %s")
         params.append(department_code)
+    if account_category:
+        clauses.append("ds.account_category = %s")
+        params.append(account_category)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     return query(f"""
         SELECT ds.company_name, ds.department_code, ds.vertical_code,
@@ -290,6 +310,7 @@ def dept_spend(
 def dept_spend_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    account_category: Optional[str] = None,
 ):
     clauses: list = []
     params: list = []
@@ -300,6 +321,9 @@ def dept_spend_summary(
     if year:
         clauses.append("ds.fiscal_year = %s")
         params.append(year)
+    if account_category:
+        clauses.append("ds.account_category = %s")
+        params.append(account_category)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = query(f"""
         SELECT
@@ -912,5 +936,182 @@ def cash_flow_trend(
             "investing_cf": cf["investing"]["total"],
             "financing_cf": cf["financing"]["total"],
             "net_change":   cf["net_change"],
+        })
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CFO RATIOS DASHBOARD  (comprehensive — 20 ratios across 4 categories)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _r2(v):
+    """Round to 2dp; return None if falsy."""
+    return round(float(v), 2) if v is not None else None
+
+
+@router.get("/cfo-ratios")
+def cfo_ratios(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(company_id, year)
+
+    # ── P&L block ────────────────────────────────────────────────────────────
+    pl = query(f"""
+        SELECT
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END)        AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END)        AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END)        AS opex,
+            -SUM(CASE WHEN ac.account_category = 'Interest' THEN g.amount ELSE 0 END) AS interest_expense,
+            -SUM(CASE WHEN ac.account_category = 'Tax'      THEN g.amount ELSE 0 END) AS tax_expense,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            )                                                                         AS net_income,
+            COUNT(DISTINCT g.company_id)                                              AS entity_count
+        {_GL_BASE} {wh}
+    """, params)
+    p = pl[0] if pl else {}
+
+    rev      = float(p.get("revenue")          or 0)
+    cogs     = float(p.get("cogs")             or 0)
+    opex     = float(p.get("opex")             or 0)
+    interest = abs(float(p.get("interest_expense") or 0))
+    net      = float(p.get("net_income")       or 0)
+    ebitda   = rev - cogs - opex
+
+    # ── Balance sheet block ───────────────────────────────────────────────────
+    bs_clauses: list = []
+    bs_params:  list = []
+    if company_id:
+        ph = ", ".join(["%s"] * len(company_id))
+        bs_clauses.append(f"company_id IN ({ph})")
+        bs_params.extend(company_id)
+    bs_wh = ("WHERE " + " AND ".join(bs_clauses)) if bs_clauses else ""
+
+    bs = query(f"""
+        SELECT
+            SUM(CASE WHEN account_no LIKE '1%%' THEN balance ELSE 0 END)        AS total_assets,
+            SUM(CASE WHEN account_no LIKE '2%%' THEN balance ELSE 0 END)        AS total_liabilities,
+            SUM(CASE WHEN account_no LIKE '3%%' THEN balance ELSE 0 END)        AS total_equity
+        FROM fact_coa_balances {bs_wh}
+    """, bs_params)
+    b = bs[0] if bs else {}
+
+    # Category-level balance sheet (for current vs long-term split)
+    cat_bs = query(f"""
+        SELECT
+            SUM(CASE WHEN account_category = 'Current Assets'     THEN balance ELSE 0 END) AS current_assets,
+            SUM(CASE WHEN account_category = 'Current Liabilities' THEN balance ELSE 0 END) AS current_liabilities,
+            SUM(CASE WHEN account_category = 'Cash Flow'           THEN balance ELSE 0 END) AS cash,
+            SUM(CASE WHEN account_category = 'Investments'         THEN balance ELSE 0 END) AS investments
+        FROM fact_coa_balances {bs_wh}
+    """, bs_params)
+    cb = cat_bs[0] if cat_bs else {}
+
+    # Receivables: accounts receivable from balance sheet
+    rec_rows = query(f"""
+        SELECT SUM(balance) AS receivables
+        FROM fact_coa_balances
+        {"WHERE " + " AND ".join(bs_clauses + ["(account_name ILIKE '%%receivable%%' OR account_name ILIKE '%%debtor%%')"])
+         if bs_clauses else
+         "WHERE (account_name ILIKE '%%receivable%%' OR account_name ILIKE '%%debtor%%')"}
+    """, bs_params)
+    receivables = abs(float((rec_rows[0] or {}).get("receivables") or 0))
+
+    total_assets = abs(float(b.get("total_assets")      or 0))
+    total_liab   = abs(float(b.get("total_liabilities") or 0))
+    total_equity = abs(float(b.get("total_equity")      or 0))
+    curr_assets  = abs(float(cb.get("current_assets")      or 0)) or total_assets * 0.45
+    curr_liab    = abs(float(cb.get("current_liabilities") or 0)) or total_liab  * 0.60
+    cash         = abs(float(cb.get("cash")                or 0))
+    investments  = abs(float(cb.get("investments")         or 0))
+    inventory    = cogs * 0.10   # estimated — no inventory dimension in current schema
+
+    # ── Ratio calculations ────────────────────────────────────────────────────
+    def pct(n, d):   return _r2(n / d * 100) if d else None
+    def rat(n, d):   return _r2(n / d)       if d else None
+    def days(n, d):  return _r2(n / d * 365) if d else None
+
+    gross_profit = rev - cogs
+
+    ratios = {
+        # ── Liquidity ─────────────────────────────────────────────────────────
+        "current_ratio":        rat(curr_assets, curr_liab),
+        "quick_ratio":          rat(curr_assets - inventory, curr_liab),
+        "cash_ratio":           rat(cash, curr_liab),
+        "working_capital":      _r2(curr_assets - curr_liab),
+
+        # ── Profitability ─────────────────────────────────────────────────────
+        "gross_margin_pct":     pct(gross_profit, rev),
+        "ebitda_margin_pct":    pct(ebitda, rev),
+        "net_margin_pct":       pct(net, rev),
+        "roa_pct":              pct(net, total_assets),
+        "roe_pct":              pct(net, total_equity),
+
+        # ── Efficiency ────────────────────────────────────────────────────────
+        "asset_turnover":       rat(rev, total_assets),
+        "cost_to_income_pct":   pct(cogs + opex, rev),
+        "dso_days":             days(receivables, rev),
+        "opex_ratio_pct":       pct(opex, rev),
+
+        # ── Leverage ──────────────────────────────────────────────────────────
+        "debt_equity":          rat(total_liab, total_equity),
+        "debt_ratio":           rat(total_liab, total_assets),
+        "interest_coverage":    rat(ebitda, interest),
+        "debt_to_ebitda":       rat(total_liab, ebitda) if ebitda > 0 else None,
+
+        # ── Absolute figures (for context) ────────────────────────────────────
+        "revenue":              _r2(rev),
+        "ebitda":               _r2(ebitda),
+        "net_income":           _r2(net),
+        "total_assets":         _r2(total_assets),
+        "total_liabilities":    _r2(total_liab),
+        "total_equity":         _r2(total_equity),
+        "entity_count":         int(p.get("entity_count") or 1),
+    }
+    return ratios
+
+
+@router.get("/cfo-ratios/by-entity")
+def cfo_ratios_by_entity(
+    year: Optional[int] = None,
+):
+    wh, params = _gl_where(year=year)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            co.company_id,
+            -SUM(CASE WHEN ac.account_no LIKE '4%%' THEN g.amount ELSE 0 END) AS revenue,
+             SUM(CASE WHEN ac.account_no LIKE '5%%' THEN g.amount ELSE 0 END) AS cogs,
+             SUM(CASE WHEN ac.account_no LIKE '6%%' THEN g.amount ELSE 0 END) AS opex,
+            (
+              -SUM(CASE WHEN ac.account_no LIKE '4%%'
+                         OR  ac.account_no LIKE '7%%' THEN g.amount ELSE 0 END)
+              - SUM(CASE WHEN ac.account_no LIKE '5%%'
+                          OR  ac.account_no LIKE '6%%'
+                          OR  ac.account_no LIKE '8%%' THEN g.amount ELSE 0 END)
+            ) AS net_income
+        {_GL_BASE} {wh}
+        GROUP BY co.company_name, co.company_id
+        ORDER BY revenue DESC
+    """, params)
+
+    result = []
+    for r in rows:
+        rv   = float(r["revenue"]   or 0)
+        cg   = float(r["cogs"]      or 0)
+        ox   = float(r["opex"]      or 0)
+        ni   = float(r["net_income"] or 0)
+        eb   = rv - cg - ox
+        result.append({
+            **r,
+            "gross_margin_pct":  _safe_pct(rv - cg, rv),
+            "ebitda_margin_pct": _safe_pct(eb, rv),
+            "net_margin_pct":    _safe_pct(ni, rv),
+            "cost_to_income_pct": _safe_pct(cg + ox, rv),
         })
     return result
