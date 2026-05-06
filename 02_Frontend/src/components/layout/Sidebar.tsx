@@ -47,6 +47,8 @@ const nav: NavSection[] = [
     label: 'Revenue & Income',
     items: [
       { label: 'Monthly Income', path: '/income',                 icon: '↑' },
+      { label: 'Revenue Report',   path: '/reports/revenue',       icon: '$' },
+      { label: 'Unbilled Revenue', path: '/reports/ubr',          icon: 'U' },
       { label: 'Posted Sales',   path: '/insights/posted-sales',  icon: '◈' },
       { label: 'Invoices',       path: '/insights/invoices',      icon: '⊡' },
     ],

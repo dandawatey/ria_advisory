@@ -67,6 +67,8 @@ import DataLineage             from './pages/13_F013_DataLineage';
 import OnboardingWizard        from './pages/22_F022_OnboardingWizard';
 import SecurityCompliance      from './pages/24_F024_SecurityCompliance';
 import CFORatios               from './pages/61_F061_CFORatios';
+import Revenue                from './pages/62_F062_Revenue';
+import UBR                    from './pages/63_F063_UBR';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -128,6 +130,8 @@ export default function App() {
                 <Route path="/reports/entities"      element={<EntityComparison />} />
                 <Route path="/reports/cash-flow"     element={<CashFlow />} />
                 <Route path="/reports/cfo-ratios"    element={<CFORatios />} />
+                <Route path="/reports/revenue"       element={<Revenue />} />
+                <Route path="/reports/ubr"           element={<UBR />} />
 
                 {/* Insights */}
                 <Route path="/insights/gl"           element={<GLInsights />} />

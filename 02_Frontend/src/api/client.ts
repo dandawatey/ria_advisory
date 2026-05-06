@@ -362,6 +362,43 @@ export function buildInsightsQS(
   return s ? `?${s}` : '';
 }
 
+// Revenue
+export interface RevenueSummary {
+  total_revenue: number; prior_year_revenue: number; yoy_growth_pct: number | null;
+  avg_monthly_revenue: number; month_count: number; entity_count: number; entry_count: number;
+}
+export interface RevenueMonthRow {
+  year: number; month: number; month_name: string; month_key?: string;
+  quarter: number; revenue: number; entity_count: number; entry_count: number;
+}
+export interface RevenueEntityRow {
+  company_name: string; company_id: number; revenue: number;
+  entry_count: number; revenue_share_pct: number | null;
+}
+export interface RevenueAccountRow {
+  account_no: string; account_name: string | null; revenue: number;
+  entity_count: number; entry_count: number; revenue_share_pct: number | null;
+}
+
+// UBR
+export interface UBRSummary {
+  total_revenue: number; billed_revenue: number; ubr_amount: number;
+  ubr_pct: number | null; entity_count: number; entry_count: number;
+}
+export interface UBRMonthRow {
+  year: number; month: number; month_name: string; quarter: number;
+  total_revenue: number; billed: number; ubr: number;
+}
+export interface UBREntityRow {
+  company_name: string; company_id: number;
+  total_revenue: number; billed_revenue: number; ubr_amount: number; ubr_pct: number | null;
+}
+export interface UBRAccountRow {
+  account_no: string; account_name: string | null;
+  total_revenue: number; billed_revenue: number; ubr_amount: number;
+  ubr_pct: number | null; entry_count: number;
+}
+
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -464,6 +501,26 @@ export const api = {
         get<InvoiceCustomerRow[]>(`/api/insights/invoices/by-customer${buildInsightsQS(ids, yr, { limit })}`),
       byEntity:   (yr: number | null) => get<InvoiceEntityRow[]>(`/api/insights/invoices/by-entity${buildInsightsQS([], yr)}`),
     },
+  },
+  revenue: {
+    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<RevenueSummary>(`/api/reports/revenue/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byMonth:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<RevenueMonthRow[]>(`/api/reports/revenue/by-month${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<RevenueEntityRow[]>(`/api/reports/revenue/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<RevenueAccountRow[]>(`/api/reports/revenue/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+  },
+  ubr: {
+    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<UBRSummary>(`/api/reports/ubr/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byMonth:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<UBRMonthRow[]>(`/api/reports/ubr/by-month${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<UBREntityRow[]>(`/api/reports/ubr/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<UBRAccountRow[]>(`/api/reports/ubr/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
   },
   erp: {
     sources:  () => get<{ erp_source_id: number; erp_type: string; display_name: string; connection_status: string; entity_id: string | null; last_sync_at: string | null; sync_schedule: string | null; is_active: boolean }[]>('/api/erp/sources'),

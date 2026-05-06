@@ -1115,3 +1115,312 @@ def cfo_ratios_by_entity(
             "cost_to_income_pct": _safe_pct(cg + ox, rv),
         })
     return result
+
+
+# ── Revenue Report helpers ─────────────────────────────────────────────────────
+
+def _rev_where(company_ids=None, year=None, month_from=None, month_to=None):
+    """WHERE clause scoped to revenue accounts (4xx) with optional filters."""
+    clauses: list = [
+        "g.account_no != '999999'",
+        "ac.account_no LIKE '4%%'",
+    ]
+    params: list = []
+    if company_ids:
+        ph = ", ".join(["%s"] * len(company_ids))
+        clauses.append(f"g.company_id IN ({ph})")
+        params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        clauses.append("d.month_key >= %s")
+        params.append(month_from)
+    if month_to:
+        clauses.append("d.month_key <= %s")
+        params.append(month_to)
+    return "WHERE " + " AND ".join(clauses), params
+
+
+# ── Revenue endpoints ──────────────────────────────────────────────────────────
+
+@router.get("/revenue/summary")
+def revenue_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _rev_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            -SUM(g.amount)                       AS total_revenue,
+            COUNT(DISTINCT d.year * 100 + d.month) AS month_count,
+            COUNT(DISTINCT co.company_id)         AS entity_count,
+            COUNT(*)                              AS entry_count
+        {_GL_BASE} {wh}
+    """, params)
+
+    total = float(rows[0]["total_revenue"] or 0) if rows else 0.0
+    month_count = int(rows[0]["month_count"] or 0) if rows else 0
+
+    # Prior-year total for YoY (same filters but year-1)
+    prior_total = 0.0
+    if year:
+        wh2, p2 = _rev_where(company_id, year - 1, month_from, month_to)
+        pr = query(f"SELECT -SUM(g.amount) AS rev {_GL_BASE} {wh2}", p2)
+        prior_total = float(pr[0]["rev"] or 0) if pr else 0.0
+
+    return {
+        "total_revenue":      round(total, 2),
+        "prior_year_revenue": round(prior_total, 2),
+        "yoy_growth_pct":     _safe_pct(total - prior_total, prior_total) if prior_total else None,
+        "avg_monthly_revenue": round(total / month_count, 2) if month_count else 0.0,
+        "month_count":   int(rows[0]["month_count"] or 0) if rows else 0,
+        "entity_count":  int(rows[0]["entity_count"] or 0) if rows else 0,
+        "entry_count":   int(rows[0]["entry_count"] or 0) if rows else 0,
+    }
+
+
+@router.get("/revenue/by-month")
+def revenue_by_month(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _rev_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            d.year,
+            d.month,
+            d.month_name,
+            d.quarter,
+            -SUM(g.amount)                        AS revenue,
+            COUNT(DISTINCT co.company_id)         AS entity_count,
+            COUNT(*)                              AS entry_count
+        {_GL_BASE} {wh}
+        GROUP BY d.year, d.month, d.month_name, d.quarter
+        ORDER BY d.year, d.month
+    """, params)
+    return [
+        {**r, "revenue": round(float(r["revenue"] or 0), 2)}
+        for r in rows
+    ]
+
+
+@router.get("/revenue/by-entity")
+def revenue_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _rev_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            co.company_id,
+            -SUM(g.amount)   AS revenue,
+            COUNT(*)         AS entry_count
+        {_GL_BASE} {wh}
+        GROUP BY co.company_name, co.company_id
+        ORDER BY revenue DESC
+    """, params)
+
+    total = sum(float(r["revenue"] or 0) for r in rows)
+    return [
+        {
+            **r,
+            "revenue":          round(float(r["revenue"] or 0), 2),
+            "revenue_share_pct": _safe_pct(float(r["revenue"] or 0), total),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/revenue/by-account")
+def revenue_by_account(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _rev_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            ac.account_no,
+            ac.account_name,
+            -SUM(g.amount)                AS revenue,
+            COUNT(DISTINCT co.company_id) AS entity_count,
+            COUNT(*)                      AS entry_count
+        {_GL_BASE} {wh}
+        GROUP BY ac.account_no, ac.account_name
+        ORDER BY revenue DESC
+    """, params)
+
+    total = sum(float(r["revenue"] or 0) for r in rows)
+    return [
+        {
+            **r,
+            "revenue":          round(float(r["revenue"] or 0), 2),
+            "revenue_share_pct": _safe_pct(float(r["revenue"] or 0), total),
+        }
+        for r in rows
+    ]
+
+
+# ── UBR helpers ────────────────────────────────────────────────────────────────
+
+_UBR_BASE = """
+    FROM fact_gl_entries g
+    JOIN dim_date     d  ON d.date_id      = g.date_id
+    JOIN dim_account  ac ON ac.account_no  = g.account_no
+    JOIN dim_company  co ON co.company_id  = g.company_id
+    LEFT JOIN dim_document dd ON dd.document_id = g.document_id
+"""
+
+def _ubr_where(company_ids=None, year=None, month_from=None, month_to=None):
+    """WHERE clause scoped to revenue accounts (4xx) — same as _rev_where."""
+    return _rev_where(company_ids, year, month_from, month_to)
+
+
+# ── UBR endpoints ──────────────────────────────────────────────────────────────
+
+@router.get("/ubr/summary")
+def ubr_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            -SUM(g.amount) AS total_revenue,
+            -SUM(CASE WHEN dd.document_type ILIKE '%%Invoice%%' THEN g.amount ELSE 0 END)
+                           AS billed_revenue,
+            -SUM(CASE WHEN dd.document_type NOT ILIKE '%%Invoice%%' OR dd.document_type IS NULL
+                      THEN g.amount ELSE 0 END)
+                           AS ubr_amount,
+            COUNT(DISTINCT co.company_id) AS entity_count,
+            COUNT(*) AS entry_count
+        {_UBR_BASE} {wh}
+    """, params)
+
+    r = rows[0] if rows else {}
+    total  = round(float(r.get("total_revenue")  or 0), 2)
+    billed = round(float(r.get("billed_revenue") or 0), 2)
+    ubr    = round(float(r.get("ubr_amount")     or 0), 2)
+    return {
+        "total_revenue":  total,
+        "billed_revenue": billed,
+        "ubr_amount":     ubr,
+        "ubr_pct":        _safe_pct(ubr, total),
+        "entity_count":   int(r.get("entity_count") or 0),
+        "entry_count":    int(r.get("entry_count")  or 0),
+    }
+
+
+@router.get("/ubr/by-month")
+def ubr_by_month(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            d.year,
+            d.month,
+            d.month_name,
+            d.quarter,
+            -SUM(g.amount)               AS total_revenue,
+            -SUM(CASE WHEN dd.document_type ILIKE '%%Invoice%%' THEN g.amount ELSE 0 END)
+                                         AS billed,
+            -SUM(CASE WHEN dd.document_type NOT ILIKE '%%Invoice%%' OR dd.document_type IS NULL
+                      THEN g.amount ELSE 0 END)
+                                         AS ubr
+        {_UBR_BASE} {wh}
+        GROUP BY d.year, d.month, d.month_name, d.quarter
+        ORDER BY d.year, d.month
+    """, params)
+    return [
+        {
+            **r,
+            "total_revenue": round(float(r["total_revenue"] or 0), 2),
+            "billed":        round(float(r["billed"]        or 0), 2),
+            "ubr":           round(float(r["ubr"]           or 0), 2),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/ubr/by-entity")
+def ubr_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            co.company_id,
+            -SUM(g.amount)               AS total_revenue,
+            -SUM(CASE WHEN dd.document_type ILIKE '%%Invoice%%' THEN g.amount ELSE 0 END)
+                                         AS billed_revenue,
+            -SUM(CASE WHEN dd.document_type NOT ILIKE '%%Invoice%%' OR dd.document_type IS NULL
+                      THEN g.amount ELSE 0 END)
+                                         AS ubr_amount
+        {_UBR_BASE} {wh}
+        GROUP BY co.company_name, co.company_id
+        ORDER BY total_revenue DESC
+    """, params)
+    return [
+        {
+            **r,
+            "total_revenue":  round(float(r["total_revenue"]  or 0), 2),
+            "billed_revenue": round(float(r["billed_revenue"] or 0), 2),
+            "ubr_amount":     round(float(r["ubr_amount"]     or 0), 2),
+            "ubr_pct":        _safe_pct(float(r["ubr_amount"] or 0), float(r["total_revenue"] or 0)),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/ubr/by-account")
+def ubr_by_account(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+):
+    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            ac.account_no,
+            ac.account_name,
+            -SUM(g.amount)               AS total_revenue,
+            -SUM(CASE WHEN dd.document_type ILIKE '%%Invoice%%' THEN g.amount ELSE 0 END)
+                                         AS billed_revenue,
+            -SUM(CASE WHEN dd.document_type NOT ILIKE '%%Invoice%%' OR dd.document_type IS NULL
+                      THEN g.amount ELSE 0 END)
+                                         AS ubr_amount,
+            COUNT(*)                     AS entry_count
+        {_UBR_BASE} {wh}
+        GROUP BY ac.account_no, ac.account_name
+        ORDER BY total_revenue DESC
+    """, params)
+    return [
+        {
+            **r,
+            "total_revenue":  round(float(r["total_revenue"]  or 0), 2),
+            "billed_revenue": round(float(r["billed_revenue"] or 0), 2),
+            "ubr_amount":     round(float(r["ubr_amount"]     or 0), 2),
+            "ubr_pct":        _safe_pct(float(r["ubr_amount"] or 0), float(r["total_revenue"] or 0)),
+        }
+        for r in rows
+    ]
