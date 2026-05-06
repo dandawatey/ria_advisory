@@ -1,0 +1,76 @@
+# docker-compose.prod.yml — i-CFO360 Production Deployment
+# Target: Self-hosted Ubuntu 22.04 LTS (4 vCPU, 16 GB RAM, 500 GB SSD)
+# Usage:  docker compose -f docker-compose.prod.yml up -d
+#
+# Prerequisites:
+#   1. Copy .env.prod.example to .env.prod and fill in all values
+#   2. Place SSL certificate + key in ./certs/cert.pem and ./certs/key.pem
+#      (Let's Encrypt: sudo certbot certonly --standalone -d your-domain.com)
+#   3. Build images: docker compose -f docker-compose.prod.yml build
+#   4. Start: docker compose -f docker-compose.prod.yml up -d
+#
+# IC-48 | Owner: Neha_DevOps_006 | Reviewer: Kabir_Reviewer_010
+
+version: "3.9"
+
+services:
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./03_Backend
+      dockerfile: Dockerfile
+    image: ria-advisory/api:${GIT_SHA:-latest}
+    container_name: ria-backend
+    restart: unless-stopped
+    env_file: .env.prod
+    networks:
+      - ria-net
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ── React Frontend + Nginx reverse proxy ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./02_Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""          # empty = Nginx proxies /api → backend container
+        VITE_AZURE_CLIENT_ID: "${VITE_AZURE_CLIENT_ID}"
+        VITE_AZURE_TENANT_ID: "${VITE_AZURE_TENANT_ID}"
+        VITE_AZURE_REDIRECT_URI: "${VITE_AZURE_REDIRECT_URI}"
+    image: ria-advisory/web:${GIT_SHA:-latest}
+    container_name: ria-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    networks:
+      - ria-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+networks:
+  ria-net:
+    driver: bridge
+    name: ria-advisory-prod-network

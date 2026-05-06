@@ -1548,3 +1548,216 @@ def ubr_by_account(
         }
         for r in rows
     ]
+
+
+# ── Invoicing Report helpers ────────────────────────────────────────────────────
+
+def _inv_where(company_ids=None, year=None, month_from=None, month_to=None):
+    """WHERE clause scoped to revenue invoice entries (4xx + Invoice doc type)."""
+    clauses: list = [
+        "g.account_no != '999999'",
+        "ac.account_no LIKE '4%%'",
+        "dd.document_type ILIKE '%%Invoice%%'",
+    ]
+    params: list = []
+    if company_ids is not None:
+        if not company_ids:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_ids))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_ids)
+    if year:
+        clauses.append("d.year = %s")
+        params.append(year)
+    if month_from:
+        clauses.append("TO_CHAR(d.full_date, 'YYYY-MM') >= %s")
+        params.append(month_from)
+    if month_to:
+        clauses.append("TO_CHAR(d.full_date, 'YYYY-MM') <= %s")
+        params.append(month_to)
+    return "WHERE " + " AND ".join(clauses), params
+
+
+# ── Invoicing endpoints ─────────────────────────────────────────────────────────
+
+@router.get("/invoicing/summary")
+def invoicing_summary(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
+):
+    company_id = _resolve_companies(company_id, current)
+    if company_id == []:
+        return {"total_invoices": 0, "total_value": 0.0, "avg_invoice": None,
+                "entity_count": 0, "yoy_growth_pct": None}
+    wh, params = _inv_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            COUNT(DISTINCT g.document_no)         AS total_invoices,
+            -SUM(g.amount)                        AS total_value,
+            COUNT(DISTINCT co.company_id)         AS entity_count
+        {_UBR_BASE} {wh}
+    """, params)
+    r = rows[0] if rows else {}
+    total_invoices = int(r.get("total_invoices") or 0)
+    total_value    = round(float(r.get("total_value") or 0), 2)
+
+    prior_value = 0.0
+    if year:
+        wh2, p2 = _inv_where(company_id, year - 1, month_from, month_to)
+        pr = query(f"SELECT -SUM(g.amount) AS val {_UBR_BASE} {wh2}", p2)
+        prior_value = round(float((pr[0] or {}).get("val") or 0), 2)
+
+    return {
+        "total_invoices":  total_invoices,
+        "total_value":     total_value,
+        "avg_invoice":     round(total_value / total_invoices, 2) if total_invoices else None,
+        "entity_count":    int(r.get("entity_count") or 0),
+        "yoy_growth_pct":  _safe_pct(total_value - prior_value, prior_value) if prior_value else None,
+    }
+
+
+@router.get("/invoicing/by-month")
+def invoicing_by_month(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
+):
+    company_id = _resolve_companies(company_id, current)
+    if company_id == []:
+        return []
+    wh, params = _inv_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            d.year,
+            d.month,
+            d.month_name,
+            COUNT(DISTINCT g.document_no)  AS invoice_count,
+            -SUM(g.amount)                 AS total_value
+        {_UBR_BASE} {wh}
+        GROUP BY d.year, d.month, d.month_name
+        ORDER BY d.year, d.month
+    """, params)
+    return [
+        {**r,
+         "invoice_count": int(r["invoice_count"] or 0),
+         "total_value":   round(float(r["total_value"] or 0), 2)}
+        for r in rows
+    ]
+
+
+@router.get("/invoicing/by-entity")
+def invoicing_by_entity(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
+):
+    company_id = _resolve_companies(company_id, current)
+    if company_id == []:
+        return []
+    wh, params = _inv_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            co.company_name,
+            co.company_id,
+            COUNT(DISTINCT g.document_no)  AS invoice_count,
+            -SUM(g.amount)                 AS total_value
+        {_UBR_BASE} {wh}
+        GROUP BY co.company_name, co.company_id
+        ORDER BY total_value DESC
+    """, params)
+    total = sum(float(r["total_value"] or 0) for r in rows)
+    return [
+        {
+            **r,
+            "invoice_count":    int(r["invoice_count"] or 0),
+            "total_value":      round(float(r["total_value"] or 0), 2),
+            "value_share_pct":  _safe_pct(float(r["total_value"] or 0), total),
+        }
+        for r in rows
+    ]
+
+
+@router.get("/invoicing/by-account")
+def invoicing_by_account(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
+):
+    company_id = _resolve_companies(company_id, current)
+    if company_id == []:
+        return []
+    wh, params = _inv_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            ac.account_no,
+            ac.account_name,
+            COUNT(DISTINCT g.document_no)  AS invoice_count,
+            -SUM(g.amount)                 AS total_value
+        {_UBR_BASE} {wh}
+        GROUP BY ac.account_no, ac.account_name
+        ORDER BY total_value DESC
+    """, params)
+    total = sum(float(r["total_value"] or 0) for r in rows)
+    return [
+        {
+            **r,
+            "invoice_count":   int(r["invoice_count"] or 0),
+            "total_value":     round(float(r["total_value"] or 0), 2),
+            "value_share_pct": _safe_pct(float(r["total_value"] or 0), total),
+        }
+        for r in rows
+    ]
+
+
+# ── UBR by-project ──────────────────────────────────────────────────────────────
+
+@router.get("/ubr/by-project")
+def ubr_by_project(
+    company_id: Optional[List[int]] = Query(default=None),
+    year: Optional[int] = None,
+    month_from: Optional[str] = None,
+    month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
+):
+    """UBR breakdown by project (uses dim_project if populated; falls back to description prefix)."""
+    company_id = _resolve_companies(company_id, current)
+    if company_id == []:
+        return []
+    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    rows = query(f"""
+        SELECT
+            COALESCE(dp.project_name, SPLIT_PART(g.description, ' ', 1), 'Unassigned') AS project_name,
+            COALESCE(g.project_id, -1)                                                  AS project_id,
+            -SUM(g.amount)                                                              AS total_revenue,
+            -SUM(CASE WHEN dd.document_type ILIKE '%%Invoice%%' THEN g.amount ELSE 0 END)
+                                                                                        AS billed,
+            -SUM(CASE WHEN dd.document_type NOT ILIKE '%%Invoice%%' OR dd.document_type IS NULL
+                      THEN g.amount ELSE 0 END)
+                                                                                        AS ubr
+        {_UBR_BASE}
+        LEFT JOIN dim_project dp ON dp.project_id = g.project_id
+        {wh}
+        GROUP BY project_name, project_id
+        ORDER BY total_revenue DESC
+        LIMIT 50
+    """, params)
+    return [
+        {
+            **r,
+            "total_revenue": round(float(r["total_revenue"] or 0), 2),
+            "billed":        round(float(r["billed"]        or 0), 2),
+            "ubr":           round(float(r["ubr"]           or 0), 2),
+            "ubr_pct":       _safe_pct(float(r["ubr"] or 0), float(r["total_revenue"] or 0)),
+        }
+        for r in rows
+    ]

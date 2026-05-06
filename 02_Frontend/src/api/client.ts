@@ -399,6 +399,30 @@ export interface UBRAccountRow {
   ubr_pct: number | null; entry_count: number;
 }
 
+// Invoicing Report
+export interface InvoicingSummary {
+  total_invoices: number; total_value: number; avg_invoice: number | null;
+  entity_count: number; yoy_growth_pct: number | null;
+}
+export interface InvoicingMonthRow {
+  year: number; month: number; month_name: string;
+  invoice_count: number; total_value: number;
+}
+export interface InvoicingEntityRow {
+  company_name: string; company_id: number;
+  invoice_count: number; total_value: number; value_share_pct: number | null;
+}
+export interface InvoicingAccountRow {
+  account_no: string; account_name: string | null;
+  invoice_count: number; total_value: number; value_share_pct: number | null;
+}
+
+// UBR project view
+export interface UBRProjectRow {
+  project_name: string; project_id: number;
+  total_revenue: number; billed: number; ubr: number; ubr_pct: number | null;
+}
+
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -521,6 +545,18 @@ export const api = {
       get<UBREntityRow[]>(`/api/reports/ubr/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
     byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
       get<UBRAccountRow[]>(`/api/reports/ubr/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byProject: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<UBRProjectRow[]>(`/api/reports/ubr/by-project${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+  },
+  invoicing: {
+    summary:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<InvoicingSummary>(`/api/reports/invoicing/summary${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byMonth:   (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<InvoicingMonthRow[]>(`/api/reports/invoicing/by-month${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byEntity:  (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<InvoicingEntityRow[]>(`/api/reports/invoicing/by-entity${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
+    byAccount: (ids: number[], yr: number | null, mf?: string, mt?: string) =>
+      get<InvoicingAccountRow[]>(`/api/reports/invoicing/by-account${buildInsightsQS(ids, yr, { ...(mf ? { month_from: mf } : {}), ...(mt ? { month_to: mt } : {}) })}`),
   },
   erp: {
     sources:  () => get<{ erp_source_id: number; erp_type: string; display_name: string; connection_status: string; entity_id: string | null; last_sync_at: string | null; sync_schedule: string | null; is_active: boolean }[]>('/api/erp/sources'),

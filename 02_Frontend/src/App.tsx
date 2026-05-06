@@ -69,6 +69,7 @@ import SecurityCompliance      from './pages/24_F024_SecurityCompliance';
 import CFORatios               from './pages/61_F061_CFORatios';
 import Revenue                from './pages/62_F062_Revenue';
 import UBR                    from './pages/63_F063_UBR';
+import Invoicing              from './pages/64_F064_Invoicing';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -132,6 +133,7 @@ export default function App() {
                 <Route path="/reports/cfo-ratios"    element={<CFORatios />} />
                 <Route path="/reports/revenue"       element={<Revenue />} />
                 <Route path="/reports/ubr"           element={<UBR />} />
+                <Route path="/reports/invoicing"     element={<Invoicing />} />
 
                 {/* Insights */}
                 <Route path="/insights/gl"           element={<GLInsights />} />

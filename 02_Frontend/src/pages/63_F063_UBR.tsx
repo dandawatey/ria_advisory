@@ -17,6 +17,7 @@ import {
   type UBRMonthRow,
   type UBREntityRow,
   type UBRAccountRow,
+  type UBRProjectRow,
 } from '../api/client';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ const fmtK = (v: number) => {
   return `$${v.toFixed(0)}`;
 };
 
-type TabKey = 'monthly' | 'entity' | 'account';
+type TabKey = 'monthly' | 'entity' | 'account' | 'project';
 
 // ── KPI Tile ──────────────────────────────────────────────────────────────────
 function KPITile({ label, value, sub, color = '#1F6B66' }: {
@@ -90,6 +91,7 @@ export default function UBR() {
   const [monthly, setMonthly]       = useState<UBRMonthRow[]>([]);
   const [byEntity, setByEntity]     = useState<UBREntityRow[]>([]);
   const [byAccount, setByAccount]   = useState<UBRAccountRow[]>([]);
+  const [byProject, setByProject]   = useState<UBRProjectRow[]>([]);
 
   const [loadSum, setLoadSum]       = useState(false);
   const [loadTab, setLoadTab]       = useState(false);
@@ -117,6 +119,7 @@ export default function UBR() {
     const load =
       tab === 'monthly' ? api.ubr.byMonth(ids, yr, mf, mt).then(setMonthly) :
       tab === 'entity'  ? api.ubr.byEntity(ids, yr, mf, mt).then(setByEntity) :
+      tab === 'project' ? api.ubr.byProject(ids, yr, mf, mt).then(setByProject) :
                           api.ubr.byAccount(ids, yr, mf, mt).then(setByAccount);
     load.catch(() => setErrTab(true)).finally(() => setLoadTab(false));
   }, [tab, selCompanies, selYear, monthFrom, monthTo]);
@@ -249,7 +252,7 @@ export default function UBR() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-          {([['monthly','Monthly Trend'],['entity','By Entity'],['account','By Account']] as [TabKey,string][]).map(([k,l]) => (
+          {([['monthly','Monthly Trend'],['entity','By Entity'],['account','By Account'],['project','By Project']] as [TabKey,string][]).map(([k,l]) => (
             <button key={k} onClick={() => setTab(k)}
               style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 border: '1px solid', borderColor: tab === k ? '#1F6B66' : '#D1D8D8',
@@ -316,6 +319,45 @@ export default function UBR() {
                   ))}
                 </tbody>
               </table>
+            </>
+          )}
+
+          {/* By Project */}
+          {!loadTab && !errTab && tab === 'project' && (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1F6B66', marginBottom: 14 }}>
+                UBR by Project — {byProject.length} projects
+              </div>
+              {byProject.length === 0 ? (
+                <div style={{ color: '#66726F', fontSize: 13, padding: '40px 0', textAlign: 'center' }}>
+                  No project data available for selected filters.
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#EEF5F4' }}>
+                      {['Project','Total Revenue','Billed','Unbilled (UBR)','UBR %'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Project' ? 'left' : 'right',
+                          color: '#1F6B66', fontWeight: 700, fontSize: 11 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byProject.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #F0F2F2',
+                        background: i % 2 === 0 ? '#fff' : '#FAFBFB' }}>
+                        <td style={{ padding: '8px 12px', color: '#333938', fontWeight: 600 }}>{r.project_name}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1F6B66' }}>{fmt(r.total_revenue)}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#2F7873' }}>{fmt(r.billed)}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#E8443B', fontWeight: 600 }}>{fmt(r.ubr)}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>
+                          <UBRBar pct={r.ubr_pct} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </>
           )}
 
