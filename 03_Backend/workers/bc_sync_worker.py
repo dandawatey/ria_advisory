@@ -36,10 +36,10 @@ _ACTIVE_BC_SOURCES_SQL = """
         t.api_version
     FROM dim_erp_source s
     JOIN tenant_bc_config t
-        ON t.tenant_id = s.tenant_id::text
-    WHERE s.erp_type    = 'BC'
-      AND s.is_active   = TRUE
-      AND t.auth_status = 'authenticated'
+        ON t.tenant_id = s.tenant_id
+    WHERE s.erp_type           = 'BC'
+      AND s.connection_status != 'disabled'
+      AND t.auth_status        = 'authenticated'
 """
 
 _WATERMARK_SQL = """
@@ -142,8 +142,8 @@ def _fetch_gl_entries(
     Paginates with $top=1000 until no @odata.nextLink.
     """
     base_url = (
-        f"https://api.businesscentral.dynamics.com/{environment}/"
-        f"{bc_tenant_id}/api/{api_version}"
+        f"https://api.businesscentral.dynamics.com/v2.0/"
+        f"{bc_tenant_id}/{environment}/api/{api_version}"
     )
     # First, get companies list for this BC tenant
     headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
@@ -173,7 +173,7 @@ def _fetch_gl_entries(
             f"{base_url}/companies({company_id})/generalLedgerEntries"
             f"?$filter=postingDate ge {date_filter}"
             f"&$select=id,postingDate,accountNumber,documentNumber,"
-            f"description,amount,debitAmount,creditAmount"
+            f"description,debitAmount,creditAmount,lastModifiedDateTime"
             f"&$top=1000"
         )
 
