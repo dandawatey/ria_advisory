@@ -3,11 +3,34 @@ Standard Finance Reports — Trial Balance, Balance Sheet, Expense Analysis, Dep
 KPI Ratios, Financial Health Score, Project Financials
 GET /api/reports/*
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional, List
 from database import query
+from auth_utils import require_auth, get_allowed_company_ids
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
+
+
+def _resolve_companies(
+    requested: Optional[List[int]],
+    current: dict,
+) -> Optional[List[int]]:
+    """
+    Intersect caller-supplied company_id list with what the JWT tenant allows.
+    Returns:
+      None          → superadmin, no restriction (pass through to _where helpers)
+      []            → tenant has no allowed companies — caller must return empty
+      [1, 2, ...]   → effective company_id list for the query
+    """
+    allowed = get_allowed_company_ids(current)
+    if allowed is None:          # superadmin — unrestricted
+        return requested
+    if not allowed:              # tenant has no companies configured
+        return []
+    if requested:
+        effective = [c for c in requested if c in set(allowed)]
+        return effective if effective else []
+    return allowed
 
 # ── Shared expense FROM + JOIN ─────────────────────────────────────────────────
 _EXP_BASE = """
@@ -23,13 +46,18 @@ _EXP_BASE = """
 def trial_balance(
     company_id: Optional[List[int]] = Query(default=None),
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = []
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     if account_category:
         clauses.append("tb.account_category = %s")
         params.append(account_category)
@@ -48,13 +76,18 @@ def trial_balance(
 @router.get("/trial-balance/summary")
 def trial_balance_summary(
     company_id: Optional[List[int]] = Query(default=None),
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = []
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = query(f"""
         SELECT
@@ -74,15 +107,20 @@ def trial_balance_summary(
 @router.get("/balance-sheet")
 def balance_sheet(
     company_id: Optional[List[int]] = Query(default=None),
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = [
         "(cb.account_no LIKE '1%' OR cb.account_no LIKE '2%' OR cb.account_no LIKE '3%')"
     ]
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     wh = "WHERE " + " AND ".join(clauses)
     return query(f"""
         SELECT cb.company_name, cb.account_no, cb.account_name,
@@ -98,13 +136,18 @@ def balance_sheet(
 @router.get("/balance-sheet/summary")
 def balance_sheet_summary(
     company_id: Optional[List[int]] = Query(default=None),
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = []
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = query(f"""
         SELECT
@@ -133,13 +176,18 @@ def expense_summary(
     year: Optional[int] = None,
     month: Optional[int] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -169,13 +217,18 @@ def expense_accounts(
     month: Optional[int] = None,
     account_prefix: Optional[str] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -212,13 +265,18 @@ def expense_by_entity(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -243,13 +301,18 @@ def expense_by_month(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = ["(ac.account_no LIKE '5%%' OR ac.account_no LIKE '6%%')"]
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -277,13 +340,18 @@ def dept_spend(
     year: Optional[int] = None,
     department_code: Optional[str] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = []
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("ds.fiscal_year = %s")
         params.append(year)
@@ -311,13 +379,18 @@ def dept_spend_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
     account_category: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     clauses: list = []
     params: list = []
-    if company_id:
-        ph = ", ".join(["%s"] * len(company_id))
-        clauses.append(f"co.company_id IN ({ph})")
-        params.extend(company_id)
+    if company_id is not None:
+        if not company_id:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_id))
+            clauses.append(f"co.company_id IN ({ph})")
+            params.extend(company_id)
     if year:
         clauses.append("ds.fiscal_year = %s")
         params.append(year)
@@ -351,10 +424,13 @@ _GL_BASE = """
 def _gl_where(company_ids=None, year=None):
     clauses: list = ["g.account_no != '999999'"]
     params:  list = []
-    if company_ids:
-        ph = ", ".join(["%s"] * len(company_ids))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_ids)
+    if company_ids is not None:
+        if not company_ids:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_ids))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_ids)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -374,7 +450,9 @@ def _safe_ratio(num, denom):
 def kpi_ratios(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
 
     # P&L from fact_gl_entries
@@ -441,7 +519,9 @@ def kpi_ratios(
 @router.get("/kpi-ratios/trend")
 def kpi_ratios_trend(
     company_id: Optional[List[int]] = Query(default=None),
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id)
     return query(f"""
         SELECT
@@ -469,7 +549,9 @@ def kpi_ratios_trend(
 def kpi_ratios_by_entity(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
     rows = query(f"""
         SELECT
@@ -526,9 +608,11 @@ def _score_metric(value, green_threshold, amber_threshold, higher_is_better=True
 def health_score(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
-    # Fetch base ratios
-    ratios = kpi_ratios(company_id=company_id, year=year)
+    company_id = _resolve_companies(company_id, current)
+    # Fetch base ratios (pass resolved list; kpi_ratios handles None/list)
+    ratios = kpi_ratios(company_id=company_id, year=year, current=current)
 
     gross_margin = ratios.get("gross_margin_pct") or 0
     net_margin   = ratios.get("net_margin_pct")   or 0
@@ -638,7 +722,9 @@ def health_score(
 def project_financials_summary(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
     rows = query(f"""
         SELECT
@@ -658,7 +744,9 @@ def project_financials_summary(
 def project_financials(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
     return query(f"""
         SELECT
@@ -700,10 +788,13 @@ _VERT_EXCL = "AND dp.vertical_code IS NOT NULL AND dp.vertical_code NOT IN ('OPE
 def _vert_where(company_ids=None, year=None):
     clauses = [f"g.account_no != '999999' {_VERT_EXCL}"]
     params: list = []
-    if company_ids:
-        ph = ", ".join(["%s"] * len(company_ids))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_ids)
+    if company_ids is not None:
+        if not company_ids:
+            clauses.append("FALSE")
+        else:
+            ph = ", ".join(["%s"] * len(company_ids))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_ids)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
@@ -714,7 +805,9 @@ def _vert_where(company_ids=None, year=None):
 def vertical_analytics(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _vert_where(company_id, year)
     rows = query(f"""
         SELECT
@@ -757,7 +850,9 @@ def vertical_departments(
     vertical_code: Optional[str] = None,
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _vert_where(company_id, year)
     if vertical_code:
         wh += " AND dp.vertical_code = %s"
@@ -795,8 +890,10 @@ def vertical_departments(
 @router.get("/entity-comparison")
 def entity_comparison(
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _gl_where(year=year)
+    allowed = _resolve_companies(None, current)
+    wh, params = _gl_where(company_ids=allowed, year=year)
     rows = query(f"""
         SELECT
             co.company_name,
@@ -892,7 +989,9 @@ def _cf_from_rows(rows: list) -> dict:
 def cash_flow(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
     rows = query(f"""
         SELECT
@@ -907,7 +1006,9 @@ def cash_flow(
 @router.get("/cash-flow/trend")
 def cash_flow_trend(
     company_id: Optional[List[int]] = Query(default=None),
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id)
     rows = query(f"""
         SELECT
@@ -953,7 +1054,9 @@ def _r2(v):
 def cfo_ratios(
     company_id: Optional[List[int]] = Query(default=None),
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _gl_where(company_id, year)
 
     # ── P&L block ────────────────────────────────────────────────────────────
@@ -1079,8 +1182,10 @@ def cfo_ratios(
 @router.get("/cfo-ratios/by-entity")
 def cfo_ratios_by_entity(
     year: Optional[int] = None,
+    current: dict = Depends(require_auth),
 ):
-    wh, params = _gl_where(year=year)
+    allowed = _resolve_companies(None, current)
+    wh, params = _gl_where(company_ids=allowed, year=year)
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1126,18 +1231,21 @@ def _rev_where(company_ids=None, year=None, month_from=None, month_to=None):
         "ac.account_no LIKE '4%%'",
     ]
     params: list = []
-    if company_ids:
-        ph = ", ".join(["%s"] * len(company_ids))
-        clauses.append(f"g.company_id IN ({ph})")
-        params.extend(company_ids)
+    if company_ids is not None:
+        if not company_ids:
+            clauses.append("FALSE")           # tenant has no allowed companies
+        else:
+            ph = ", ".join(["%s"] * len(company_ids))
+            clauses.append(f"g.company_id IN ({ph})")
+            params.extend(company_ids)
     if year:
         clauses.append("d.year = %s")
         params.append(year)
     if month_from:
-        clauses.append("d.month_key >= %s")
+        clauses.append("TO_CHAR(d.full_date, 'YYYY-MM') >= %s")
         params.append(month_from)
     if month_to:
-        clauses.append("d.month_key <= %s")
+        clauses.append("TO_CHAR(d.full_date, 'YYYY-MM') <= %s")
         params.append(month_to)
     return "WHERE " + " AND ".join(clauses), params
 
@@ -1150,7 +1258,9 @@ def revenue_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _rev_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1188,7 +1298,9 @@ def revenue_by_month(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _rev_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1215,7 +1327,9 @@ def revenue_by_entity(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _rev_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1245,7 +1359,9 @@ def revenue_by_account(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _rev_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1293,7 +1409,9 @@ def ubr_summary(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _ubr_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1328,7 +1446,9 @@ def ubr_by_month(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _ubr_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1363,7 +1483,9 @@ def ubr_by_entity(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _ubr_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
@@ -1397,7 +1519,9 @@ def ubr_by_account(
     year: Optional[int] = None,
     month_from: Optional[str] = None,
     month_to: Optional[str] = None,
+    current: dict = Depends(require_auth),
 ):
+    company_id = _resolve_companies(company_id, current)
     wh, params = _ubr_where(company_id, year, month_from, month_to)
     rows = query(f"""
         SELECT
