@@ -88,6 +88,53 @@ export default function CloseCockpit() {
         </div>
       </div>
 
+      {/* ── What is Close Cockpit ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%)',
+        border: '1px solid #c3ddf7',
+        borderLeft: '4px solid var(--color-primary, #2563eb)',
+        borderRadius: 8,
+        padding: '16px 20px',
+        marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>🎛️</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1e40af', marginBottom: 6 }}>
+              What is Close Cockpit?
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.65 }}>
+              <strong>Close Cockpit</strong> is the group-level period-end financial close controller.
+              At month-end (or quarter/year-end), every subsidiary must complete its accounting close —
+              posting all transactions, reconciling accounts, and obtaining sign-off — before the group
+              can consolidate financials. Close Cockpit gives the Group CFO a single view of where every
+              entity stands in that process.
+            </p>
+            <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+              {[
+                { icon: '✓', color: 'var(--color-success, #16a34a)', label: 'Signed Off', desc: 'Entity close complete — books locked, CFO approved' },
+                { icon: '⟳', color: 'var(--color-warning, #d97706)', label: 'Reviewed',   desc: 'Entries posted and reviewed — awaiting final sign-off' },
+                { icon: '○', color: '#6b7280',                        label: 'Pending',    desc: 'Close in progress — transactions still being entered' },
+              ].map(({ icon, color, label, desc }) => (
+                <div key={label} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700, color, fontSize: 14, minWidth: 16 }}>{icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 12, color }}>{label}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 12, color: '#6b7280' }}>
+              <strong>Columns explained:</strong>{' '}
+              <span style={{ marginRight: 12 }}><strong>GL Entries</strong> — total posted journal lines for the period</span>
+              <span style={{ marginRight: 12 }}><strong>Mapping %</strong> — % of GL accounts mapped to the group Chart of Accounts</span>
+              <span><strong>DQ</strong> — Data Quality flag: Pass = no anomalies detected, Exceptions = review required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Status summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
         {[
