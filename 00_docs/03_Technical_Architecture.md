@@ -1,8 +1,8 @@
-# i-finsights — Technical Architecture
+# i-CFO360 — Technical Architecture
 
-**Version:** 1.0
+**Version:** 1.1
 **Stack:** React 18 + TypeScript → FastAPI → PostgreSQL
-**Deployed:** https://i-finsights.netlify.app
+**Deployed:** Self-hosted Docker + Nginx (http://localhost:5002 — dev)
 
 ---
 

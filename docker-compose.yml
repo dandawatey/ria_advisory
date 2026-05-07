@@ -45,8 +45,7 @@ services:
         http://localhost,
         http://localhost:5002,
         http://localhost:8080,
-        http://127.0.0.1,
-        https://i-finsights.netlify.app
+        http://127.0.0.1
 
     extra_hosts:
       - "host.docker.internal:host-gateway"   # Linux compat; no-op on Mac

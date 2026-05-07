@@ -1,9 +1,9 @@
 # i-finsights Documentation
 
-**Product:** i-finsights — Unified Financial Intelligence Platform
+**Product:** i-CFO360 — Unified Financial Intelligence Platform
 **Client:** RIA Advisory Group
 **Built by:** i-Source Infosystems
-**Live:** https://i-finsights.netlify.app
+**Live:** Self-hosted Docker (http://localhost:5002 — dev)
 
 ---
 

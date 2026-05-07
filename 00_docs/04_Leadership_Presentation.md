@@ -335,7 +335,7 @@ superadmin      ← Platform owner (i-Source)
 - [x] Star schema: 188,380 GL entries indexed and queryable
 
 ### Live Deployment
-**URL:** https://i-finsights.netlify.app
+**URL:** Self-hosted Docker at http://localhost:5002 (dev)
 
 ---
 
@@ -447,8 +447,8 @@ superadmin      ← Platform owner (i-Source)
 Automated financial intelligence platform. Live data. Automated pipeline. 3-day close.
 
 ### What's Built
-51 features. 9 API layers. 188,380 GL entries. 20 E2E tests passing.
-Deployed at **https://i-finsights.netlify.app**
+54+ features. 9 API layers. 188,380 GL entries. 20 E2E tests passing.
+Deployed on **self-hosted Docker**
 
 ### The Outcomes
 | Before | After |
@@ -484,8 +484,8 @@ See: `00_docs/03_Technical_Architecture.md`
 
 ## Appendix C — Live Demo
 
-URL: https://i-finsights.netlify.app
-Login: Contact i-Source Infosystems team for demo credentials.
+URL: http://localhost:5002 (local development)
+Login: Use test credentials (admin@ria-advisory.com / Admin@2026)
 
 ## Appendix D — Data Volume
 

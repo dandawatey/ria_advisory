@@ -26,5 +26,5 @@ services:
       - key: JWT_REFRESH_DAYS
         value: "7"
       - key: ALLOWED_ORIGINS
-        value: "https://i-finsights.netlify.app"
+        value: "https://icfo360.ria-advisory.com"
     autoDeploy: true

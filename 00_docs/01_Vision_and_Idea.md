@@ -1,8 +1,8 @@
 # i-finsights — Vision & Idea
 
-**Product:** i-finsights (Unified Financial Intelligence Platform)
+**Product:** i-CFO360 (Unified Financial Intelligence Platform)
 **Organisation:** RIA Advisory, powered by i-Source Infosystems
-**Deployed at:** https://i-finsights.netlify.app
+**Deployed at:** Self-hosted Docker + Nginx
 
 ---
 

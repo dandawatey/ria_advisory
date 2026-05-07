@@ -685,7 +685,7 @@ Delivery is structured in **two phases**. Phase 1 delivers the five revenue and 
 | **Database** | PostgreSQL — Star Schema | 3 fact tables, 12 dimensions, ~200K analytical rows |
 | **ERP Integration** | **Business Central only** — OData API v2.0 + Certificate OAuth | Included. Other ERP connectors (SAP, Oracle, Odoo, NetSuite) available as paid add-ons. |
 | **Data Pipeline** | Python ETL (pandas) | Bronze → Silver → Gold transformations |
-| **Frontend Deploy** | Netlify | Zero frontend ops, global CDN, instant deploys |
+| **Frontend Deploy** | Self-hosted Nginx | Docker-based, on-premise control, no CDN costs |
 | **Backend Deploy** | Azure Container Apps (target) | Scalable, managed, close to BC tenants |
 
 **Total cost of ownership:** Dramatically lower than Cognos, Hyperion, or OneStream — with full source code ownership and no per-user BI licensing.
@@ -811,7 +811,7 @@ For deployment and go-live, i-Source will need RIA IT to provide:
 | Dimensions defined | 7 frameworks (company, dept, project, vertical, geo, currency, doc type) |
 | API endpoints | ~65 across 9 routers |
 | Test coverage | 20 Playwright E2E tests across 4 spec files |
-| Frontend deployment | Live at https://i-finsights.netlify.app |
+| Frontend deployment | Self-hosted Docker at http://localhost:5002 (dev) |
 | Dashboard query performance | < 2 seconds (P95) |
 
 ---
@@ -831,7 +831,7 @@ RIA Advisory Users (Browser / Mobile)
 Azure CDN + Load Balancer (SSL)
         │
         ▼
-Netlify (React Frontend)   +   Azure Container Apps (FastAPI Backend)
+Docker/Nginx (React Frontend)   +   Self-hosted (FastAPI Backend)
         │                                    │
         └───────────────┬────────────────────┘
                         │
@@ -844,7 +844,7 @@ Netlify (React Frontend)   +   Azure Container Apps (FastAPI Backend)
 - Azure-native — backend co-located with BC tenants, minimal latency on API calls
 - Existing Azure Entra ID — users log in with their Microsoft 365 credentials, no new passwords
 - No infrastructure investment — i-Source manages hosting, monitoring, and upgrades
-- Instant access — live at https://i-finsights.netlify.app today
+- Instant access — demo ready at http://localhost:5002
 
 → **Full pricing details:** [06_Pricing_Cloud.md](06_Pricing_Cloud.md)
 

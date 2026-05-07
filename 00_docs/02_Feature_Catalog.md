@@ -1,7 +1,7 @@
-# i-finsights — Feature Catalog
+# i-CFO360 — Feature Catalog
 
-**Total Features:** 51 (F000–F051)
-**Status:** In Development / Deployed at https://i-finsights.netlify.app
+**Total Features:** 54+ (F000–F065+)
+**Status:** In Development / Deployed to self-hosted Docker
 
 Features grouped into 7 domains. Each domain maps to a navigation section in the app.
 
