@@ -160,10 +160,29 @@ def test_bc_connection():
             token_resp = json.loads(resp.read())
         access_token = token_resp.get("access_token")
         if not access_token:
-            err = token_resp.get("error_description") or token_resp.get("error") or "Unknown token error"
+            err_code = token_resp.get("error", "")
+            err_desc = token_resp.get("error_description") or token_resp.get("error") or "Unknown token error"
+            # Detect specific Azure AD errors for actionable guidance
+            if "AADSTS7000222" in err_desc:
+                msg = "Client secret EXPIRED. Go to Azure Portal → App Registrations → {client_id} → Certificates & Secrets → create a new secret and update here."
+            elif "AADSTS7000215" in err_desc:
+                msg = "Client secret is INVALID. Check that the correct secret value (not the secret ID) was entered in BC settings."
+            elif "AADSTS65001" in err_desc:
+                msg = "Admin consent required. Go to Azure Portal → Enterprise Applications → grant admin consent for Business Central API permissions."
+            elif "AADSTS700016" in err_desc or "AADSTS70011" in err_desc:
+                msg = f"Application not found or scope invalid. Verify client_id '{client_id}' exists in tenant '{tenant_id}' and has BC API permissions."
+            elif "AADSTS90002" in err_desc:
+                msg = f"Tenant '{tenant_id}' not found. Verify the Azure AD tenant ID is correct."
+            else:
+                msg = f"Azure AD auth failed [{err_code}]: {err_desc[:300]}"
             _upsert_setting("bc.connected", "false")
             _upsert_setting("bc.last_tested", datetime.now(timezone.utc).isoformat())
-            return {"ok": False, "message": f"Azure AD auth failed: {err}"}
+            return {"ok": False, "message": msg}
+    except urllib.error.HTTPError as token_err:
+        body = token_err.read().decode(errors="replace")[:300]
+        _upsert_setting("bc.connected", "false")
+        _upsert_setting("bc.last_tested", datetime.now(timezone.utc).isoformat())
+        return {"ok": False, "message": f"Azure AD token endpoint error {token_err.code}: {body}"}
     except Exception as e:
         _upsert_setting("bc.connected", "false")
         _upsert_setting("bc.last_tested", datetime.now(timezone.utc).isoformat())
@@ -193,7 +212,21 @@ def test_bc_connection():
         body = e.read().decode(errors="replace")[:300]
         _upsert_setting("bc.connected", "false")
         _upsert_setting("bc.last_tested", datetime.now(timezone.utc).isoformat())
-        return {"ok": False, "message": f"BC API error {e.code}: {body}"}
+        if e.code == 401:
+            msg = (
+                f"BC rejected the access token (401 Unauthorized). "
+                f"Check: (1) App registration '{client_id}' has 'Financials.ReadWrite.All' or equivalent BC API permission. "
+                f"(2) BC environment name '{env_name}' is correct. "
+                f"(3) Admin granted consent in Azure Portal → Enterprise Applications. "
+                f"Detail: {body[:200]}"
+            )
+        elif e.code == 403:
+            msg = f"BC access forbidden (403). App lacks permission to this BC environment. Detail: {body[:200]}"
+        elif e.code == 404:
+            msg = f"BC environment '{env_name}' not found (404). Verify the environment name matches exactly in BC Admin Center."
+        else:
+            msg = f"BC API error {e.code}: {body}"
+        return {"ok": False, "message": msg}
     except Exception as e:
         _upsert_setting("bc.connected", "false")
         _upsert_setting("bc.last_tested", datetime.now(timezone.utc).isoformat())

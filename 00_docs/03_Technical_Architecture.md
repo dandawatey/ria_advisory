@@ -697,3 +697,174 @@ Total: **21 routers** in `03_Backend/routers/`
 | 006 | company_tenant.sql | Company ↔ tenant FK mapping |
 | 007 | canonical_model.sql | dim_canonical_account + account_mapping |
 | 008 | sync_worker.sql | Extended fact_sync_log (IC-40) |
+
+---
+
+## Update 2026-05-06 — UML Diagrams + AWS Deployment Architecture
+
+**Updated by:** Meera_Architect_002
+**Scope:** UML sequence diagrams for key flows + AWS reference deployment architecture
+
+### BC Connection Error Diagnostics (settings.py)
+
+Improved `POST /api/settings/bc/test` error handling:
+- Detects Azure AD error codes: AADSTS7000222 (expired secret), AADSTS7000215 (invalid secret), AADSTS65001 (no consent), AADSTS700016 (app not found)
+- BC 401: now includes actionable checklist (BC API permission, env name, admin consent)
+- BC 404: flags incorrect environment name
+- BC 403: flags missing BC-level permission
+
+---
+
+### UML Sequence Diagrams
+
+#### 1. Authentication Flow (SSO + JWT)
+
+```mermaid
+sequenceDiagram
+    actor CFO as CFO / User
+    participant Browser as Browser (React)
+    participant MSAL as Azure AD (Entra ID)
+    participant API as FastAPI (:8000)
+    participant DB as PostgreSQL
+
+    CFO->>Browser: Click "Login with Microsoft"
+    Browser->>MSAL: Redirect OAuth2 (PKCE flow)
+    MSAL-->>Browser: id_token (Entra ID claims)
+    Browser->>API: POST /auth/sso {id_token}
+    API->>API: Decode JWT claims (oid, email, name)
+    API->>DB: SELECT user WHERE azure_oid=?
+    alt User not found
+        DB-->>API: No row
+        API->>DB: INSERT new user (linked to default tenant)
+    end
+    DB-->>API: User record {id, tenant_id, role}
+    API->>API: Sign JWT HS256 (60-min access + 7-day refresh)
+    API-->>Browser: {access_token, refresh_token, user}
+    Browser->>API: GET /api/dashboard (Bearer token)
+    API->>API: require_auth() — decode + verify JWT
+    API->>API: Casbin RBAC check (role, resource, action)
+    API->>DB: SELECT ... WHERE tenant_id=? (row-level isolation)
+    DB-->>API: Aggregated KPI data
+    API-->>Browser: JSON response
+    Browser-->>CFO: Dashboard rendered
+```
+
+#### 2. BC Sync Worker Flow (15-min Incremental)
+
+```mermaid
+sequenceDiagram
+    participant Sched as APScheduler (15-min)
+    participant Worker as bc_sync_worker.py
+    participant DB as PostgreSQL
+    participant AzAD as Azure AD
+    participant BC as BC Dynamics 365 OData
+
+    Sched->>Worker: bc_sync_job() triggered
+    Worker->>DB: SELECT * FROM tenant_bc_config WHERE active
+    Worker->>DB: SELECT last_sync_watermark FROM fact_sync_log
+    Worker->>DB: INSERT fact_sync_log (status='running')
+    Worker->>AzAD: POST /oauth2/v2.0/token (client_credentials)
+    AzAD-->>Worker: access_token (BC scope)
+    loop Paginated OData fetch
+        Worker->>BC: GET /generalLedgerEntries?$filter=postingDate ge {watermark}&$top=1000
+        BC-->>Worker: {value: [...1000 rows], @odata.nextLink}
+        Worker->>Worker: account_normalizer.normalize() — debit-positive
+        Worker->>DB: UPSERT fact_gl_normalized ON CONFLICT (tenant,source,id,line)
+    end
+    Worker->>DB: UPDATE fact_sync_log SET status='success', watermark_to=?, records_upserted=?
+```
+
+#### 3. GL Dashboard Query Flow (Star Schema)
+
+```mermaid
+sequenceDiagram
+    actor CFO as CFO
+    participant Browser as Browser (React)
+    participant API as FastAPI
+    participant DB as PostgreSQL (Star Schema)
+
+    CFO->>Browser: Open Executive Dashboard
+    Browser->>API: GET /api/dashboard/summary?period=2026-01
+    API->>API: Verify JWT, extract {tenant_id, role}
+    API->>DB: SELECT SUM(reporting_amount_dr/cr) FROM fact_gl_entries JOIN dim_* WHERE tenant_id=? AND year=2026
+    DB-->>API: Revenue, COGS, OpEx totals (Gold layer)
+    API->>DB: SELECT canonical_id, SUM(debit-credit) FROM fact_gl_normalized WHERE tenant_id=?
+    DB-->>API: Live BC normalized data
+    API->>DB: SELECT last_sync_watermark FROM fact_sync_log ORDER BY completed_at DESC LIMIT 1
+    DB-->>API: Freshness timestamp
+    API-->>Browser: {kpis, charts_data, last_synced_at}
+    Browser-->>CFO: KPI tiles + charts rendered
+```
+
+#### 4. Canonical CoA Mapping Flow
+
+```mermaid
+sequenceDiagram
+    actor Admin as Finance Admin
+    participant UI as GL Mapping Console (F057)
+    participant API as FastAPI /api/mapping
+    participant DB as PostgreSQL
+
+    Admin->>UI: Open GL Mapping Console
+    UI->>API: GET /api/mapping?tenant_id=?&source_erp=BC
+    API->>DB: SELECT am.*, dca.l1_statement, dca.l2_category FROM account_mapping am JOIN dim_canonical_account dca USING(canonical_id) WHERE tenant_id=?
+    DB-->>API: 1068 mapping rows
+    API-->>UI: Mapping table (source → canonical L1/L2/L3)
+    Admin->>UI: Edit: account 4001 → Revenue / SaaS Revenue
+    UI->>API: PATCH /api/mapping/{id} {canonical_id, l2_override}
+    API->>DB: UPDATE account_mapping SET canonical_id=?, mapped_by='admin@ria.com'
+    API->>DB: INSERT audit_logs (action='mapping_updated')
+    API-->>UI: {ok: true, coverage_pct}
+```
+
+---
+
+### AWS Deployment Architecture (Reference)
+
+Current deployment: Self-hosted Ubuntu VM (IC-39 — docker-compose.prod.yml pending).
+Target AWS reference architecture:
+
+```
+┌─────────────────── AWS Region (ap-south-1 / me-south-1) ──────────────────────┐
+│                                                                                  │
+│  ┌─── VPC: 10.0.0.0/16 ───────────────────────────────────────────────────┐   │
+│  │                                                                          │   │
+│  │  ┌── Public Subnet (10.0.1.0/24) ─────────────────────────────────┐    │   │
+│  │  │  AWS WAF (OWASP rules + rate limiting)                          │    │   │
+│  │  │  Application Load Balancer (HTTPS :443 · SSL via ACM)          │    │   │
+│  │  │  Routes: / → frontend · /api/* → backend                       │    │   │
+│  │  └────────────────────────────────────────────────────────────────┘    │   │
+│  │                              ↓                                          │   │
+│  │  ┌── Private App Subnet (10.0.2.0/24 · Multi-AZ) ────────────────┐    │   │
+│  │  │  Amazon ECS Fargate (auto-scaling, CPU 70% threshold)          │    │   │
+│  │  │  ├── ria-frontend  (nginx:alpine · Vite build · Port :80)      │    │   │
+│  │  │  └── ria-backend   (python:3.12 · FastAPI · Port :8000)        │    │   │
+│  │  │       └── APScheduler embedded (BC sync every 15-min)          │    │   │
+│  │  └────────────────────────────────────────────────────────────────┘    │   │
+│  │                              ↓                                          │   │
+│  │  ┌── Private DB Subnet (10.0.3.0/24 · Multi-AZ) ─────────────────┐    │   │
+│  │  │  Amazon RDS PostgreSQL 16 (db.t3.medium)                       │    │   │
+│  │  │  ria_advisory DB · 41 tables · Encrypted at rest (AES-256)     │    │   │
+│  │  │  Automated snapshots · 7-day PITR · Port 5432 (app subnet only)│    │   │
+│  │  └────────────────────────────────────────────────────────────────┘    │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                                  │
+│  Supporting Services:                                                            │
+│  ├── Secrets Manager: BC client_secret · JWT_SECRET · DB credentials           │
+│  ├── ECR: ria-frontend:{sha} · ria-backend:{sha} (never :latest in prod)       │
+│  ├── CloudWatch: access logs · BC sync metrics · ECS container insights         │
+│  └── S3: RDS snapshot exports · ETL input files                                │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+External (Internet-bound egress from App Subnet):
+  ├── Azure AD (login.microsoftonline.com) — MSAL SSO + BC OAuth2 token
+  └── BC Dynamics 365 (api.businesscentral.dynamics.com) — OData v2.0 pull
+```
+
+**Key migration items (self-hosted → AWS):**
+1. Move `bc.client_secret` from `app_settings` table → AWS Secrets Manager
+2. Replace docker-compose → ECS task definitions
+3. Replace local PostgreSQL → Amazon RDS (Multi-AZ)
+4. Add ALB + WAF in front of both containers
+5. CloudWatch log groups for FastAPI + bc_sync_worker

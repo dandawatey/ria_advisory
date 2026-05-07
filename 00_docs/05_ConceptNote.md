@@ -6,9 +6,9 @@
 **TO:** RIA Advisory — Group Finance Leadership  
 **SUBJECT:** i-finsights — Unified Financial Intelligence Platform for Microsoft Business Central  
 **Document Type:** Concept Note and Feature Delivery Proposal  
-**Version:** 1.1.0  
-**Status:** Submitted for Review and Approval  
-**Date:** 2026-05-05  
+**Version:** 1.2.0  
+**Status:** Updated — Phase 1 / Phase 2 Split  
+**Date:** 2026-05-06  
 **Related:** [06_Pricing_Cloud.md](06_Pricing_Cloud.md) | [07_Pricing_OnPrem.md](07_Pricing_OnPrem.md)
 
 ---
@@ -58,7 +58,7 @@ For RIA Advisory — operating 17 independent BC tenants across multiple geograp
 
 > **"One number. Real-time. From 17 subsidiaries. Down to a single GL entry."**
 
-**Delivery commitment to RIA Advisory:** Within 3 weeks of go-ahead, the core platform will be live, connected to all 17 BC tenants, and serving real financial data to your finance team.
+**Phase 1 delivery commitment to RIA Advisory:** The initial delivery focuses on the five revenue and receivables reports your finance team needs most — **Collections, Invoicing, Revenue, Unbilled Revenue (UBR), and AR** — alongside **Azure Entra ID Single Sign-On**. These six capabilities represent the highest-value, fastest-payback set and will be live and in your team's hands before the full platform is rolled out in Phase 2.
 
 ---
 
@@ -485,162 +485,191 @@ End-to-end orchestration of the monthly close cycle.
 
 ## 6. Feature Delivery Roadmap
 
-Delivery is structured in **three sequential sprints**. Each sprint has a hard dependency on the previous one completing successfully.
-
-> **Why three sprints?**  
-> GL code mapping and account grouping is not a configuration step — it is substantive finance domain work. Every P&L line, every Balance Sheet category, every KPI depends entirely on GL codes being correctly grouped into canonical account hierarchies. Dashboards and reports built on incorrect or incomplete mappings will produce wrong numbers. The mapping sprint is therefore a mandatory quality gate between raw data flowing in and analytical output being trusted.
+Delivery is structured in **two phases**. Phase 1 delivers the five revenue and receivables reports that generate immediate value for the RIA Advisory finance team, along with Single Sign-On. Phase 2 delivers the full platform.
 
 > **Legend:**  
-> 🎯 **Sprint 1 — 3 Weeks** — BC connection, data extraction, raw pipeline live  
-> 🗺️ **Sprint 2 — Mapping** — GL code mapping, account grouping, Gold layer (duration depends on RIA team availability)  
-> 📊 **Sprint 3 — Dashboards** — All reports and dashboards go live post-mapping sign-off  
-> 🔵 **Phase 2** — Q3 2026  
-> ⬜ **Phase 3+** — Q4 2026 and beyond
+> 🟢 **Phase 1** — Initial delivery: Collections, Invoicing, Revenue, UBR, AR + SSO  
+> 🔵 **Phase 2** — Full platform: Dashboards, all reports, analytics, close automation, AI
 
 ---
 
-### 6.1 Sprint 1 — 3 Weeks: Connect, Extract, Raw Pipeline Live
+### 6.1 Phase 1 — Revenue and Receivables Reports + SSO
 
-**Goal:** All 17 BC tenants connected. Full historical GL data flowing into Bronze and Silver. Raw GL Explorer live. Mapping Console ready for RIA team to begin mapping work.
+**Goal:** Five targeted financial reports live and in use by RIA Advisory finance team. Azure Entra ID Single Sign-On configured. Users log in with their existing Microsoft 365 credentials from day one.
 
-**What is NOT in Sprint 1:** Canonical account grouping, Gold layer, any P&L or balance sheet report, any dashboard that requires grouped financial data.
+**What Phase 1 delivers — and nothing more:** Only the six capabilities below. All other reports, dashboards, and analytics are Phase 2. This keeps Phase 1 focused, fast, and immediately valuable.
 
-| Feature | Sprint | Notes |
-|---|---|---|
-| BC Tenant Authentication — all 17 tenants | 🎯 Sprint 1 | Certificate OAuth configured per tenant. All data flows from BC API from this point. |
-| Data Extraction — GL Entries (full historical) | 🎯 Sprint 1 | Complete GL history pulled from all 17 subsidiaries via BC OData API. No file upload. No Excel. |
-| Data Extraction — Chart of Accounts | 🎯 Sprint 1 | Raw CoA pulled from BC API per entity. Basis for mapping work in Sprint 2. |
-| Data Extraction — Customers, Vendors, Posted Sales | 🎯 Sprint 1 | All sourced from BC API. Supports AR/AP and sales views post-mapping. |
-| Bronze Zone (raw append-only store) | 🎯 Sprint 1 | Every GL entry from every BC tenant stored with full audit trail. Immutable. |
-| Silver Layer — basic conforming | 🎯 Sprint 1 | Type casting, null handling, deduplication. Data cleaned and structured. Canonical mapping applied once Sprint 2 completes. |
-| Pipeline Orchestration and Scheduling | 🎯 Sprint 1 | Automated runs on schedule + on-demand trigger. Retry with exponential backoff. |
-| Data Quality Engine | 🎯 Sprint 1 | Completeness, referential integrity, range checks active from first run. |
-| GL Explorer — raw search | 🎯 Sprint 1 | Full-text search across all GL entries. Filters by company, date, document type. Note: account grouping labels appear after Sprint 2 mapping. |
-| Mapping Console — ready for use | 🎯 Sprint 1 | Console live. RIA finance team begins GL code review and mapping assignment here. |
-| Pipeline Health Monitor | 🎯 Sprint 1 | Run history, row counts, status, alerts, retry controls. |
-| Azure Entra ID SSO (MSAL) | 🎯 Sprint 1 | Configured for RIA Advisory Azure AD. Users login with Microsoft 365 credentials. |
-| User and Role Setup (all 5 RBAC roles) | 🎯 Sprint 1 | All RIA users created, subsidiaries assigned, roles set. |
-| Tenant Configuration | 🎯 Sprint 1 | RIA Advisory tenant fully configured. |
+#### Phase 1 Capabilities
 
 ---
 
-### 6.2 Sprint 2 — GL Code Mapping and Account Grouping
+##### 1. Collections Report
 
-**Goal:** Every GL code from every BC entity mapped to the canonical 4-level account hierarchy. Mappings reviewed, validated, and signed off by RIA Controller. Gold layer star schema built on verified mappings.
+**What it shows:** Outstanding receivables aged by customer. Days outstanding per customer. Collection risk flags for balances overdue beyond 30, 60, and 90 days. Per-entity view — so RIA Advisory's controller can see which subsidiary has the largest outstanding balances and who owes it. Total overdue amount across all entities. Customers with the longest outstanding days ranked at the top.
 
-**This sprint is the critical path.** No financial report or dashboard can be trusted before this sprint is complete and signed off.
+**Source:** BC `customerLedgerEntries` — only open (uncleared) entries. All 17 subsidiaries. Filtered by entry type = receivable.
 
-**Duration:** Depends on RIA finance team availability and the complexity of entity-level CoA variations. i-Source estimates 2–4 weeks of collaborative work.
-
-**Who does what:**
-
-| Activity | Owner | i-Source Role |
-|---|---|---|
-| Export all raw GL codes from BC (17 entities) | i-Source | Automated via pipeline |
-| Initial auto-mapping — GL code to canonical account (rule-based) | i-Source | Delivered as starting point |
-| Review and correct auto-mapped accounts | **RIA Finance / Controller** | i-Source assists with exceptions |
-| Define account groupings — L1 (P&L/BS/CF), L2 (Revenue/COGS/OpEx…), L3 (Subcategory) | **RIA Finance / Controller** | i-Source provides canonical framework |
-| Map dimension codes — departments, projects, verticals, cost centres | **RIA Finance / Controller** | i-Source configures in console |
-| Configure intercompany counterparty rules (IC elimination) | **RIA Finance / Controller** | i-Source implements rules in engine |
-| Validate: sample P&L by entity against known BC numbers | **Both** | i-Source runs reconciliation checks |
-| Sign-off: Controller confirms mappings are correct | **RIA Controller** | Sign-off gate before Sprint 3 |
-| Gold Layer build — star schema promotion with verified mappings | i-Source | Automated pipeline run |
-
-| Feature | Sprint | Notes |
-|---|---|---|
-| Canonical CoA Mapping — all 17 entity GL codes (474 canonical accounts) | 🗺️ Sprint 2 | 4-level hierarchy: L1 Statement → L2 Category → L3 Subcategory → L4 Source account. |
-| Dimension Framework mapping (7 dimensions) | 🗺️ Sprint 2 | Company, Department, Project, Vertical, Geography, Currency, Doc Type — all mapped and validated. |
-| IC Elimination counterparty rules | 🗺️ Sprint 2 | Intercompany pairs identified and configured. Tested per entity pair. |
-| FX Translation configuration | 🗺️ Sprint 2 | USD as reporting currency. Period-average and period-end rates validated. |
-| Gold Layer — Star Schema (analytics-ready) | 🗺️ Sprint 2 | Built only after mapping sign-off. fact_gl_entries, fact_coa_balances, fact_posted_sales + 12 dimension tables. |
-| Mapping validation — sample P&L reconciliation | 🗺️ Sprint 2 | Cross-check Gold layer totals against known BC figures. Discrepancies resolved before Sprint 3. |
-| Controller sign-off gate | 🗺️ Sprint 2 | RIA Controller formally signs off mapping accuracy before dashboards are enabled. |
+**Value to RIA Advisory:** Finance team knows within seconds which customers are delinquent across all 17 entities, without pulling a single BC report manually.
 
 ---
 
-### 6.3 Sprint 3 — Dashboards, Reports and Analytics Go Live
+##### 2. Invoicing Report
 
-**Dependency:** Sprint 2 mapping sign-off required. Gold layer must be verified before Sprint 3 begins.
+**What it shows:** All posted sales invoices — invoice number, customer name, invoice date, due date, amount, entity, and payment status. Total invoice value issued in any selected period. Invoice count per entity. Average invoice value. Top customers by invoice volume. Month-by-month invoice trend. Drill-through from summary to individual invoice lines.
 
-**Goal:** All financial dashboards, reports, and analytics live on verified, grouped data. RIA finance team trained and using the platform.
+**Source:** BC `salesInvoices` (posted status only) and `salesInvoiceLines`. Pulled via OData for all 17 BC tenants. Stored in `fact_posted_sales`.
 
-#### Dashboards
-
-| Feature | Sprint | Notes |
-|---|---|---|
-| Executive Dashboard | 📊 Sprint 3 | Group P&L, KPI tiles, entity grid, AR/AP aging, department heatmap. Powered by Gold layer. |
-| Entity Detail View | 📊 Sprint 3 | Drill-through to entity P&L, Trial Balance, Balance Sheet, GL entries. |
-| Close Cockpit | 📊 Sprint 3 | Entity sign-off, IC reconciliation status, close timeline. |
-| GL Explorer — with account groups | 📊 Sprint 3 | GL Explorer now shows canonical account groupings and labels. |
-
-#### Core Financial Reports
-
-| Report | Sprint | Notes |
-|---|---|---|
-| P&L Analytics | 📊 Sprint 3 | Monthly waterfall — Revenue → COGS → Gross Profit → EBITDA → Net Income. Correct only after mapping sign-off. |
-| Trial Balance | 📊 Sprint 3 | Account-level Debit / Credit / Net. Entity filter. Export-ready. |
-| Balance Sheet | 📊 Sprint 3 | Assets, Liabilities, Equity — requires Balance Sheet account groupings from Sprint 2. |
-| AR / AP Aging | 📊 Sprint 3 | Aging buckets by entity. Customer and vendor data from BC API. |
-| Cash Flow Statement | 📊 Sprint 3 | Operating, Investing, Financing — requires Cash Flow groupings from Sprint 2. |
-| KPI Dashboard | 📊 Sprint 3 | Current Ratio, EBITDA Margin, DSO, Debt-to-Equity — all formula-driven from Gold layer. |
-
-#### Additional Reports and Analytics (activated in Sprint 3 or on request)
-
-| Feature | Sprint | Notes |
-|---|---|---|
-| Financial Health Score | 📊 Sprint 3 | Composite 0–100 score from Gold layer ratios. |
-| Expense Analysis | 📊 Sprint 3 | OpEx by account and department. |
-| Department Spend Heatmap | 📊 Sprint 3 | Cross-entity. |
-| Project Financials | 📊 Sprint 3 | 44 active project codes. |
-| Vertical Analytics | 📊 Sprint 3 | Business unit P&L, cross-entity. |
-| Entity Comparison | 📊 Sprint 3 | Side-by-side subsidiary benchmarking. |
-| Collections Report | 📊 Sprint 3 | AR aging by customer. |
-| Customer Insights | 📊 Sprint 3 | Top customers by revenue. |
-| Posted Sales Insights | 📊 Sprint 3 | 3,094 invoice records. |
-| Multi-Dimensional Analytics Workbench | 📊 Sprint 3 | Full interactive workbench for analysts. |
-| Close Automation (full workflow) | 📊 Sprint 3 | Task assignment, auto-escalation, SLA tracking. |
-| Data Lineage (column-level) | 📊 Sprint 3 | On request — audit/compliance use cases. |
-| Security and Compliance Audit Module | 📊 Sprint 3 | Audit log viewer, RBAC audit, retention config. |
-| Subsidiary Onboarding Wizard | 📊 Sprint 3 | For adding future subsidiaries. |
+**Value to RIA Advisory:** Complete invoicing picture across all subsidiaries in one view — no entity-by-entity manual extraction from 17 separate BC environments.
 
 ---
 
-### 6.4 Future Phases
+##### 3. Revenue Report
 
-| Feature | Delivery | Notes |
-|---|---|---|
-| AI-generated variance commentary | 🔵 Phase 2 — Q3 2026 | Auto-drafted narrative on P&L variances. |
-| Anomaly detection | 🔵 Phase 2 — Q3 2026 | ML-based outlier flagging on GL entries. |
-| Natural language query (full) | 🔵 Phase 2 — Q3 2026 | Ask financial questions in plain English. |
-| WhatsApp / Slack / Teams daily briefing | 🔵 Phase 2 — Q3 2026 | CFO digest to messaging apps. |
-| Dynamics 365 Finance connector | ⬜ Phase 3 — Q4 2026 — **Paid Add-On** | Additional connector license. For entities not on BC. |
-| NetSuite connector | ⬜ Phase 3 — Q4 2026 — **Paid Add-On** | Additional connector license. For entities not on BC. |
-| SAP S/4HANA connector | ⬜ Phase 3 — Q4 2026 — **Paid Add-On** | Additional connector license applies. |
-| Mobile app (iOS / Android) | ⬜ Phase 3 — Q4 2026 | Executive dashboard on mobile. |
-| Multi-client SaaS / partner model | ⬜ Phase 4 — Q1 2027 | RIA Advisory as a potential reseller. |
+**What it shows:** Revenue recognised per entity per month. Revenue breakdown by GL account (revenue account codes — 4xx prefix). Month-on-month revenue trend. Year-to-date revenue by entity. Revenue contribution per subsidiary as a percentage of group total. Drill-down from group revenue to individual GL entries.
+
+**Source:** BC `generalLedgerEntries` filtered to revenue accounts (canonical CoA L2 = Revenue). All 17 BC tenants via OData API v2.0.
+
+**Value to RIA Advisory:** Real-time revenue visibility across the group — not the 8–10 day lagged view from the current Excel process. Leadership can see intra-month revenue without waiting for close.
 
 ---
 
-### 6.5 Sprint Delivery Summary
+##### 4. UBR — Unbilled Revenue Report
 
-| Sprint | Duration | Owner | Gate |
-|---|---|---|---|
-| **Sprint 1** — BC Connect + Raw Pipeline | 3 weeks | i-Source | All 17 tenants connected, GL Explorer live |
-| **Sprint 2** — GL Mapping + Account Grouping | 2–4 weeks (RIA team dependent) | i-Source + **RIA Controller** | Controller sign-off on mapping accuracy |
-| **Sprint 3** — Dashboards + Reports | 1–2 weeks post Sprint 2 | i-Source | UAT with RIA finance team |
+**What it shows:** Revenue earned by the business but not yet invoiced to customers — Work in Progress (WIP) and accrued income balances. Unbilled amounts per project, per entity, and per customer. Age of unbilled balances (how long revenue has been earned but not invoiced). Trend of UBR across periods — growing UBR signals billing lag. Flags entities or projects where unbilled balances exceed a configurable threshold.
 
-**Sprint 1 Delivery Checklist** — confirmed at end of week 3:
+**Source:** BC `generalLedgerEntries` for accounts classified as WIP / accrued income (specific GL account codes configured during onboarding). Customer ledger entries where invoiced amount < recognised amount. WIP journal entries from BC project module where applicable.
 
-- [ ] All 17 BC tenants authenticated and extracting data
-- [ ] Full historical GL data in Bronze Zone (188,380+ entries)
-- [ ] Silver Layer running — data clean and deduplicated
-- [ ] Pipeline running on schedule with alerts configured
-- [ ] GL Explorer live — raw GL searchable by company, date, document type
-- [ ] Mapping Console open — RIA team can begin GL code review
-- [ ] Azure Entra ID SSO live — users login with Microsoft 365 credentials
-- [ ] All users created and roles assigned
-- [ ] Pipeline Health Monitor live
-- [ ] i-Source provides initial auto-mapping draft for Sprint 2 review
+**Value to RIA Advisory:** UBR is invisible in standard BC reports. This report surfaces cash that is owed but not yet billed — enabling the finance team to accelerate billing and reduce Days Sales Outstanding (DSO).
+
+---
+
+##### 5. AR — Accounts Receivable Report
+
+**What it shows:** Complete open AR position across all 17 entities. Total outstanding receivables balance. Aging buckets: Current (0–30 days), 31–60 days, 61–90 days, 90+ days (overdue). Per-entity AR breakdown. Per-customer AR detail. Days Sales Outstanding (DSO) calculated per entity. Receivables trend over time — is the AR balance growing or shrinking? Identifies entities with highest overdue exposure.
+
+**Source:** BC `customerLedgerEntries` — all open entries (remaining amount > 0). Applied against BC `customers` master for customer name and credit terms. All 17 subsidiaries.
+
+**Value to RIA Advisory:** The AR report is the single most-requested addition to any finance team's toolkit. This delivers it across the entire group in real time — without a single Excel extraction.
+
+---
+
+##### 6. Single Sign-On (Azure Entra ID / MSAL)
+
+**What it delivers:** RIA Advisory users log in to i-finsights using their existing **Microsoft 365 credentials** — the same username and password they use for Outlook, Teams, and Business Central. No new password to remember. No separate account to create. Azure Entra ID (formerly Azure AD) handles authentication via MSAL (Microsoft Authentication Library). Token-based session with automatic refresh. Role mapping from Azure AD groups to i-finsights RBAC roles.
+
+**Configuration required:** i-Source registers i-finsights as an Azure Enterprise Application in RIA Advisory's Azure AD tenant. RIA Advisory IT team provides temporary Azure AD admin access (one-time, during onboarding week). Takes approximately 2 hours to configure and test.
+
+**Value to RIA Advisory:** Zero password management overhead. Users are onboarded and offboarded through Azure AD — the same system HR already uses. When an employee leaves, disabling their Microsoft 365 account automatically revokes i-finsights access.
+
+---
+
+#### Phase 1 Delivery Checklist
+
+- [ ] All 17 BC tenants authenticated — OData API connected, data flowing
+- [ ] Collections Report live — aged receivables by customer, all entities
+- [ ] Invoicing Report live — posted invoices with drill-through, all entities
+- [ ] Revenue Report live — monthly revenue by entity and account
+- [ ] UBR Report live — unbilled balances flagged by entity and project
+- [ ] AR Report live — open receivables with aging buckets, DSO per entity
+- [ ] Azure Entra ID SSO live — RIA users log in with Microsoft 365 credentials
+- [ ] All RIA Advisory users created, subsidiaries assigned, roles set
+- [ ] Data pipeline running on schedule — GL, invoices, customer ledger from BC API
+
+---
+
+### 6.2 Phase 2 — Full Platform
+
+**Dependency:** Phase 1 live and accepted by RIA Advisory finance team.
+
+**Goal:** Complete financial intelligence platform — executive dashboards, full report suite, multi-dimensional analytics, monthly close automation, and AI-driven commentary.
+
+> Phase 2 scope is the full feature set described in Sections 5.2 through 5.6 of this document. All items below are out of scope for Phase 1.
+
+#### Phase 2 — Data Infrastructure
+
+| Feature | Notes |
+|---|---|
+| GL Code Mapping and Account Grouping | All 17 entity GL codes → canonical 4-level hierarchy. RIA Controller sign-off gate. |
+| Dimension Framework (7 dimensions) | Department, Project, Vertical, Geography, Currency, Doc Type — all mapped. |
+| IC Elimination Engine | Intercompany pairs identified, counterparty rules configured, elimination entries posted. |
+| FX Translation | All amounts → USD. Period-average and period-end rates. |
+| Gold Layer — Star Schema | Built on verified mappings. Analytics-ready fact tables with 12 dimensions. |
+
+#### Phase 2 — Dashboards
+
+| Feature | Notes |
+|---|---|
+| Executive Dashboard | Group P&L · KPI tiles · AR/AP aging · Entity grid · Department heatmap |
+| Entity Detail View | Drill-through to entity P&L, Trial Balance, Balance Sheet, GL entries |
+| Close Cockpit | Entity sign-off, IC reconciliation status, close timeline |
+| GL Explorer (with account groups) | Full-text GL search with canonical account groupings applied |
+
+#### Phase 2 — Core Financial Reports
+
+| Report | Notes |
+|---|---|
+| P&L Analytics | Monthly waterfall — Revenue → COGS → Gross Profit → EBITDA → Net Income |
+| Trial Balance | Account-level Debit / Credit / Net per entity, per period |
+| Balance Sheet | Assets, Liabilities, Equity — requires Balance Sheet groupings from GL mapping |
+| AP Aging | Vendor payables aging — mirrors AR report structure |
+| Cash Flow Statement | Operating, Investing, Financing — indirect method |
+| KPI Dashboard | Current Ratio, EBITDA Margin, DSO, Debt-to-Equity |
+
+#### Phase 2 — Additional Reports and Analytics
+
+| Feature | Notes |
+|---|---|
+| Financial Health Score | Composite 0–100 score with grade A–F |
+| Expense Analysis | OpEx breakdown by GL account and department |
+| Department Spend Heatmap | Cross-entity spend by department code |
+| Project Financials | Revenue, COGS, OpEx, Net per project |
+| Vertical Analytics | Business unit P&L across entities |
+| Entity Comparison | Side-by-side subsidiary benchmarking |
+| Customer Insights | Top customers by revenue contribution |
+| Posted Sales Insights | Full invoice analytics from fact_posted_sales |
+| Multi-Dimensional Analytics Workbench | Full interactive workbench for analysts |
+| Monthly Income Report | Month-by-month revenue and income trend |
+| GL Insights and CoA Insights | Account-level balance and mapping visibility |
+
+#### Phase 2 — Operations and Automation
+
+| Feature | Notes |
+|---|---|
+| Monthly Close Automation | Task assignment, controller sign-off, IC reconciliation, auto-escalation |
+| Data Lineage (column-level) | Audit/compliance — BC source field → dashboard KPI |
+| Security and Compliance Audit Module | Audit log viewer, RBAC audit, retention configuration |
+| Subsidiary Onboarding Wizard | Step-by-step onboarding for future BC entities |
+| Pipeline Health Monitor (advanced) | Extended run history, DQ exceptions, alert thresholds |
+
+#### Phase 2 — Intelligence (AI)
+
+| Feature | Notes |
+|---|---|
+| AI-generated variance commentary | Auto-drafted narrative on P&L variances |
+| Anomaly detection | ML-based outlier flagging on GL entries |
+| Natural language query | Ask financial questions in plain English |
+| WhatsApp / Slack / Teams daily briefing | CFO digest to messaging apps |
+
+#### Phase 2 — Additional ERP Connectors (Paid Add-Ons)
+
+| ERP | Availability |
+|---|---|
+| SAP S/4HANA | Q3 2026 — add-on |
+| Microsoft Dynamics 365 Finance | Q4 2026 — add-on |
+| Oracle ERP Cloud | Q4 2026 — add-on |
+| Odoo | Q4 2026 — add-on |
+| NetSuite | Q4 2026 — add-on |
+| Mobile app (iOS / Android) | Q4 2026 |
+| Multi-client SaaS / partner model | Q1 2027 |
+
+---
+
+### 6.3 Delivery Summary
+
+| Phase | Scope | Gate |
+|---|---|---|
+| **Phase 1** — Collections, Invoicing, Revenue, UBR, AR + SSO | 5 reports + SSO only | RIA Advisory finance team acceptance |
+| **Phase 2** — Full Platform | All dashboards, reports, analytics, close automation, AI | Phase 1 accepted + GL mapping sign-off by RIA Controller |
 
 ---
 
@@ -885,14 +914,12 @@ Docker Host (Customer-managed — RIA Advisory hardware)
 
 ## 13. Product Roadmap
 
-| Phase | Timeline | Capabilities |
+| Phase | Scope | Capabilities |
 |---|---|---|
-| **Sprint 1 — Connect + Extract** | 3 weeks from go-ahead | BC connections (17 tenants), full GL extraction, Bronze/Silver pipeline, GL Explorer, SSO, admin |
-| **Sprint 2 — GL Mapping** | 2–4 weeks (RIA Controller-dependent) | GL code mapping, account grouping, dimension mapping, IC rules, Gold layer, Controller sign-off |
-| **Sprint 3 — Dashboards + Reports** | 1–2 weeks post Sprint 2 | Full report suite, Executive Dashboard, Close Cockpit, analytics — live on verified data |
-| **Phase 2 — Intelligence** | Q3 2026 | AI-generated variance commentary, anomaly detection, natural language query (full) |
-| **Phase 3 — Expansion** | Q4 2026 | Additional ERP connector add-ons (Dynamics 365 Finance, NetSuite, SAP) — paid add-on per connector; mobile app |
-| **Phase 4 — Platform** | Q1 2027 | Multi-client SaaS — onboard additional group clients, partner reseller model |
+| **Phase 1 — Revenue and Receivables + SSO** | Initial delivery | **Collections** (AR aging by customer) · **Invoicing** (posted sales invoices) · **Revenue** (monthly revenue by entity and account) · **UBR** (unbilled / accrued revenue) · **AR** (open receivables with aging + DSO) · **Azure Entra ID SSO** |
+| **Phase 2 — Full Platform** | Post Phase 1 acceptance | GL code mapping · Gold layer · Executive Dashboard · P&L, Balance Sheet, Trial Balance, Cash Flow, KPI · Expense Analysis · Department Spend · Project Financials · Vertical Analytics · Entity Comparison · Close Cockpit · Multi-Dim Analytics · AI commentary · Anomaly detection · Natural language query |
+| **Phase 2 — Additional ERP Connectors** | Q3–Q4 2026 (paid add-ons) | SAP S/4HANA · Dynamics 365 Finance · Oracle · Odoo · NetSuite — each as a separate paid connector license |
+| **Phase 2 — Mobile + Platform** | Q4 2026 – Q1 2027 | Mobile app (iOS / Android) · Multi-client SaaS · Partner reseller model |
 
 ---
 
@@ -900,23 +927,27 @@ Docker Host (Customer-managed — RIA Advisory hardware)
 
 i-finsights gives RIA Advisory what no off-the-shelf BI tool or ERP report can: a **real-time, auditable, fully automated financial intelligence platform** that is native to Business Central, built around the monthly close cycle, and owned entirely by RIA Advisory.
 
-It eliminates the parallel Excel universe that currently costs 8–10 business days of high-value finance talent every month — replacing it with a platform that surfaces the same answers in under 2 seconds, with a full audit trail from board dashboard to source GL journal.
+**Phase 1** puts the five most immediately valuable reports — Collections, Invoicing, Revenue, UBR, and AR — into the hands of RIA Advisory's finance team quickly, alongside Single Sign-On so every user logs in with their existing Microsoft 365 credentials. No waiting for the full platform. No Excel extraction. Real data, from BC, in your browser, from day one.
+
+**Phase 2** delivers the complete platform: Executive Dashboards, consolidated P&L, Balance Sheet, Cash Flow, close automation, AI commentary, and multi-dimensional analytics — built on the verified GL mapping foundation established in Phase 1.
 
 ### Proposed Next Steps
 
 | Step | Owner | Timeline |
 |---|---|---|
 | Review concept note and pricing documents | RIA Advisory | This week |
-| Clarification call — platform walkthrough and Q&A | i-Source + RIA Advisory | TBD |
+| Clarification call — Phase 1 scope walkthrough and Q&A | i-Source + RIA Advisory | TBD |
 | Decision: Cloud vs On-Premises deployment model | RIA Advisory | Before contract |
 | If On-Premises: confirm hardware specification (Section 8) | RIA Advisory IT | Before contract |
 | Contract and SOW signing | Both parties | TBD |
-| Kick-off — 3-week delivery sprint begins | i-Source | Week 1 post-signing |
-| Go-live — RIA Advisory finance team on platform | Both parties | Week 3 post-signing |
+| Kick-off — Phase 1 delivery begins | i-Source | Week 1 post-signing |
+| Phase 1 go-live — Collections, Invoicing, Revenue, UBR, AR + SSO live | i-Source | To be agreed at kick-off |
+| Phase 1 acceptance — RIA Advisory finance team sign-off | RIA Advisory | Post go-live |
+| Phase 2 kick-off — Full platform delivery begins | i-Source | Post Phase 1 acceptance |
 
 ---
 
 *Concept note prepared and submitted by i-Source Infosystems to RIA Advisory*  
-*Version 1.1.0 | 2026-05-05*  
+*Version 1.2.0 | 2026-05-06 — Phase 1 / Phase 2 restructure*  
 *For queries: contact i-Source Infosystems account team*  
 *Next Review: 2026-06-05*
