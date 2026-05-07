@@ -45,7 +45,7 @@ function lowercaseFilenames(): Plugin {
 export default defineConfig({
   plugins: [react(), lowercaseFilenames()],
   server: {
-    port: 4000,
+    port: 5002,
     host: '127.0.0.1',
     open: false,
   },
