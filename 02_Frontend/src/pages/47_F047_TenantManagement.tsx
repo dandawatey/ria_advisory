@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { get, post, put } from '../api/client';
 import { Tenant } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 const PLANS = ['trial', 'starter', 'professional', 'enterprise'];
 
@@ -108,6 +109,20 @@ export default function TenantManagement() {
           + New Tenant
         </button>
       </div>
+
+      <PageExplainer
+        icon="🏢"
+        title="What is Tenant Management?"
+        description="This page is the <strong>superadmin control panel for managing all organisations (tenants)</strong> using the i-CFO360 platform. Each tenant is a separate company or group with isolated data. Superadmins can create new tenants, assign plans (Trial → Enterprise), view user counts, suspend tenants, and configure ERP connections per tenant."
+        concepts={[
+          { icon: '●', color: '#15803d', label: 'Active', desc: 'Tenant is live and users can log in' },
+          { icon: '●', color: '#b45309', label: 'Suspended', desc: 'Tenant is paused — users cannot log in until reactivated' },
+        ]}
+        glossary={[
+          { term: 'Slug', def: 'URL-safe identifier for the tenant (e.g. "ria-advisory") — unique and immutable after creation' },
+          { term: 'Plan', def: 'Subscription tier: Trial → Starter → Professional → Enterprise' },
+        ]}
+      />
 
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>

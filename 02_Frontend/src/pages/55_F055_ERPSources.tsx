@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { get } from '../api/client';
 import { FreshnessIndicator } from '../components/erp/FreshnessIndicator';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface ERPSource {
   erp_source_id: number;
@@ -117,6 +118,21 @@ export default function ERPSources() {
         </div>
         <FreshnessIndicator compact />
       </div>
+
+      <PageExplainer
+        icon="🔌"
+        title="What are ERP Data Sources?"
+        description="This page lists all <strong>ERP systems connected to your tenant</strong> — Business Central, SAP, Odoo, and others. Each source syncs GL entries, dimensions, and entities into the unified data warehouse. Click a source to see its sync history, connection status, and last sync time. A green status means data is current; amber means authentication needs refresh."
+        concepts={[
+          { icon: '●', color: '#10b981', label: 'Connected', desc: 'ERP is authenticated and syncing successfully' },
+          { icon: '●', color: '#ef4444', label: 'Disconnected', desc: 'Connection lost — check credentials or network' },
+          { icon: '●', color: '#f59e0b', label: 'Auth Expired', desc: 'OAuth token expired — re-authenticate required' },
+        ]}
+        glossary={[
+          { term: 'Sync Type', def: 'Full = all historical data; Incremental = only changes since last sync' },
+          { term: 'Records Fetched', def: 'Number of GL lines pulled from the ERP in the last sync run' },
+        ]}
+      />
 
       {/* Error */}
       {error && (

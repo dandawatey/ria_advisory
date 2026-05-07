@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useFeatureFlags, FeatureFlag } from '../contexts/FeatureFlagContext';
 import { useAuth } from '../contexts/AuthContext';
+import PageExplainer from '../components/common/PageExplainer';
 
 const CATEGORY_LABELS: Record<string, string> = {
   ar:          'Accounts Receivable',
@@ -77,6 +78,20 @@ export default function FeatureFlagsPage() {
           (promised in the 3-week proposal). Phase 2 features are hidden until explicitly enabled.
         </p>
       </div>
+
+      <PageExplainer
+        icon="🚩"
+        title="What are Feature Flags?"
+        description="Feature flags control <strong>which modules and pages are visible to RIA Advisory users</strong>. Phase 1 features were promised in the 3-week proposal and are enabled by default. Phase 2 features are hidden until explicitly toggled on. Only Superadmins can change flags — toggling a flag takes effect immediately for all users in the tenant without a redeploy."
+        concepts={[
+          { icon: '●', color: '#059669', label: 'Enabled', desc: 'Feature is visible and accessible to all users in the tenant' },
+          { icon: '●', color: '#991B1B', label: 'Disabled', desc: 'Feature is hidden — menu item and route are suppressed' },
+        ]}
+        glossary={[
+          { term: 'Phase 1', def: 'Features committed in the initial proposal — must remain enabled unless explicitly waived' },
+          { term: 'Phase 2', def: 'Advanced features enabled after Phase 1 is signed off — disabled by default' },
+        ]}
+      />
 
       {/* Stats bar */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>

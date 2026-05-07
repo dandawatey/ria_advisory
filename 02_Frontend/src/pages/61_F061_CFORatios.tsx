@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { get } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -362,6 +363,22 @@ export default function CFORatios() {
           </select>
         </div>
       </div>
+
+      <PageExplainer
+        icon="📐"
+        title="What is the CFO Ratios Dashboard?"
+        description="This page shows <strong>20 key financial ratios</strong> across four categories: Liquidity (can the firm pay its bills?), Profitability (is it earning enough?), Efficiency (how well are assets deployed?), and Leverage (how much debt is it carrying?). Each ratio is colour-coded green/amber/red against industry benchmarks so CFOs can instantly spot concerns."
+        concepts={[
+          { icon: '●', color: '#059669', label: 'Green', desc: 'Ratio within healthy benchmark range' },
+          { icon: '●', color: '#d97706', label: 'Amber', desc: 'Ratio near boundary — monitor closely' },
+          { icon: '●', color: '#dc2626', label: 'Red', desc: 'Ratio outside healthy range — action required' },
+        ]}
+        glossary={[
+          { term: 'Current Ratio', def: 'Current Assets ÷ Current Liabilities — measures short-term liquidity' },
+          { term: 'EBITDA Margin', def: 'EBITDA ÷ Revenue — operating profitability before non-cash items' },
+          { term: 'Debt-to-Equity', def: 'Total Debt ÷ Equity — financial leverage measure' },
+        ]}
+      />
 
       {/* ── KPI Summary strip ── */}
       <div style={{

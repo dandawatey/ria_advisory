@@ -4,6 +4,7 @@ import {
   Legend, ResponsiveContainer, ReferenceLine, Cell,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -123,6 +124,22 @@ export default function Budgeting() {
         <h1 className="page-title">Budgeting</h1>
         <p className="page-subtitle">Budget vs actual variance by period and entity</p>
       </div>
+
+      <PageExplainer
+        icon="💰"
+        title="What is the Budgeting Dashboard?"
+        description="This page shows <strong>budget vs actual variance</strong> across all subsidiaries by period and entity. Finance teams use this to identify where spending is over or under plan, which categories are driving variance, and how utilisation compares to approved budgets. Use the filters to slice by year, account category, or specific entity."
+        concepts={[
+          { icon: '●', color: '#3b82f6', label: 'Budget', desc: 'Planned spending approved for the period' },
+          { icon: '●', color: '#0F3F3C', label: 'Actual', desc: 'Recorded GL spend for the same period' },
+          { icon: '●', color: '#10b981', label: 'Positive Variance', desc: 'Under budget — actual spend below plan' },
+          { icon: '●', color: '#ef4444', label: 'Negative Variance', desc: 'Over budget — actual spend exceeds plan' },
+        ]}
+        glossary={[
+          { term: 'Utilization %', def: 'Actual ÷ Budget × 100 — how much of the budget has been consumed' },
+          { term: 'Variance', def: 'Budget minus Actual — positive = under budget, negative = over budget' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       {kpis && (

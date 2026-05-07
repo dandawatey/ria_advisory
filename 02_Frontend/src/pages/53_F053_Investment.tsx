@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -132,6 +133,22 @@ export default function Investment() {
         <h1 className="page-title">Investment Portfolio</h1>
         <p className="page-subtitle">Holdings, returns and portfolio composition</p>
       </div>
+
+      <PageExplainer
+        icon="📈"
+        title="What is the Investment Portfolio Dashboard?"
+        description="This page tracks the firm's <strong>investment holdings, returns, and portfolio composition</strong> across all subsidiaries. CFOs use this to monitor total invested capital, current market value, unrealised gains/losses, and portfolio allocation by asset class and entity. Use the filters to drill into specific investment types or entities."
+        concepts={[
+          { icon: '●', color: '#3b82f6', label: 'Invested', desc: 'Total capital deployed into investments' },
+          { icon: '●', color: '#10b981', label: 'Current Value', desc: 'Mark-to-market value of holdings today' },
+          { icon: '●', color: '#10b981', label: 'Unrealised Gain', desc: 'Current value minus cost — not yet realised' },
+          { icon: '●', color: '#ef4444', label: 'Unrealised Loss', desc: 'Value below cost — paper loss until sold' },
+        ]}
+        glossary={[
+          { term: 'ROI %', def: '(Current Value − Invested) ÷ Invested × 100 — total return on investment' },
+          { term: 'Asset Class', def: 'Category of investment — equities, fixed income, property, alternatives' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       {kpis && (

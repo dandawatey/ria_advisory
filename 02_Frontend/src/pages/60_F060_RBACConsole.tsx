@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -220,6 +221,22 @@ export default function RBACConsolePage() {
           Manage user roles and subsidiary access. Impersonate users to validate their experience.
         </p>
       </div>
+
+      <PageExplainer
+        icon="🔐"
+        title="What is the RBAC Console?"
+        description="This page is the <strong>Role-Based Access Control admin panel</strong> for managing who can see what in i-CFO360. Admins assign roles (Viewer, Finance User, RIA Admin, Superadmin) and control which subsidiaries each user can access. The Impersonation Audit tab logs every time an admin has impersonated another user for compliance and accountability."
+        concepts={[
+          { icon: '●', color: '#92400e', label: 'Super Admin', desc: 'Full platform access — all tenants and settings' },
+          { icon: '●', color: '#1e40af', label: 'RIA Admin', desc: 'Admin for RIA Advisory tenant — manage users and config' },
+          { icon: '●', color: '#166534', label: 'Finance User', desc: 'Read/write access to financial dashboards' },
+          { icon: '●', color: '#374151', label: 'Viewer', desc: 'Read-only access to assigned subsidiaries' },
+        ]}
+        glossary={[
+          { term: 'Subsidiary Access', def: 'Which of the 17 BC subsidiaries a user can see data for' },
+          { term: 'Impersonation', def: 'Admin viewing the platform as another user — logged for audit' },
+        ]}
+      />
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--color-border)' }}>

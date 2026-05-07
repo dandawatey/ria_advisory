@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import { get, post, del } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface ERPSource {
   erp_source_id: number;
@@ -136,6 +137,21 @@ export default function FieldMapping() {
           Map ERP-native account/dimension codes to canonical values
         </p>
       </div>
+
+      <PageExplainer
+        icon="🗂️"
+        title="What is Field Mapping?"
+        description="This page lets you <strong>map ERP-native account codes and dimension values to canonical group-wide equivalents</strong>. Each ERP uses its own internal codes — BC might call an account '40100' while SAP calls it 'REV-001'. Field mappings translate these into a single canonical code so consolidated reports work correctly across all subsidiaries."
+        concepts={[
+          { icon: '●', color: '#3b82f6', label: 'Account', desc: 'Maps ERP account code to canonical GL account number' },
+          { icon: '●', color: '#10b981', label: 'Department', desc: 'Maps ERP cost centre to canonical department code' },
+          { icon: '●', color: '#f59e0b', label: 'Project', desc: 'Maps ERP project code to canonical project identifier' },
+        ]}
+        glossary={[
+          { term: 'Source Value', def: 'The raw code from the ERP system (e.g. "40100" in BC)' },
+          { term: 'Canonical Value', def: 'The standardised group-wide equivalent used in all reports' },
+        ]}
+      />
 
       {error && (
         <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, padding: 10, color: '#dc2626', marginBottom: 14, fontSize: 13 }}>

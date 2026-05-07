@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { get } from '../api/client';
 import { FreshnessIndicator } from '../components/erp/FreshnessIndicator';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface ERPSource {
   erp_source_id: number;
@@ -130,6 +131,21 @@ export default function CrossERPPL() {
         </div>
         <FreshnessIndicator compact />
       </div>
+
+      <PageExplainer
+        icon="📊"
+        title="What is Cross-ERP P&L Comparison?"
+        description="This page compares <strong>Revenue, Gross Profit, and EBITDA side-by-side across all connected ERP systems</strong>. When a firm runs multiple ERPs (e.g. BC for one subsidiary, SAP for another), this view normalises the P&L so management can compare financial performance across systems on equal footing. Select a date range to analyse any period."
+        concepts={[
+          { icon: '●', color: '#3b82f6', label: 'Revenue', desc: 'Total income recognised in the period per ERP source' },
+          { icon: '●', color: '#10b981', label: 'Gross Profit', desc: 'Revenue minus cost of goods sold' },
+          { icon: '●', color: '#f59e0b', label: 'EBITDA', desc: 'Earnings before interest, taxes, depreciation and amortisation' },
+        ]}
+        glossary={[
+          { term: 'ERP Source', def: 'One connected ERP system (e.g. BC Dynamics, SAP S/4HANA, Odoo)' },
+          { term: 'Normalised', def: 'Data mapped to canonical accounts so all ERPs are directly comparable' },
+        ]}
+      />
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { get, post, put } from '../api/client';
 import { TenantUser, UserRole } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 const ROLES: UserRole[] = ['viewer', 'finance_user', 'isource_admin', 'ria_admin', 'superadmin'];
 
@@ -123,6 +124,22 @@ export default function UserManagement() {
           + Invite User
         </button>
       </div>
+
+      <PageExplainer
+        icon="👥"
+        title="What is User Management?"
+        description="This page manages <strong>all users for this tenant organisation</strong>. Admins can invite new users, assign roles (Viewer → Finance User → RIA Admin → Superadmin), and remove users who no longer need access. Each role controls which dashboards and features a user can see and interact with in i-CFO360."
+        concepts={[
+          { icon: '●', color: '#1d4ed8', label: 'Super Admin', desc: 'Full platform access across all tenants' },
+          { icon: '●', color: '#065f46', label: 'RIA Admin', desc: 'Full access within this tenant — manage users and config' },
+          { icon: '●', color: '#15803d', label: 'Finance User', desc: 'Access to financial dashboards and reports' },
+          { icon: '●', color: '#6b7280', label: 'Viewer', desc: 'Read-only access to assigned subsidiaries only' },
+        ]}
+        glossary={[
+          { term: 'Role', def: 'Determines which pages and actions a user can access within the platform' },
+          { term: 'Active', def: 'User can log in; Inactive = access revoked but record preserved for audit' },
+        ]}
+      />
 
       {/* Summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>

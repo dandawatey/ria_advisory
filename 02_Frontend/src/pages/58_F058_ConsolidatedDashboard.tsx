@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { get } from '../api/client';
 import { FreshnessIndicator } from '../components/erp/FreshnessIndicator';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface ConsolidatedSummary {
   total_revenue: number;
@@ -109,6 +110,21 @@ export default function ConsolidatedDashboard() {
         </div>
         <FreshnessIndicator />
       </div>
+
+      <PageExplainer
+        icon="🏦"
+        title="What is the Consolidated Dashboard?"
+        description="This page shows <strong>group-wide financial KPIs aggregated across all ERP systems</strong> — Revenue, Gross Profit, EBITDA, and trends over time. Data from BC, SAP, Odoo, and other sources is normalised and combined into a single consolidated view. CFOs use this as the primary single-pane-of-glass for overall business performance."
+        concepts={[
+          { icon: '●', color: '#3b82f6', label: 'Revenue', desc: 'Total group revenue across all ERP sources' },
+          { icon: '●', color: '#10b981', label: 'Gross Profit', desc: 'Revenue minus COGS — consolidated across all entities' },
+          { icon: '●', color: '#f59e0b', label: 'EBITDA', desc: 'Operating profitability before non-cash and financing items' },
+        ]}
+        glossary={[
+          { term: 'Consolidated', def: 'Data from all ERPs summed after normalisation and intercompany elimination' },
+          { term: 'Trend', def: 'Monthly series showing how KPIs have changed over the selected date range' },
+        ]}
+      />
 
       {/* Date range */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
