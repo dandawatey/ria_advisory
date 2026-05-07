@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # ── Config ───────────────────────────────────────────────────────────────────
-FRONTEND_URL="http://localhost:4000"
+FRONTEND_URL="http://localhost:5002"
 BACKEND_URL="http://localhost:8080"
 COMPOSE_FILE="docker-compose.yml"
 HEALTH_TIMEOUT=60   # seconds to wait for healthy state
