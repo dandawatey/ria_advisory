@@ -8,6 +8,7 @@ import { StatusBadge } from '../components/shared/StatusBadge';
 import type { Status } from '../types';
 import { api } from '../api/client';
 import type { GLStats } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface HealthRow extends GLStats {
   status: Status;
@@ -83,6 +84,22 @@ export default function PipelineHealth() {
           </button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="💚"
+        title="What is Pipeline Health?"
+        description="This page shows <strong>GL data freshness and entry counts for all 17 subsidiaries</strong> based on real data from the database. It tells you whether each entity's data is current (latest entry less than 30 days old), stale (30–90 days), or outdated (over 90 days). Finance ops and DevOps use this as their first check when something looks wrong in a report — it quickly shows which entities have data issues."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Current (< 30 days)', desc: 'Latest GL entry is recent — data is fresh for reporting' },
+          { icon: '⚠', color: '#d97706', label: 'Stale (30–90 days)', desc: 'Data is aging — investigate sync schedule' },
+          { icon: '✗', color: '#dc2626', label: 'Outdated (> 90 days)', desc: 'Serious data gap — pipeline may be broken for this entity' },
+        ]}
+        glossary={[
+          { term: 'Earliest Entry', def: 'Oldest GL posting date in the database for this subsidiary' },
+          { term: 'Latest Entry', def: 'Most recent GL posting date — used to determine freshness' },
+          { term: 'Freshness', def: 'Classification based on days since the latest GL entry was posted' },
+        ]}
+      />
 
       {/* Summary tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>

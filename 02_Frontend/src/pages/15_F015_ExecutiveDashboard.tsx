@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { KPITile } from '../components/shared/KPITile';
 import { useNavigate } from 'react-router-dom';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   ComposedChart, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -175,6 +176,22 @@ export default function ExecutiveDashboard() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="📊"
+        title="What is the Executive Dashboard?"
+        description="The Executive Dashboard gives the <strong>CFO and senior leadership a real-time consolidated view of group financial performance</strong>. KPI tiles show consolidated Revenue, COGS, OpEx, EBITDA, and Net Income. The P&L chart breaks down the income statement visually. The donut chart shows revenue share by subsidiary. Click any subsidiary bar or pie slice to drill into entity-level detail. Toggle between IC-Eliminated and Gross views."
+        concepts={[
+          { icon: '$', color: '#16a34a', label: 'Revenue', desc: 'Consolidated group revenue (4xx accounts)' },
+          { icon: '%', color: '#2563eb', label: 'EBITDA Margin', desc: 'EBITDA as % of revenue — key profitability metric' },
+          { icon: '↓', color: '#dc2626', label: 'COGS + OpEx', desc: 'Costs of goods sold and operating expenses' },
+        ]}
+        glossary={[
+          { term: 'Eliminated', def: 'Inter-company transactions removed — true consolidated view' },
+          { term: 'Gross', def: 'Includes inter-company transactions — gross-up view before elimination' },
+          { term: 'EBITDA', def: 'Earnings Before Interest, Tax, Depreciation and Amortisation' },
+        ]}
+      />
 
       {/* ── KPI tiles ── */}
       <div className="card-grid card-grid-3 mb-24" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>

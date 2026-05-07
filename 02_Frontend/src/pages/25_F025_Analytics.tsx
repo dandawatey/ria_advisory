@@ -3,6 +3,7 @@
  * PowerBI-style filter panel + 5 content tabs, all powered by PostgreSQL star schema.
  */
 import { useState, useEffect, useCallback } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   ComposedChart, AreaChart, BarChart, LineChart, PieChart,
   Bar, Area, Line, Pie, Cell,
@@ -220,6 +221,23 @@ export default function Analytics() {
         <h1 className="page-title">Analytics &amp; Insights</h1>
         <p className="page-subtitle">Star schema · 188,380 GL entries · 17 entities · powered by PostgreSQL</p>
       </div>
+
+      <PageExplainer
+        icon="📈"
+        title="What is Analytics & Insights?"
+        description="This is the <strong>main self-service analytics workspace</strong> for finance teams. It provides a PowerBI-style filter panel (by entity, period, currency, GL group) alongside 5 tabbed content views: P&L Overview, Trends, Cost Anatomy, Entities, and Insights. All data is sourced live from the PostgreSQL star schema (188,380 GL entries). Use filters to slice the data, then explore charts and drill-down tables. Filters persist across tabs."
+        concepts={[
+          { icon: '📊', color: '#2563eb', label: 'P&L Overview', desc: 'Monthly revenue vs costs waterfall + entity ranking' },
+          { icon: '📉', color: '#7c3aed', label: 'Trends', desc: 'Month-over-month revenue by entity and MoM change' },
+          { icon: '💰', color: '#d97706', label: 'Cost Anatomy', desc: 'Top GL accounts, department spend, transaction type mix' },
+          { icon: '🔍', color: '#16a34a', label: 'Insights', desc: 'Data quality scorecard, entity coverage, currency split' },
+        ]}
+        glossary={[
+          { term: 'Suspense (999999)', def: 'Catch-all account for unclassified entries — should trend toward zero' },
+          { term: 'GM %', def: 'Gross Margin % = (Revenue − COGS) / Revenue — measure of profitability before overheads' },
+          { term: 'MoM', def: 'Month-over-Month — percentage change between current and prior month' },
+        ]}
+      />
 
       {/* KPI tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, padding: '0 0 16px' }}>

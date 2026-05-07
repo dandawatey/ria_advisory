@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { api, type FilterOptions } from '../api/client';
 import { GLFilterBar } from '../components/GLFilterBar';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Env ────────────────────────────────────────────────────────────────────────
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
@@ -293,6 +294,22 @@ export default function CoAInsights() {
             : 'CoA structure · balance distribution · entity coverage'}
         </p>
       </div>
+
+      <PageExplainer
+        icon="📒"
+        title="What is Chart of Accounts Insights?"
+        description="This page provides <strong>deep analysis of the Business Central Chart of Accounts structure</strong> across all subsidiaries. The By Category tab shows balance and net-change trends per account category. Account Detail gives a searchable paginated view of individual GL accounts with balances. Coverage Map shows which account categories exist across different subsidiaries. Balance Distribution visualises the absolute balance mix as a donut chart. Use the filter panel to scope by subsidiary, fiscal year, or account prefix."
+        concepts={[
+          { icon: '4', color: '#22c55e', label: 'Revenue (4xx)', desc: 'Income accounts — advisory fees and service revenue' },
+          { icon: '5', color: '#f97316', label: 'COGS (5xx)', desc: 'Cost of goods sold — direct costs of delivering services' },
+          { icon: '6', color: '#8b5cf6', label: 'OpEx (6xx)', desc: 'Operating expenses — salaries, rent, technology, overhead' },
+        ]}
+        glossary={[
+          { term: 'Balance', def: 'Cumulative net amount posted to the account across all periods' },
+          { term: 'Net Change', def: 'Amount posted to the account in the selected period only' },
+          { term: 'Coverage Map', def: 'Which account categories are present in which subsidiaries — gaps indicate missing data or different CoA structure' },
+        ]}
+      />
 
       {/* KPI row — always visible */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, paddingBottom: 16 }}>

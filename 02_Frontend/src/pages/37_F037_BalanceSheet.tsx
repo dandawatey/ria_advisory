@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface BSRow {
@@ -115,6 +116,22 @@ export default function BalanceSheet() {
         <h1 className="page-title">Balance Sheet</h1>
         <p className="page-subtitle">Assets · Liabilities · Equity — 1xx / 2xx / 3xx accounts</p>
       </div>
+
+      <PageExplainer
+        icon="🏦"
+        title="What is the Balance Sheet?"
+        description="The Balance Sheet shows <strong>the financial position of the entity at a point in time</strong>: what it owns (Assets, 1xx), what it owes (Liabilities, 2xx), and the owners' residual claim (Equity, 3xx). The fundamental accounting equation Assets = Liabilities + Equity must hold at all times. Use the filter panel to scope by subsidiary and period. The donut chart visualises the balance composition across these three sections."
+        concepts={[
+          { icon: '1', color: '#3b82f6', label: 'Assets (1xx)', desc: 'Resources owned — cash, receivables, fixed assets, investments' },
+          { icon: '2', color: '#ef4444', label: 'Liabilities (2xx)', desc: 'Obligations owed — payables, loans, deferred revenue' },
+          { icon: '3', color: '#10b981', label: 'Equity (3xx)', desc: "Owners' interest — paid-in capital, retained earnings, reserves" },
+        ]}
+        glossary={[
+          { term: 'Net Equity', def: 'Total Assets minus Total Liabilities — the book value of the business' },
+          { term: 'Debt / Equity', def: 'Total Liabilities ÷ Total Equity — leverage ratio; higher = more debt-financed' },
+          { term: 'Balance', def: 'Cumulative net amount on the account — does not reset each year (unlike P&L accounts)' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

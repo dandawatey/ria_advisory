@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { Status } from '../types';
 import { api } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface TenantRow {
   code: string;
@@ -81,6 +82,21 @@ export default function BCTenantAuth() {
 
   return (
     <div>
+      <PageExplainer
+        icon="🔐"
+        title="What is BC Tenant Authentication?"
+        description="This page manages <strong>Entra ID app registrations and OAuth connectivity</strong> for each Business Central subsidiary. Each entity requires its own client credentials and certificate to authenticate with Microsoft's BC API. Finance ops admins use this page to monitor connection health, check certificate expiry, and test API connectivity before data extraction runs."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Connected', desc: 'Auth token valid — BC API responding normally' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Near expiry or intermittent — check cert/token' },
+          { icon: '✗', color: '#dc2626', label: 'Failed', desc: 'Auth broken — extraction blocked for this entity' },
+        ]}
+        glossary={[
+          { term: 'Entra ID', def: 'Microsoft Azure AD — identity provider for BC OAuth app registrations' },
+          { term: 'Client Certificate', def: 'X.509 cert used for cert-based OAuth (more secure than client secret)' },
+          { term: 'API Version', def: 'BC OData API version (v2.0) — must match tenant BC environment' },
+        ]}
+      />
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div>
@@ -93,6 +109,22 @@ export default function BCTenantAuth() {
           <button className="btn btn-primary btn-sm">+ Register New Tenant</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🔐"
+        title="What is BC Tenant Authentication?"
+        description="This page manages <strong>Microsoft Entra ID (Azure AD) app registrations</strong> and certificate-based OAuth 2.0 connections for every Business Central (BC) subsidiary. Admins use this to verify that each entity's ERP connection is authenticated and the SSL certificate is valid. A <strong>Connected</strong> status means the pipeline can pull data automatically; <strong>Warning</strong> means the certificate is expiring within 90 days; <strong>Pending</strong> means the connection has not been verified yet."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Connected', desc: 'OAuth flow successful — data pipeline active' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Certificate expiring within 90 days — renew soon' },
+          { icon: '○', color: '#6b7280', label: 'Pending', desc: 'Not yet verified — click Test Auth to check' },
+        ]}
+        glossary={[
+          { term: 'Tenant ID', def: 'Azure AD tenant GUID for the subsidiary' },
+          { term: 'Client ID', def: 'App registration ID used for OAuth token requests' },
+          { term: 'Cert Expiry', def: 'Date when the OAuth certificate becomes invalid' },
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
         {[

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface DeptRow {
@@ -123,6 +124,22 @@ export default function DeptSpend() {
         <h1 className="page-title">Department Spend</h1>
         <p className="page-subtitle">Spend by department + vertical · quarterly breakdown</p>
       </div>
+
+      <PageExplainer
+        icon="🏢"
+        title="What is Department Spend?"
+        description="This page analyses <strong>operating expenses broken down by department code and vertical business line</strong>. It answers questions like 'Which department is spending the most?' and 'How does spend compare across verticals?' The bar chart shows total spend per department. The table allows filtering by entity, department, vertical, and fiscal year. Finance business partners use this to challenge budgets and identify cost centres running over plan."
+        concepts={[
+          { icon: 'D', color: '#3b82f6', label: 'Department', desc: 'Cost centre code from BC — e.g. ADMIN, SALES, TECH, OPS' },
+          { icon: 'V', color: '#10b981', label: 'Vertical', desc: 'Business line code — e.g. ADVISORY, FUND, CORP' },
+          { icon: '$', color: '#f59e0b', label: 'Total Spend', desc: 'Sum of all GL entries posted to this department for the period' },
+        ]}
+        glossary={[
+          { term: 'v_dept_spend', def: 'Database view aggregating GL entries by department code, vertical, entity, and fiscal period' },
+          { term: 'Fiscal Period', def: 'Month number within the fiscal year — period 1 = first month of fiscal year' },
+          { term: 'Department Code', def: 'Dimension tag on GL entries that assigns the transaction to a cost centre' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

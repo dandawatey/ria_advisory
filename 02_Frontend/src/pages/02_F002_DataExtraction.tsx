@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface EntityConfig {
   entity: string;
@@ -42,6 +43,21 @@ export default function DataExtraction() {
 
   return (
     <div>
+      <PageExplainer
+        icon="⚙️"
+        title="What is the Data Extraction Engine?"
+        description="This page controls <strong>how and when data is pulled from Business Central</strong> into the platform. Each BC entity (GL entries, customers, invoices, etc.) has its own extraction config: endpoint URL, load strategy, page size, and last watermark. Finance ops teams use it to monitor extraction health, review row counts per run, and adjust incremental sync parameters."
+        concepts={[
+          { icon: '⟳', color: '#2563eb', label: 'Delta Token', desc: 'Incremental pull using BC change token — only new/changed rows fetched' },
+          { icon: '📅', color: '#7c3aed', label: 'Last Modified', desc: 'Pulls rows where modifiedAt > last watermark timestamp' },
+          { icon: '⬇', color: '#6b7280', label: 'Full Load', desc: 'Complete table reload — used for small reference tables' },
+        ]}
+        glossary={[
+          { term: 'Watermark', def: 'Last successful sync timestamp or delta token — used to determine what to pull next' },
+          { term: 'Page Size', def: 'Number of records per OData API request — affects speed vs memory tradeoff' },
+          { term: 'Rows Last Run', def: 'Count of records extracted in the most recent sync job' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Data Extraction Engine</h1>
         <p className="page-subtitle">
@@ -52,6 +68,22 @@ export default function DataExtraction() {
           <button className="btn btn-secondary">Export Catalog</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="⚙️"
+        title="What is the Data Extraction Engine?"
+        description="This page configures <strong>how each Business Central entity is extracted</strong> via OData API. Finance ops and data engineers use it to set load strategy, page size, watermark timestamps, and field projections per entity. The extraction runs on schedule and feeds the Bronze Zone. Clicking a row opens the config panel to tune the extraction for that entity."
+        concepts={[
+          { icon: 'Δ', color: '#2563eb', label: 'Delta Token', desc: 'Incremental — only new/changed records since last run' },
+          { icon: '⏱', color: '#0891b2', label: 'Last-Modified', desc: 'Pulls records changed since last watermark timestamp' },
+          { icon: '⟳', color: '#6b7280', label: 'Full Load', desc: 'Always reloads all rows — used for small lookup tables' },
+        ]}
+        glossary={[
+          { term: 'Watermark', def: 'Timestamp of last successful extract — used as starting point for next delta pull' },
+          { term: 'Page Size', def: 'Number of records fetched per OData API call ($top parameter)' },
+          { term: '$select', def: 'Field projection — limits which columns are pulled from BC to reduce payload size' },
+        ]}
+      />
 
       <div className="card">
         <div className="card-title">Entity Catalog ({mockEntities.length} entities)</div>

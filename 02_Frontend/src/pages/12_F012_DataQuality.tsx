@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import type { GLStats } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface DQRow extends GLStats {
   coverage: number;  // % of expected date range covered
@@ -72,6 +73,22 @@ export default function DataQuality() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="✅"
+        title="What is the Data Quality Dashboard?"
+        description="This page shows <strong>GL data completeness and coverage metrics per subsidiary</strong>. The DQ Score measures how densely populated each entity's GL data is relative to its date range — a high score means consistent daily entries, a low score suggests gaps. Finance ops and data engineers use this to identify subsidiaries with sparse data, missing periods, or null account codes that may produce unreliable consolidated reports."
+        concepts={[
+          { icon: '●', color: '#16a34a', label: 'High (≥70)', desc: 'Dense data — reliable for reporting' },
+          { icon: '●', color: '#d97706', label: 'Medium (40–69)', desc: 'Moderate density — review gaps before using' },
+          { icon: '●', color: '#dc2626', label: 'Low (<40)', desc: 'Sparse data — may indicate missing syncs or inactive entity' },
+        ]}
+        glossary={[
+          { term: 'DQ Score', def: 'Data quality score 0–100 based on GL entry density (entries per day over date range)' },
+          { term: 'Coverage %', def: 'Estimated % of expected date range covered by actual GL entries' },
+          { term: 'Null Accounts', def: 'GL entries with missing account code — these cannot be classified in reports' },
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
         {[

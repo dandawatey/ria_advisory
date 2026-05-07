@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { Status } from '../types';
 import { api } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface EndpointRow {
   method: string;
@@ -83,6 +84,22 @@ export default function APIStatus() {
           </a>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🩺"
+        title="What is API Status?"
+        description="This page performs <strong>live health checks against every FastAPI backend endpoint</strong> and displays latency and status. DevOps engineers and developers use it to verify the backend is running, all endpoints respond correctly, and the database connection is active. The endpoint list shows response time in milliseconds — useful for identifying slow queries or broken routes."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Healthy', desc: 'All endpoints returning 2xx — system operational' },
+          { icon: '⚠', color: '#d97706', label: 'Degraded', desc: 'Some endpoints failing — check individual rows' },
+          { icon: '✗', color: '#dc2626', label: 'Down', desc: 'Backend not reachable — start uvicorn server' },
+        ]}
+        glossary={[
+          { term: 'Latency (ms)', def: 'Time in milliseconds for the endpoint to respond to a GET request' },
+          { term: '401', def: 'Unauthorized — endpoint requires a valid auth token' },
+          { term: '5xx', def: 'Server error — backend threw an exception' },
+        ]}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
         <div className="card" style={{ padding: '14px 16px' }}>

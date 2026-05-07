@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
 import { get, post, put, del } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,22 @@ export default function MappingConsole() {
           ERP-agnostic canonical account mapping · GL codes → P&amp;L / Balance Sheet / Cash Flow
         </p>
       </div>
+
+      <PageExplainer
+        icon="🗂️"
+        title="What is the GL Mapping Console?"
+        description="This page is the <strong>central workspace for mapping ERP GL account codes to the canonical 4-level chart of accounts</strong>. Finance controllers and data stewards use it to assign each raw BC account number to the appropriate L1 financial statement (P&L, Balance Sheet, Cash Flow), L2 category (Revenue, COGS, OpEx, etc.), and L3 subcategory. The Canonical Hierarchy tab shows the full standard account tree. The Coverage Stats tab shows how much of the GL is mapped vs. unmapped across all ERPs."
+        concepts={[
+          { icon: '●', color: '#059669', label: 'User-mapped', desc: 'Account manually mapped by a finance user — highest confidence' },
+          { icon: '●', color: '#3b82f6', label: 'Auto-mapped', desc: 'Account mapped automatically by the system based on account prefix rules' },
+          { icon: '●', color: '#ef4444', label: 'Unmapped', desc: 'Account not yet assigned to a canonical category — excluded from reports' },
+        ]}
+        glossary={[
+          { term: 'Canonical Account', def: '4-level standard account hierarchy used across all subsidiaries for consolidated reporting' },
+          { term: 'L1 / L2 / L3', def: 'Hierarchy levels: L1 = Financial Statement, L2 = Category, L3 = Subcategory' },
+          { term: 'Account Group', def: 'Custom named grouping of GL accounts for custom report lines or analysis views' },
+        ]}
+      />
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 2, borderBottom: '2px solid #e5e7eb', marginBottom: 20 }}>

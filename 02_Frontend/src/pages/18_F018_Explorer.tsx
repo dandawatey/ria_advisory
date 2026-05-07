@@ -7,6 +7,7 @@
  * Tab 2 — Stats    : per-subsidiary load statistics
  */
 import { useState, useEffect, useCallback } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   ComposedChart, BarChart, PieChart,
   Bar, Line, Pie, Cell,
@@ -207,6 +208,22 @@ export default function Explorer() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🔍"
+        title="What is GL Explorer?"
+        description="GL Explorer provides <strong>chart-first analytics and ad-hoc search</strong> across the full GL dataset (188,380 entries from 17 subsidiaries). The Charts tab shows 7 pre-built visualisations including monthly P&L, top expense accounts, entity revenue comparison, and document type mix. The Search tab lets finance teams filter and export GL entries by entity, account, department, and date range. The Stats tab shows load statistics per subsidiary."
+        concepts={[
+          { icon: '📈', color: '#16a34a', label: 'Charts', desc: 'Pre-built analytics views — monthly P&L, entity comparison, cost anatomy' },
+          { icon: '🔍', color: '#2563eb', label: 'GL Search', desc: 'Filter and export raw GL entries — useful for audit and investigation' },
+          { icon: '📊', color: '#7c3aed', label: 'Load Stats', desc: 'Per-subsidiary entry counts and date ranges' },
+        ]}
+        glossary={[
+          { term: '4xx', def: 'Revenue accounts — income and fee revenue' },
+          { term: '5xx', def: 'COGS accounts — cost of goods and services sold' },
+          { term: '6xx', def: 'Operating expense accounts — salaries, rent, marketing, IT' },
+        ]}
+      />
 
       {/* ── KPI tiles ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>

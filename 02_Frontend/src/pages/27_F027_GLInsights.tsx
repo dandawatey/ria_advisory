@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   api,
   type GLFilters,
@@ -281,6 +282,22 @@ export default function GLInsights() {
         <h1 className="page-title">GL Insights</h1>
         <p className="page-subtitle">Drill-through analytics · filter by entity, year and period</p>
       </div>
+
+      <PageExplainer
+        icon="🔬"
+        title="What is GL Insights?"
+        description="This page provides <strong>drill-through analytics over the full GL dataset</strong> with a left filter panel for slicing by entity, fiscal year, and period. The P&L tab shows a monthly waterfall chart. The By Account tab shows the top-30 GL accounts by spend with account category breakdown. By Department shows spend heatmap by cost centre. The Anomalies tab surfaces suspense account entries and completeness gaps. Click any chart element to drill into that segment."
+        concepts={[
+          { icon: '→', color: '#3b82f6', label: 'Drill-through', desc: 'Click a chart bar or pie slice to filter all other tabs to that segment' },
+          { icon: '🗂', color: '#22c55e', label: 'Filter Panel', desc: 'Left panel — select entities, fiscal year, and date range to scope the analysis' },
+          { icon: '⚠', color: '#f97316', label: 'Suspense (999999)', desc: 'Entries posted to account 999999 — unclassified; must be reclassified in BC' },
+        ]}
+        glossary={[
+          { term: 'Waterfall Chart', def: 'Monthly P&L chart showing Revenue, COGS, OpEx as stacked bars and Net Income as a line' },
+          { term: 'Dept Heatmap', def: 'Spend by department code — identifies which cost centres are driving expenses' },
+          { term: 'Drill State', def: 'Active filter applied by clicking a chart — shown as breadcrumb at top; click × to clear' },
+        ]}
+      />
 
       {/* KPI row — always visible */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, paddingBottom: 16 }}>

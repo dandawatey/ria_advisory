@@ -4,6 +4,7 @@
  */
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { CircuitBreaker } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 const mockCircuitBreakers: CircuitBreaker[] = [
   { subsidiaryCode: 'SUB05', entity: 'GeneralLedgerEntries', state: 'open',      consecutiveFailures: 3, lastFailureAt: '2026-04-23T09:15:00Z', openedAt: '2026-04-23T09:15:00Z' },
@@ -26,12 +27,43 @@ const sftpSlots = [
 export default function IngestionResilience() {
   return (
     <div>
+      <PageExplainer
+        icon="🛡️"
+        title="What is Ingestion Resilience?"
+        description="This page monitors <strong>circuit breakers, retry queues, and SFTP fallback slots</strong> for each BC entity. When an API call fails repeatedly, the circuit breaker opens to prevent cascading failures — data falls back to SFTP CSV upload. Finance ops teams use this page to identify stuck extractions, reset tripped breakers, and manage manual SFTP file uploads when BC API is unavailable."
+        concepts={[
+          { icon: '●', color: '#dc2626', label: 'Open', desc: 'Circuit breaker tripped — extraction paused, SFTP fallback active' },
+          { icon: '◑', color: '#d97706', label: 'Half-Open', desc: 'Testing recovery — one probe request sent to BC API' },
+          { icon: '○', color: '#16a34a', label: 'Closed', desc: 'Normal operation — API calls flowing through' },
+        ]}
+        glossary={[
+          { term: 'Circuit Breaker', def: 'Stops retrying after N consecutive failures to prevent overload' },
+          { term: 'SFTP Fallback', def: 'Manual CSV upload path used when BC API is unreachable' },
+          { term: 'Jitter', def: 'Random delay added to retry intervals to avoid thundering herd effect' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Ingestion Resilience & Fallback</h1>
         <p className="page-subtitle">
           Circuit breaker status, retry configuration, and SFTP fallback ingestion management. (F004)
         </p>
       </div>
+
+      <PageExplainer
+        icon="🛡️"
+        title="What is Ingestion Resilience?"
+        description="This page monitors <strong>circuit breakers, retry policies, and SFTP fallback ingestion</strong> for subsidiaries experiencing API issues. When a BC API fails repeatedly, the circuit breaker trips to prevent cascading errors. DevOps and data engineers use this page to diagnose failures, reset circuits after fixes, tune retry backoff parameters, and manage SFTP drop zones for entities that can't expose APIs."
+        concepts={[
+          { icon: '⚡', color: '#dc2626', label: 'Open', desc: 'Circuit tripped — extraction halted; manual reset required' },
+          { icon: '◑', color: '#d97706', label: 'Half-Open', desc: 'Testing recovery — one probe request allowed through' },
+          { icon: '○', color: '#16a34a', label: 'Closed', desc: 'Normal operation — requests flowing through' },
+        ]}
+        glossary={[
+          { term: 'Circuit Breaker', def: 'Pattern that stops retrying after N consecutive failures to avoid overloading a failing system' },
+          { term: 'Retry-After', def: 'HTTP 429 header — tells the client how long to wait before retrying' },
+          { term: 'SFTP Fallback', def: 'Secure file transfer alternative when BC API is inaccessible for a subsidiary' },
+        ]}
+      />
 
       {/* Active circuit breakers */}
       {mockCircuitBreakers.length > 0 && (

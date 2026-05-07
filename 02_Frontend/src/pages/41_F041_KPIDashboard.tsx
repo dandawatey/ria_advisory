@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Ratios {
@@ -159,6 +160,22 @@ export default function KPIDashboard() {
         <h1 className="page-title">Financial KPI Dashboard</h1>
         <p className="page-subtitle">Profitability · Liquidity · Leverage ratios across entities</p>
       </div>
+
+      <PageExplainer
+        icon="📐"
+        title="What is the Financial KPI Dashboard?"
+        description="This page displays <strong>key financial ratios calculated from real GL data</strong> — profitability, liquidity, and leverage metrics. Gross Margin, Net Margin, and EBITDA Margin measure operational efficiency. OpEx Ratio shows overhead as a percent of revenue. Current Ratio measures short-term liquidity. Debt/Equity shows financial leverage. Ratio trend charts show how these metrics have moved month by month. Use the filter panel to scope by entity and fiscal year."
+        concepts={[
+          { icon: '%', color: '#22c55e', label: 'Profitability', desc: 'Gross Margin, Net Margin, EBITDA Margin — higher is better; target >20% net' },
+          { icon: '×', color: '#3b82f6', label: 'Liquidity', desc: 'Current Ratio — current assets ÷ current liabilities; target >1.5×' },
+          { icon: '÷', color: '#f97316', label: 'Leverage', desc: 'Debt/Equity ratio — higher means more debt-financed; target varies by industry' },
+        ]}
+        glossary={[
+          { term: 'EBITDA Margin', def: 'Earnings Before Interest, Tax, Depreciation, Amortisation as % of revenue — operational profitability proxy' },
+          { term: 'OpEx Ratio', def: 'Operating Expenses ÷ Revenue × 100 — measures overhead efficiency' },
+          { term: 'Current Ratio', def: 'Current Assets ÷ Current Liabilities — ability to pay short-term obligations' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

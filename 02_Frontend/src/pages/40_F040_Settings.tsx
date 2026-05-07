@@ -3,6 +3,7 @@
  * Business Central Dynamics 365 connection + application defaults
  */
 import { useState, useEffect } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -171,6 +172,22 @@ export default function Settings() {
           Data source connections · Application preferences
         </div>
       </div>
+
+      <PageExplainer
+        icon="⚙️"
+        title="What is Settings?"
+        description="This page manages <strong>data source connections and application preferences</strong> for the i-CFO360 platform. The Business Central section configures the OAuth 2.0 service-to-service connection to Microsoft Dynamics 365 BC — enter the Azure AD app registration credentials and test the connection. Application Defaults sets the base currency, fiscal year start month, and date display format. Changes take effect immediately for all users in this tenant."
+        concepts={[
+          { icon: '✓', color: '#22c55e', label: 'Connected', desc: 'BC API reachable and OAuth token exchange successful' },
+          { icon: '✗', color: '#dc2626', label: 'Disconnected', desc: 'Connection test failed — check tenant ID, client ID, and client secret' },
+          { icon: '○', color: '#6b7280', label: 'Not Configured', desc: 'No BC credentials saved yet — fill in the form and save' },
+        ]}
+        glossary={[
+          { term: 'Tenant ID', def: 'Azure AD tenant GUID for the Business Central environment' },
+          { term: 'Client ID', def: 'App registration client ID used for OAuth client credentials flow' },
+          { term: 'Client Secret', def: 'Secret key for the app registration — stored securely, never shown in UI after save' },
+        ]}
+      />
 
       {/* ── Business Central Connection ─────────────────────────────────────── */}
       <Section

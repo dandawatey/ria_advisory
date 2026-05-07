@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ExpSummary {
@@ -168,6 +169,22 @@ export default function ExpenseAnalysis() {
         <h1 className="page-title">Expense Analysis</h1>
         <p className="page-subtitle">COGS (5xx) + Operating Expenses (6xx)</p>
       </div>
+
+      <PageExplainer
+        icon="💸"
+        title="What is Expense Analysis?"
+        description="This page breaks down <strong>COGS (5xx) and Operating Expenses (6xx)</strong> from the GL. COGS are the direct costs of delivering advisory services. OpEx covers overhead — salaries, rent, technology, and administration. The By Period tab shows monthly expense trends. By Account ranks the top expense accounts. By Entity compares spend across subsidiaries. Use the filter panel to scope by entity, fiscal year, and expense category."
+        concepts={[
+          { icon: '5', color: '#ef4444', label: 'COGS (5xx)', desc: 'Cost of Goods Sold — direct costs tied to delivering client services' },
+          { icon: '6', color: '#f59e0b', label: 'OpEx (6xx)', desc: 'Operating Expenses — indirect overhead: salaries, rent, marketing, technology' },
+          { icon: '÷', color: '#3b82f6', label: 'COGS %', desc: 'COGS as percentage of total expenses — measures direct vs overhead cost mix' },
+        ]}
+        glossary={[
+          { term: 'Total Expenses', def: 'Sum of all COGS (5xx) and OpEx (6xx) accounts for the period' },
+          { term: 'Account 601201', def: 'Income Tax Expense — often misclassified in OpEx; should be in 8xx Tax accounts' },
+          { term: 'Entry Count', def: 'Number of GL lines posted to expense accounts — not the monetary amount' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

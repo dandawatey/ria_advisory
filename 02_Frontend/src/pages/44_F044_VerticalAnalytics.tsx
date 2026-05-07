@@ -9,6 +9,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface VerticalRow {
@@ -202,6 +203,21 @@ export default function VerticalAnalytics() {
 
   return (
     <div>
+      <PageExplainer
+        icon="📊"
+        title="What is Vertical Analytics?"
+        description="This page breaks down <strong>Revenue, COGS, and OpEx by business vertical</strong> across all subsidiaries. CFOs and finance directors use it to identify which business segments drive profitability, where costs are concentrated, and how margins compare across verticals. Each vertical groups departments from the GL dimension framework into a logical business unit."
+        concepts={[
+          { icon: '📈', color: '#16a34a', label: 'Revenue', desc: 'Total income accounts (4xx) attributed to the vertical' },
+          { icon: '📉', color: '#dc2626', label: 'COGS + OpEx', desc: 'Cost of goods sold plus operating expenditure per vertical' },
+          { icon: '▲', color: '#2563eb', label: 'Gross Margin', desc: '(Revenue − COGS) ÷ Revenue — primary profitability signal' },
+        ]}
+        glossary={[
+          { term: 'Vertical', def: 'Business segment grouping (e.g. Asset Mgmt, Advisory, Operations) derived from GL dimensions' },
+          { term: 'Net Margin', def: '(Revenue − COGS − OpEx) ÷ Revenue — bottom-line profitability per vertical' },
+          { term: 'OpEx Ratio', def: 'Operating expenses as % of revenue — efficiency indicator' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Vertical Analytics</h1>
         <p className="page-subtitle">Revenue · COGS · OpEx breakdown by business vertical</p>

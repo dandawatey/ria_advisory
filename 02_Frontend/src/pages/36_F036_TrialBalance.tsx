@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface TBRow {
@@ -116,6 +117,22 @@ export default function TrialBalance() {
         <h1 className="page-title">Trial Balance</h1>
         <p className="page-subtitle">All accounts · Debit, Credit, Net Balance per entity</p>
       </div>
+
+      <PageExplainer
+        icon="⚖️"
+        title="What is the Trial Balance?"
+        description="The Trial Balance lists <strong>all GL accounts with their total debits, total credits, and net balance</strong> for the selected entity and period. Finance controllers use it to verify that debits equal credits before closing the period. The trial balance is the foundation for producing the Income Statement and Balance Sheet. Use the filter panel to scope by subsidiary, account category, and fiscal year."
+        concepts={[
+          { icon: 'D', color: '#3b82f6', label: 'Debit', desc: 'Total amount posted to the debit side of this account across the period' },
+          { icon: 'C', color: '#10b981', label: 'Credit', desc: 'Total amount posted to the credit side of this account across the period' },
+          { icon: '=', color: '#f59e0b', label: 'Net Balance', desc: 'Debit minus Credit — positive = net debit, negative = net credit' },
+        ]}
+        glossary={[
+          { term: 'v_trial_balance', def: 'Database view that aggregates GL entries into per-account debit/credit/net totals by entity' },
+          { term: 'Income Balance', def: 'BC field indicating whether the account resets each year (Income Statement) or accumulates (Balance Sheet)' },
+          { term: 'Account Category', def: 'High-level classification: Assets, Liabilities, Equity, Revenue, COGS, OpEx, etc.' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

@@ -16,6 +16,7 @@ import {
   type IncomeAccountRow,
   type IncomeEntityRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
@@ -256,6 +257,22 @@ export default function MonthlyIncome() {
         <h1 className="page-title">Monthly Income Report</h1>
         <p className="page-subtitle">Revenue and other income by period, account, and entity</p>
       </div>
+
+      <PageExplainer
+        icon="📈"
+        title="What is the Monthly Income Report?"
+        description="This page analyses <strong>revenue and other income posted to the GL</strong> from accounts 4xx (Revenue) and 7xx (Other Income). The By Period tab shows monthly income trends with MoM change. By Account ranks the top revenue accounts by total amount. By Entity compares income across subsidiaries. Use the filter panel to scope by entity, fiscal year, and account prefix to isolate specific income streams."
+        concepts={[
+          { icon: '4', color: '#22c55e', label: 'Revenue (4xx)', desc: 'Primary income — advisory fees, management fees, service revenue' },
+          { icon: '7', color: '#06b6d4', label: 'Other Income (7xx)', desc: 'Non-operating income — interest, gain on sale, miscellaneous' },
+          { icon: '↕', color: '#f97316', label: 'MoM Change', desc: 'Month-over-month variance in income — positive = growth' },
+        ]}
+        glossary={[
+          { term: 'Total Income', def: 'Sum of Revenue (4xx) and Other Income (7xx) for the selected period' },
+          { term: 'Avg Monthly Income', def: 'Total income divided by number of months with data — smoothed run rate' },
+          { term: 'Account Prefix', def: 'First digit of GL account number — use to filter to revenue (4) or other income (7)' },
+        ]}
+      />
 
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>

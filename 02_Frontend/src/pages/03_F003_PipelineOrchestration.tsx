@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
 import type { Status } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface Schedule {
   id: string;
@@ -43,6 +44,22 @@ export default function PipelineOrchestration() {
 
   return (
     <div>
+      <PageExplainer
+        icon="🗓️"
+        title="What is Pipeline Orchestration?"
+        description="This page manages the <strong>scheduling and execution of all data pipeline jobs</strong> — Extract → Bronze → Silver → Gold. Each schedule defines when data syncs run (cron expression), which entities are in scope, and the full stage-by-stage execution status. Finance ops and data engineers use this page to trigger manual runs, adjust schedules, and diagnose pipeline failures."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Success', desc: 'Stage completed — all rows processed without errors' },
+          { icon: '⟳', color: '#2563eb', label: 'Running', desc: 'Stage currently executing — check progress in logs' },
+          { icon: '✗', color: '#dc2626', label: 'Error', desc: 'Stage failed — review error log before retrying' },
+          { icon: '○', color: '#6b7280', label: 'Pending', desc: 'Queued but not yet started — waiting for prior stage' },
+        ]}
+        glossary={[
+          { term: 'Cron', def: 'Schedule expression — e.g. "0 6 * * 1-5" = 6am Mon–Fri' },
+          { term: 'Bronze→Silver', def: 'Normalisation stage — deduplication, SCD-2 history, type casting' },
+          { term: 'Silver→Gold', def: 'Aggregation stage — star schema joins, KPI rollups for reporting' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Pipeline Orchestration & Scheduling</h1>
         <p className="page-subtitle">
@@ -55,6 +72,22 @@ export default function PipelineOrchestration() {
           <button className="btn btn-secondary">+ New Schedule</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🔄"
+        title="What is Pipeline Orchestration?"
+        description="This page manages the <strong>scheduling and execution of the full ETL pipeline</strong>: from BC extraction through to the Gold analytics layer. DevOps and data engineers use it to define cron schedules, trigger on-demand runs, and monitor the latest pipeline stage results. Each stage in the DAG (Directed Acyclic Graph) must complete successfully before the next stage begins."
+        concepts={[
+          { icon: '▶', color: '#16a34a', label: 'Running', desc: 'Stage currently executing' },
+          { icon: '✓', color: '#2563eb', label: 'Success', desc: 'Stage completed without errors' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Stage completed with non-fatal issues (e.g. DQ checks)' },
+        ]}
+        glossary={[
+          { term: 'Cron', def: 'Unix schedule expression (e.g. "0 6 * * 1-5" = 6am weekdays)' },
+          { term: 'Run ID', def: 'Unique identifier for a pipeline execution — used for traceability' },
+          { term: 'Entity Scope', def: 'Which BC entities are included in this pipeline run' },
+        ]}
+      />
 
       {triggering && (
         <div className="alert alert-info mb-24">

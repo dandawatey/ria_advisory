@@ -7,6 +7,7 @@ import { useState, useCallback } from 'react';
 import { api } from '../api/client';
 import type { GLEntry } from '../api/client';
 import { GLFilterBar } from '../components/GLFilterBar';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface Suggestion {
   label: string;
@@ -90,6 +91,21 @@ export default function AnnotationsNLQ() {
           {apiError && <span style={{ color: 'var(--color-warning)', marginLeft: 8 }}>⚠ API offline</span>}
         </p>
       </div>
+
+      <PageExplainer
+        icon="💬"
+        title="What is GL Query?"
+        description="This page provides <strong>natural language and preset-button access to the GL dataset</strong>. Type a question like 'Show me revenue entries for India' and the system translates it into a database query. Finance analysts use it for ad-hoc investigation without needing to know SQL or account codes. Results can be exported as CSV. Use the suggestion buttons for common queries or combine with the filter bar for precise results."
+        concepts={[
+          { icon: '4', color: '#16a34a', label: 'Revenue (4xx)', desc: 'All income accounts — fees, advisory revenue' },
+          { icon: '6', color: '#dc2626', label: 'Expenses (6xx)', desc: 'Operating expenses — salaries, rent, technology' },
+          { icon: '1', color: '#2563eb', label: 'Assets (1xx)', desc: 'Balance sheet assets — cash, receivables, investments' },
+        ]}
+        glossary={[
+          { term: 'NLQ', def: 'Natural Language Query — plain English question translated into a structured database query' },
+          { term: 'Net Amount', def: 'Sum of all amounts in the result set — positive = net debit, negative = net credit' },
+        ]}
+      />
 
       <div className="card mb-16">
         <div className="card-title">Ask a question about the GL data</div>

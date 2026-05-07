@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface SilverJob {
   entity: string;
@@ -43,12 +44,43 @@ export default function SilverLayer() {
 
   return (
     <div>
+      <PageExplainer
+        icon="⚗️"
+        title="What is the Silver Layer?"
+        description="The <strong>Silver Layer transforms raw Bronze data into clean, normalised records</strong>. This stage removes duplicates, applies SCD-2 (Slowly Changing Dimension) history tracking, standardises data types, and resolves entity relationships. The result is a consistent, query-ready dataset feeding the Gold analytics layer. Data engineers monitor this page for transform job status, duplicate counts, and schema changes."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Success', desc: 'Transform complete — rows validated and written to Silver' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Completed with anomalies — duplicates or schema drift detected' },
+          { icon: '✗', color: '#dc2626', label: 'Error', desc: 'Transform failed — check job log before data reaches Gold' },
+        ]}
+        glossary={[
+          { term: 'SCD-2', def: 'Slowly Changing Dimension Type 2 — keeps full history of changed records with effective dates' },
+          { term: 'Rows In / Out', def: 'Input from Bronze vs output to Silver — difference = duplicates removed or splits' },
+          { term: 'Schema Drift', def: 'Unexpected column additions or type changes from source — triggers warning flag' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Silver Layer — Transformation</h1>
         <p className="page-subtitle">
           Type-cast, deduplicated, SCD-2 history-tracked conformed tables per entity. (F006)
         </p>
       </div>
+
+      <PageExplainer
+        icon="🪙"
+        title="What is the Silver Layer?"
+        description="The Silver Layer is where <strong>raw Bronze data is cleaned, type-cast, deduplicated, and conformed</strong>. Each Bronze entity is transformed into a Silver table with validated data types, duplicate records removed (using CDC overlap logic), and SCD-2 history tracking applied to dimension changes. Data engineers and ops use this page to monitor job status, review deduplication counts, and inspect schema definitions."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Success', desc: 'Transformation job completed cleanly' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Completed with schema drift or excess dedup' },
+          { icon: '✗', color: '#dc2626', label: 'Error', desc: 'Job failed — check pipeline logs' },
+        ]}
+        glossary={[
+          { term: 'SCD-2', def: 'Slowly Changing Dimension Type 2 — tracks attribute changes over time with start/end date rows' },
+          { term: 'Dedup', def: 'Deduplication — removing records that appear twice due to CDC overlap windows' },
+          { term: 'Schema Drift', def: 'When source schema changes (e.g. new columns) without a matching Silver definition update' },
+        ]}
+      />
 
       <div className="card-grid card-grid-4 mb-24">
         <div className="kpi-tile"><div className="kpi-label">Total Rows (Silver)</div><div className="kpi-value">1.2M</div><div className="kpi-meta text-muted">All entities, all tenants</div></div>

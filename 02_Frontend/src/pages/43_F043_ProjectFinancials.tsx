@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ProjectRow {
@@ -151,6 +152,22 @@ export default function ProjectFinancials() {
         <h1 className="page-title">Project Financials</h1>
         <p className="page-subtitle">P&L breakdown by project — revenue, COGS, OpEx, net</p>
       </div>
+
+      <PageExplainer
+        icon="📁"
+        title="What is Project Financials?"
+        description="This page shows <strong>P&L breakdown by project</strong> — revenue, COGS, OpEx, and net income per project across all subsidiaries. Data comes from GL entries tagged with a project dimension code. Finance teams use it to assess project profitability and identify which projects are cross-subsidising others. The bar chart ranks projects by revenue. The table shows full P&L per project with margin percentages."
+        concepts={[
+          { icon: '$', color: '#22c55e', label: 'Revenue', desc: 'Income accounts (4xx) tagged to this project code' },
+          { icon: '$', color: '#ef4444', label: 'Spend', desc: 'COGS (5xx) + OpEx (6xx) tagged to this project code' },
+          { icon: '%', color: '#3b82f6', label: 'Net Margin', desc: 'Net income ÷ revenue — project-level profitability percentage' },
+        ]}
+        glossary={[
+          { term: 'dim_project', def: 'Project dimension table from Business Central — maps project codes to project names' },
+          { term: 'Project Code', def: 'BC dimension value used to tag GL entries to a specific client engagement or internal project' },
+          { term: 'Avg Spend / Project', def: 'Total project spend divided by number of projects with GL data' },
+        ]}
+      />
 
       {/* KPI Tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>

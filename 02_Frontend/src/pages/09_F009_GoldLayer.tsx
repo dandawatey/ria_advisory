@@ -3,6 +3,7 @@
  * Ops page: Gold table browser, row counts, Z-order config, DQ gate status.
  */
 import { useState } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface GoldTable {
   name: string;
@@ -51,6 +52,23 @@ export default function GoldLayer() {
           Star-schema fact and dimension tables optimised for consumption. Unity Catalog registered. (F009)
         </p>
       </div>
+
+      <PageExplainer
+        icon="🏆"
+        title="What is the Gold Layer?"
+        description="The Gold Layer is the <strong>fully conformed, analytics-ready star schema</strong> — the final output of the ETL pipeline. It contains fact tables (one row per business event) and dimension tables (one row per entity/account/customer) optimised for fast reporting queries. All Gold tables are registered in Unity Catalog and Z-ordered for performance. Data engineers use this page to monitor row counts, DQ gates, and trigger OPTIMIZE operations."
+        concepts={[
+          { icon: 'F', color: '#2563eb', label: 'Fact Table', desc: 'One row per measurable business event (GL entry, invoice, bank ledger)' },
+          { icon: 'D', color: '#7c3aed', label: 'Dimension Table', desc: 'Reference data (entity, account, customer, date) — used for filtering' },
+          { icon: '✓', color: '#16a34a', label: 'DQ Passed', desc: 'Data quality gate passed — safe for consumption' },
+          { icon: '⚠', color: '#d97706', label: 'DQ Warning', desc: 'Quality issues detected — review before using in reports' },
+        ]}
+        glossary={[
+          { term: 'Z-Order', def: 'Delta Lake optimization — co-locates related data in files for faster filtered queries' },
+          { term: 'Grain', def: 'The level of detail in a table — what each row represents' },
+          { term: 'OPTIMIZE', def: 'Delta Lake command that compacts small files and applies Z-ordering' },
+        ]}
+      />
 
       <div className="card-grid card-grid-4 mb-24">
         <div className="kpi-tile"><div className="kpi-label">Total Rows</div><div className="kpi-value">{(totalRows / 1_000_000).toFixed(1)}M</div></div>

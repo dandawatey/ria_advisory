@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell, PieChart, Pie,
 } from 'recharts';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -169,6 +170,22 @@ export default function CustomerInsights() {
           Customer master data from Business Central — 154 customers across 17 entities
         </p>
       </div>
+
+      <PageExplainer
+        icon="👥"
+        title="What is Customer Insights?"
+        description="This page analyses <strong>154 customer records from the Business Central customer master</strong> across 17 entities. The Top Customers tab ranks by total sales or AR balance and supports drill-through by entity. By Entity shows customer count and revenue contribution per subsidiary. Geographic breaks down customers by city and state. Balance Analysis highlights AR balance concentration and days-sales-outstanding risk. Use the filter panel to search customers or drill into a specific entity."
+        concepts={[
+          { icon: '$', color: '#22c55e', label: 'Total Sales', desc: 'Lifetime cumulative invoiced amount for this customer across all entities' },
+          { icon: '!', color: '#dc2626', label: 'Balance Due', desc: 'Past-due portion of the AR balance — amounts overdue beyond payment terms' },
+          { icon: '→', color: '#3b82f6', label: 'Drill', desc: 'Click an entity bar to filter the customer table to that entity only' },
+        ]}
+        glossary={[
+          { term: 'AR Balance', def: 'Accounts Receivable balance — total outstanding amount owed by this customer' },
+          { term: 'dim_customer', def: 'Business Central customer dimension table — not filtered by fiscal year or period' },
+          { term: 'Total Payments', def: 'Cumulative payments received from this customer against invoices' },
+        ]}
+      />
 
       {/* KPI tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>

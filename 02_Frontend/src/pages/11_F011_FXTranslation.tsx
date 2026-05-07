@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import type { FXRate } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 const mockRates: FXRate[] = [
   { currencyPair: 'GBP/USD', rateDate: '2026-04-23', rateType: 'PERIOD_END', rateValue: 1.2734, source: 'BC Currency Table' },
@@ -38,6 +39,22 @@ export default function FXTranslation() {
           Multi-rate FX translation policy (period-end, average, historical) and rate source management. (F011)
         </p>
       </div>
+
+      <PageExplainer
+        icon="💱"
+        title="What is the FX Translation Engine?"
+        description="Subsidiaries operate in local currencies (GBP, CAD, EUR, AUD). For <strong>consolidated USD reporting, all amounts must be translated using the correct exchange rate type</strong> as defined by accounting standards. Balance sheet items use period-end rates; income statement items use average rates; equity uses historical rates. Finance admins use this page to review rate policy, check the rate table, and resolve missing-rate exceptions that would block GL entries from being translated."
+        concepts={[
+          { icon: 'PE', color: '#2563eb', label: 'Period-End', desc: 'Rate on the last day of the reporting period — used for balance sheet' },
+          { icon: 'AV', color: '#16a34a', label: 'Average', desc: 'Average rate over the period — used for income statement items' },
+          { icon: 'HI', color: '#7c3aed', label: 'Historical', desc: 'Rate at the time of original transaction — used for equity' },
+        ]}
+        glossary={[
+          { term: 'Currency Pair', def: 'Source/target currency combination (e.g. GBP/USD = British Pounds to US Dollars)' },
+          { term: 'Rows Affected', def: 'GL entries that cannot be translated until this missing rate is provided' },
+          { term: 'fx_translated', def: 'Flag on each GL entry — false means the rate was missing at translation time' },
+        ]}
+      />
 
       <div className="card-grid card-grid-4 mb-24">
         <div className="kpi-tile"><div className="kpi-label">Currency Pairs</div><div className="kpi-value">7</div><div className="kpi-meta">Active in Gold</div></div>

@@ -3,8 +3,10 @@ import { MsalProvider } from '@azure/msal-react';
 import { msalInstance } from './config/msalConfig';
 import { AuthProvider } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
+import { FeatureFlagProvider, useFeatureFlags } from './contexts/FeatureFlagContext';
 import { AppShell } from './components/layout/AppShell';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ReactNode } from 'react';
 
 // Pages backed by real GL data
 import Login              from './pages/14_F014_Login';
@@ -70,144 +72,173 @@ import CFORatios               from './pages/61_F061_CFORatios';
 import Revenue                from './pages/62_F062_Revenue';
 import UBR                    from './pages/63_F063_UBR';
 import Invoicing              from './pages/64_F064_Invoicing';
+import FeatureFlagsPage       from './pages/65_F065_FeatureFlags';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
+
+// ── Feature-flag guard ────────────────────────────────────────────────────────
+function FlagGuard({ flagKey, children }: { flagKey: string; children: ReactNode }) {
+  const { isEnabled, isLoading } = useFeatureFlags();
+  if (isLoading) return null;
+  if (!isEnabled(flagKey)) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', height: '60vh', gap: 12, color: '#66726F',
+      }}>
+        <span style={{ fontSize: 32 }}>🔒</span>
+        <div style={{ fontSize: 16, fontWeight: 600, color: '#333938' }}>Coming in Phase 2</div>
+        <div style={{ fontSize: 13 }}>This feature is not included in the current Phase 1 delivery.</div>
+        <div style={{ fontSize: 11, color: '#B0BABA' }}>Contact your administrator to enable it.</div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
     <MsalProvider instance={msalInstance}>
       <AuthProvider>
         <TenantProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
+          <FeatureFlagProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public */}
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
 
-              {/* Superadmin tenant hub — standalone (no AppShell) */}
-              <Route path="/admin/hub" element={
-                <ProtectedRoute requiredRole="superadmin">
-                  <TenantHub />
-                </ProtectedRoute>
-              } />
-
-              {/* New tenant form — blank sidebar layout */}
-              <Route element={
-                <ProtectedRoute requiredRole="superadmin">
-                  <AppShellBlank />
-                </ProtectedRoute>
-              }>
-                <Route path="/admin/tenants/new" element={<NewTenant />} />
-              </Route>
-
-              {/* Protected — all routes require authentication */}
-              <Route element={
-                <ProtectedRoute>
-                  <AppShell />
-                </ProtectedRoute>
-              }>
-                {/* Finance */}
-                <Route path="/dashboard"      element={<ExecutiveDashboard />} />
-                <Route path="/analytics"      element={<Analytics />} />
-                <Route path="/pl"             element={<PLAnalytics />} />
-                <Route path="/collections"    element={<Collections />} />
-                <Route path="/income"         element={<MonthlyIncome />} />
-                <Route path="/ageing"         element={<Ageing />} />
-                <Route path="/gl-insights"    element={<DataInsights />} />
-                <Route path="/close"          element={<CloseCockpit />} />
-                <Route path="/entities/:id"   element={<EntityDetail />} />
-                <Route path="/explorer"       element={<Explorer />} />
-                <Route path="/annotations"    element={<AnnotationsNLQ />} />
-
-                {/* Reports */}
-                <Route path="/reports/trial-balance" element={<TrialBalance />} />
-                <Route path="/reports/balance-sheet" element={<BalanceSheet />} />
-                <Route path="/reports/expense"       element={<ExpenseAnalysis />} />
-                <Route path="/reports/dept-spend"    element={<DeptSpend />} />
-                <Route path="/reports/kpi"           element={<KPIDashboard />} />
-                <Route path="/reports/health-score"  element={<HealthScore />} />
-                <Route path="/reports/projects"      element={<ProjectFinancials />} />
-                <Route path="/reports/verticals"     element={<VerticalAnalytics />} />
-                <Route path="/reports/entities"      element={<EntityComparison />} />
-                <Route path="/reports/cash-flow"     element={<CashFlow />} />
-                <Route path="/reports/cfo-ratios"    element={<CFORatios />} />
-                <Route path="/reports/revenue"       element={<Revenue />} />
-                <Route path="/reports/ubr"           element={<UBR />} />
-                <Route path="/reports/invoicing"     element={<Invoicing />} />
-
-                {/* Insights */}
-                <Route path="/insights/gl"           element={<GLInsights />} />
-                <Route path="/insights/coa"          element={<CoAInsights />} />
-                <Route path="/insights/customer"     element={<CustomerInsights />} />
-                <Route path="/insights/posted-sales" element={<PostedSalesInsights />} />
-                <Route path="/insights/invoices"     element={<InvoiceInsights />} />
-
-                {/* Planning & Investments */}
-                <Route path="/budgeting"             element={<Budgeting />} />
-                <Route path="/investments"           element={<Investment />} />
-                <Route path="/360-view"              element={<View360 />} />
-
-                {/* Settings */}
-                <Route path="/settings"              element={<Settings />} />
-
-                {/* Administration */}
-                <Route path="/admin/mappings"        element={<MappingConsole />} />
-                <Route path="/admin/pipeline-health" element={<PipelineHealth />} />
-                <Route path="/admin/bc-tenants"      element={<BCTenantAuth />} />
-                <Route path="/admin/tenants"         element={
+                {/* Superadmin tenant hub — standalone (no AppShell) */}
+                <Route path="/admin/hub" element={
                   <ProtectedRoute requiredRole="superadmin">
-                    <TenantManagement />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/tenants/:tenantId/users" element={
-                  <ProtectedRoute requiredRole="isource_admin">
-                    <UserManagement />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/tenants/:tenantId/config" element={
-                  <ProtectedRoute requiredRole="isource_admin">
-                    <TenantConfig />
-                  </ProtectedRoute>
-                } />
-                <Route path="/admin/rbac" element={
-                  <ProtectedRoute requiredRole="isource_admin">
-                    <RBACConsole />
+                    <TenantHub />
                   </ProtectedRoute>
                 } />
 
-                {/* GL Data */}
-                <Route path="/admin/coa"            element={<CanonicalCoA />} />
-                <Route path="/admin/dq"             element={<DataQuality />} />
-                <Route path="/admin/ic-elimination" element={<ICElimination />} />
+                {/* New tenant form — blank sidebar layout */}
+                <Route element={
+                  <ProtectedRoute requiredRole="superadmin">
+                    <AppShellBlank />
+                  </ProtectedRoute>
+                }>
+                  <Route path="/admin/tenants/new" element={<NewTenant />} />
+                </Route>
 
-                {/* Data Pipeline */}
-                <Route path="/pipeline/extraction"    element={<DataExtraction />} />
-                <Route path="/pipeline/orchestration" element={<PipelineOrchestration />} />
-                <Route path="/pipeline/resilience"    element={<IngestionResilience />} />
-                <Route path="/pipeline/bronze"        element={<BronzeZone />} />
-                <Route path="/pipeline/silver"        element={<SilverLayer />} />
-                <Route path="/pipeline/gold"          element={<GoldLayer />} />
-                <Route path="/pipeline/lineage"       element={<DataLineage />} />
+                {/* Protected — all routes require authentication */}
+                <Route element={
+                  <ProtectedRoute>
+                    <AppShell />
+                  </ProtectedRoute>
+                }>
+                  {/* ── Phase 1 (no FlagGuard needed — always enabled) ── */}
+                  <Route path="/collections"    element={<Collections />} />
+                  <Route path="/ageing"         element={<Ageing />} />
+                  <Route path="/reports/revenue"   element={<Revenue />} />
+                  <Route path="/reports/ubr"       element={<UBR />} />
+                  <Route path="/reports/invoicing" element={<Invoicing />} />
+                  <Route path="/settings"          element={<Settings />} />
+                  <Route path="/admin/bc-tenants"  element={<BCTenantAuth />} />
+                  <Route path="/admin/api"         element={<APIStatus />} />
 
-                {/* Configuration */}
-                <Route path="/admin/dimensions"   element={<DimensionFramework />} />
-                <Route path="/admin/fx"           element={<FXTranslation />} />
-                <Route path="/admin/onboarding"   element={<OnboardingWizard />} />
-                <Route path="/admin/security"     element={<SecurityCompliance />} />
+                  {/* Feature flags admin — always accessible to superadmin */}
+                  <Route path="/admin/feature-flags" element={
+                    <ProtectedRoute requiredRole="isource_admin">
+                      <FeatureFlagsPage />
+                    </ProtectedRoute>
+                  } />
 
-                {/* System */}
-                <Route path="/admin/api"  element={<APIStatus />} />
+                  {/* ── Phase 2 (FlagGuard gates each route) ── */}
+                  <Route path="/dashboard"  element={<FlagGuard flagKey="page_executive_dashboard"><ExecutiveDashboard /></FlagGuard>} />
+                  <Route path="/analytics"  element={<FlagGuard flagKey="page_analytics"><Analytics /></FlagGuard>} />
+                  <Route path="/pl"         element={<FlagGuard flagKey="page_pl"><PLAnalytics /></FlagGuard>} />
+                  <Route path="/income"     element={<FlagGuard flagKey="page_monthly_income"><MonthlyIncome /></FlagGuard>} />
+                  <Route path="/close"      element={<FlagGuard flagKey="page_close_cockpit"><CloseCockpit /></FlagGuard>} />
+                  <Route path="/entities/:id" element={<EntityDetail />} />
+                  <Route path="/explorer"   element={<FlagGuard flagKey="page_gl_insights"><Explorer /></FlagGuard>} />
+                  <Route path="/annotations" element={<FlagGuard flagKey="page_ai_query"><AnnotationsNLQ /></FlagGuard>} />
+                  <Route path="/gl-insights" element={<FlagGuard flagKey="page_gl_insights"><DataInsights /></FlagGuard>} />
 
-                {/* ERP Integration */}
-                <Route path="/erp/consolidated" element={<ConsolidatedDashboard />} />
-                <Route path="/erp/cross-pl"     element={<CrossERPPL />} />
-                <Route path="/erp/sources"      element={<ERPSources />} />
-                <Route path="/erp/mapping"      element={<FieldMapping />} />
+                  {/* Reports — Phase 2 */}
+                  <Route path="/reports/trial-balance" element={<FlagGuard flagKey="page_trial_balance"><TrialBalance /></FlagGuard>} />
+                  <Route path="/reports/balance-sheet" element={<FlagGuard flagKey="page_balance_sheet"><BalanceSheet /></FlagGuard>} />
+                  <Route path="/reports/expense"       element={<FlagGuard flagKey="page_expense_analysis"><ExpenseAnalysis /></FlagGuard>} />
+                  <Route path="/reports/dept-spend"    element={<FlagGuard flagKey="page_dept_spend"><DeptSpend /></FlagGuard>} />
+                  <Route path="/reports/kpi"           element={<FlagGuard flagKey="page_kpi_dashboard"><KPIDashboard /></FlagGuard>} />
+                  <Route path="/reports/health-score"  element={<FlagGuard flagKey="page_health_score"><HealthScore /></FlagGuard>} />
+                  <Route path="/reports/projects"      element={<FlagGuard flagKey="page_projects"><ProjectFinancials /></FlagGuard>} />
+                  <Route path="/reports/verticals"     element={<FlagGuard flagKey="page_verticals"><VerticalAnalytics /></FlagGuard>} />
+                  <Route path="/reports/entities"      element={<FlagGuard flagKey="page_entity_comparison"><EntityComparison /></FlagGuard>} />
+                  <Route path="/reports/cash-flow"     element={<FlagGuard flagKey="page_cash_flow"><CashFlow /></FlagGuard>} />
+                  <Route path="/reports/cfo-ratios"    element={<FlagGuard flagKey="page_cfo_ratios"><CFORatios /></FlagGuard>} />
 
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
+                  {/* Insights — Phase 2 */}
+                  <Route path="/insights/gl"           element={<FlagGuard flagKey="page_gl_insights"><GLInsights /></FlagGuard>} />
+                  <Route path="/insights/coa"          element={<FlagGuard flagKey="page_coa_insights"><CoAInsights /></FlagGuard>} />
+                  <Route path="/insights/customer"     element={<FlagGuard flagKey="page_customers"><CustomerInsights /></FlagGuard>} />
+                  <Route path="/insights/posted-sales" element={<FlagGuard flagKey="page_posted_sales"><PostedSalesInsights /></FlagGuard>} />
+                  <Route path="/insights/invoices"     element={<FlagGuard flagKey="page_invoice_insights"><InvoiceInsights /></FlagGuard>} />
+
+                  {/* Planning — Phase 2 */}
+                  <Route path="/budgeting"   element={<FlagGuard flagKey="page_budgeting"><Budgeting /></FlagGuard>} />
+                  <Route path="/investments" element={<FlagGuard flagKey="page_investments"><Investment /></FlagGuard>} />
+                  <Route path="/360-view"    element={<FlagGuard flagKey="page_360_view"><View360 /></FlagGuard>} />
+
+                  {/* Administration — Phase 2 */}
+                  <Route path="/admin/mappings"        element={<FlagGuard flagKey="page_gl_mapping"><MappingConsole /></FlagGuard>} />
+                  <Route path="/admin/pipeline-health" element={<FlagGuard flagKey="page_pipeline_health"><PipelineHealth /></FlagGuard>} />
+                  <Route path="/admin/tenants" element={
+                    <ProtectedRoute requiredRole="superadmin">
+                      <FlagGuard flagKey="page_tenant_management"><TenantManagement /></FlagGuard>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/tenants/:tenantId/users" element={
+                    <ProtectedRoute requiredRole="isource_admin">
+                      <UserManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/tenants/:tenantId/config" element={
+                    <ProtectedRoute requiredRole="isource_admin">
+                      <TenantConfig />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/rbac" element={
+                    <ProtectedRoute requiredRole="isource_admin">
+                      <FlagGuard flagKey="page_rbac"><RBACConsole /></FlagGuard>
+                    </ProtectedRoute>
+                  } />
+
+                  {/* GL Data — Phase 2 */}
+                  <Route path="/admin/coa"            element={<FlagGuard flagKey="page_coa"><CanonicalCoA /></FlagGuard>} />
+                  <Route path="/admin/dq"             element={<FlagGuard flagKey="page_data_quality"><DataQuality /></FlagGuard>} />
+                  <Route path="/admin/ic-elimination" element={<FlagGuard flagKey="page_ic_elimination"><ICElimination /></FlagGuard>} />
+
+                  {/* Data Pipeline — Phase 2 */}
+                  <Route path="/pipeline/extraction"    element={<FlagGuard flagKey="page_data_extraction"><DataExtraction /></FlagGuard>} />
+                  <Route path="/pipeline/orchestration" element={<FlagGuard flagKey="page_orchestration"><PipelineOrchestration /></FlagGuard>} />
+                  <Route path="/pipeline/resilience"    element={<FlagGuard flagKey="page_resilience"><IngestionResilience /></FlagGuard>} />
+                  <Route path="/pipeline/bronze"        element={<FlagGuard flagKey="page_bronze_zone"><BronzeZone /></FlagGuard>} />
+                  <Route path="/pipeline/silver"        element={<FlagGuard flagKey="page_silver_layer"><SilverLayer /></FlagGuard>} />
+                  <Route path="/pipeline/gold"          element={<FlagGuard flagKey="page_gold_layer"><GoldLayer /></FlagGuard>} />
+                  <Route path="/pipeline/lineage"       element={<FlagGuard flagKey="page_data_lineage"><DataLineage /></FlagGuard>} />
+
+                  {/* Configuration — Phase 2 */}
+                  <Route path="/admin/dimensions" element={<FlagGuard flagKey="page_dimensions"><DimensionFramework /></FlagGuard>} />
+                  <Route path="/admin/fx"         element={<FlagGuard flagKey="page_fx_translation"><FXTranslation /></FlagGuard>} />
+                  <Route path="/admin/onboarding" element={<FlagGuard flagKey="page_onboarding_wizard"><OnboardingWizard /></FlagGuard>} />
+                  <Route path="/admin/security"   element={<FlagGuard flagKey="page_security"><SecurityCompliance /></FlagGuard>} />
+
+                  {/* ERP Integration — Phase 2 */}
+                  <Route path="/erp/consolidated" element={<FlagGuard flagKey="page_consolidated"><ConsolidatedDashboard /></FlagGuard>} />
+                  <Route path="/erp/cross-pl"     element={<FlagGuard flagKey="page_cross_erp_pl"><CrossERPPL /></FlagGuard>} />
+                  <Route path="/erp/sources"      element={<FlagGuard flagKey="page_erp_sources"><ERPSources /></FlagGuard>} />
+                  <Route path="/erp/mapping"      element={<FlagGuard flagKey="page_field_mapping"><FieldMapping /></FlagGuard>} />
+
+                  {/* Default redirect */}
+                  <Route path="*" element={<Navigate to="/collections" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </FeatureFlagProvider>
         </TenantProvider>
       </AuthProvider>
     </MsalProvider>

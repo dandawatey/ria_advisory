@@ -9,6 +9,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface EntityRow {
@@ -183,6 +184,21 @@ export default function EntityComparison() {
 
   return (
     <div>
+      <PageExplainer
+        icon="🏢"
+        title="What is Entity Comparison?"
+        description="This page places all <strong>17 subsidiaries side-by-side</strong> so the CFO can instantly compare Revenue, COGS, OpEx, Net Income, and Gross Margin across the group. Use it to identify outperformers, underperformers, and entities with abnormal cost structures. Revenue share shows each entity's contribution to consolidated group revenue."
+        concepts={[
+          { icon: '🟢', color: '#16a34a', label: 'Profitable', desc: 'Net Income > 0 — entity generating bottom-line profit' },
+          { icon: '🔴', color: '#dc2626', label: 'Loss-making', desc: 'Net Income < 0 — needs investigation or restructuring' },
+          { icon: '📊', color: '#2563eb', label: 'Revenue Share', desc: 'Entity\'s % contribution to total consolidated revenue' },
+        ]}
+        glossary={[
+          { term: 'Gross Margin', def: '(Revenue − COGS) ÷ Revenue — profitability after direct costs' },
+          { term: 'OpEx Ratio', def: 'Operating expenses ÷ Revenue — overhead efficiency measure' },
+          { term: 'Net Margin', def: 'Net Income ÷ Revenue — bottom-line profitability percentage' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Entity Comparison</h1>
         <p className="page-subtitle">Revenue · Spend · Margin comparison across all entities</p>

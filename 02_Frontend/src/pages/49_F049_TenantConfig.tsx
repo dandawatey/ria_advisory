@@ -1,11 +1,12 @@
 /**
  * F049 — Tenant Configuration
- * 4-tab config page: Branding | BC Dynamics | Subsidiaries | Plan & Billing
+ * 5-tab config page: Branding | BC Dynamics | Subsidiaries | Plan & Billing | Feature Flags
  * Access: ria_admin (own tenant) | isource_admin (own tenant) | superadmin (any)
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { get, put, post } from '../api/client';
+import type { FeatureFlag } from '../contexts/FeatureFlagContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,22 @@ interface BCConfig {
   detail?: string;
 }
 
-type Tab = 'branding' | 'bc' | 'subsidiaries' | 'billing';
+type Tab = 'branding' | 'bc' | 'subsidiaries' | 'billing' | 'flags';
+
+const FLAG_CATEGORY_LABELS: Record<string, string> = {
+  ar:          'Accounts Receivable',
+  revenue:     'Revenue & Income',
+  command:     'Command Center',
+  financial:   'Financial Statements',
+  performance: 'Performance',
+  cost:        'Cost Management',
+  planning:    'Planning',
+  erp:         'ERP Integration',
+  close:       'Close & Control',
+  pipeline:    'Data Pipeline',
+  admin:       'Administration',
+  insights:    'Insights',
+};
 
 // ── All 17 subsidiaries from the GL data ─────────────────────────────────────
 const ALL_SUBSIDIARIES = [
@@ -88,6 +104,13 @@ export default function TenantConfig() {
   const [billSaving,   setBillSaving]   = useState(false);
   const [billOk,       setBillOk]       = useState(false);
 
+  // Feature flags state
+  const [featureFlags,    setFeatureFlags]    = useState<FeatureFlag[]>([]);
+  const [flagsLoading,    setFlagsLoading]    = useState(false);
+  const [flagSaving,      setFlagSaving]      = useState<string | null>(null);
+  const [flagError,       setFlagError]       = useState<string | null>(null);
+  const [flagBulkWorking, setFlagBulkWorking] = useState(false);
+
   // ── Load ──────────────────────────────────────────────────────────────────
 
   const loadAll = async () => {
@@ -113,6 +136,54 @@ export default function TenantConfig() {
   };
 
   useEffect(() => { loadAll(); }, [tenantId]);
+
+  const loadFlags = useCallback(async () => {
+    if (!tenantId) return;
+    setFlagsLoading(true);
+    setFlagError(null);
+    try {
+      const data = await get<FeatureFlag[]>(`/api/tenants/${tenantId}/feature-flags`);
+      setFeatureFlags(data);
+    } catch (e: unknown) {
+      setFlagError(e instanceof Error ? e.message : 'Failed to load flags');
+    } finally {
+      setFlagsLoading(false);
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
+    if (activeTab === 'flags') loadFlags();
+  }, [activeTab, loadFlags]);
+
+  const handleFlagToggle = async (flag: FeatureFlag) => {
+    setFlagSaving(flag.flag_key);
+    setFlagError(null);
+    try {
+      await put(`/api/tenants/${tenantId}/feature-flags/${flag.flag_key}`, {
+        is_enabled: !flag.is_enabled,
+      });
+      setFeatureFlags((prev) =>
+        prev.map((f) => f.flag_key === flag.flag_key ? { ...f, is_enabled: !f.is_enabled } : f)
+      );
+    } catch (e: unknown) {
+      setFlagError(e instanceof Error ? e.message : 'Toggle failed');
+    } finally {
+      setFlagSaving(null);
+    }
+  };
+
+  const handleFlagBulk = async (action: 'enable-all' | 'reset') => {
+    setFlagBulkWorking(true);
+    setFlagError(null);
+    try {
+      await post(`/api/tenants/${tenantId}/feature-flags/${action}`, {});
+      await loadFlags();
+    } catch (e: unknown) {
+      setFlagError(e instanceof Error ? e.message : 'Action failed');
+    } finally {
+      setFlagBulkWorking(false);
+    }
+  };
 
   // ── Save helpers ──────────────────────────────────────────────────────────
 
@@ -243,10 +314,11 @@ export default function TenantConfig() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'branding',      label: 'Branding' },
-    { key: 'bc',            label: 'BC Dynamics' },
-    { key: 'subsidiaries',  label: 'Subsidiaries' },
-    { key: 'billing',       label: 'Plan & Billing' },
+    { key: 'branding',     label: 'Branding' },
+    { key: 'bc',           label: 'BC Dynamics' },
+    { key: 'subsidiaries', label: 'Subsidiaries' },
+    { key: 'billing',      label: 'Plan & Billing' },
+    { key: 'flags',        label: 'Feature Flags' },
   ];
 
   const inputStyle: React.CSSProperties = {
@@ -536,6 +608,180 @@ export default function TenantConfig() {
           </div>
 
           <div>{saveBtn(subSaving, subOk, saveSubsidiaries)}</div>
+        </div>
+      )}
+
+      {/* ── Tab: Feature Flags ── */}
+      {activeTab === 'flags' && (
+        <div>
+          {/* Header + bulk actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1F2423' }}>
+                Page &amp; Feature Visibility
+              </div>
+              <div style={{ fontSize: 12, color: '#66726F', marginTop: 2 }}>
+                Phase 1 features are enabled. Toggle Phase 2 features when ready to expose them to this tenant.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => handleFlagBulk('enable-all')}
+                disabled={flagBulkWorking}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                  border: '1px solid #1F6B66', background: '#1F6B66', color: 'white',
+                  cursor: flagBulkWorking ? 'default' : 'pointer', opacity: flagBulkWorking ? 0.7 : 1,
+                }}
+              >
+                {flagBulkWorking ? '…' : 'Enable All'}
+              </button>
+              <button
+                onClick={() => handleFlagBulk('reset')}
+                disabled={flagBulkWorking}
+                style={{
+                  padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                  border: '1px solid #D1D8D8', background: 'white', color: '#333938',
+                  cursor: flagBulkWorking ? 'default' : 'pointer', opacity: flagBulkWorking ? 0.7 : 1,
+                }}
+              >
+                {flagBulkWorking ? '…' : 'Reset to Phase 1'}
+              </button>
+            </div>
+          </div>
+
+          {flagError && (
+            <div style={{
+              background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 6,
+              padding: '8px 12px', color: '#991B1B', fontSize: 13, marginBottom: 14,
+            }}>
+              {flagError}
+            </div>
+          )}
+
+          {flagsLoading ? (
+            <div style={{ textAlign: 'center', padding: 32, color: '#66726F', fontSize: 13 }}>
+              Loading flags…
+            </div>
+          ) : (
+            (() => {
+              const grouped = featureFlags.reduce<Record<string, FeatureFlag[]>>((acc, f) => {
+                if (!acc[f.category]) acc[f.category] = [];
+                acc[f.category].push(f);
+                return acc;
+              }, {});
+
+              const enabledCount  = featureFlags.filter((f) => f.is_enabled).length;
+              const totalCount    = featureFlags.length;
+
+              return (
+                <>
+                  {/* Stats */}
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+                    {[
+                      { label: 'Enabled', value: enabledCount, color: '#166534', bg: '#F0FDF4' },
+                      { label: 'Disabled', value: totalCount - enabledCount, color: '#991B1B', bg: '#FEF2F2' },
+                      { label: 'Total', value: totalCount, color: '#1F6B66', bg: '#EEF5F4' },
+                    ].map((s) => (
+                      <div key={s.label} style={{
+                        background: s.bg, border: `1px solid ${s.color}22`,
+                        borderRadius: 6, padding: '8px 14px', minWidth: 70,
+                      }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: 11, color: '#66726F' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Flag list grouped by category */}
+                  {Object.entries(grouped)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([category, items]) => (
+                      <div key={category} style={{ marginBottom: 20 }}>
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, letterSpacing: '0.12em',
+                          textTransform: 'uppercase', color: '#1F6B66', marginBottom: 6,
+                        }}>
+                          {FLAG_CATEGORY_LABELS[category] ?? category}
+                        </div>
+                        <div style={{ border: '1px solid #E8ECEC', borderRadius: 8, overflow: 'hidden' }}>
+                          {items.map((flag, i) => (
+                            <div
+                              key={flag.flag_key}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 12,
+                                padding: '10px 14px',
+                                borderBottom: i < items.length - 1 ? '1px solid #F4F6F6' : 'none',
+                                background: flag.is_enabled ? 'white' : '#FAFBFB',
+                              }}
+                            >
+                              {/* Toggle */}
+                              <button
+                                onClick={() => handleFlagToggle(flag)}
+                                disabled={flagSaving === flag.flag_key}
+                                aria-label={`${flag.is_enabled ? 'Disable' : 'Enable'} ${flag.label}`}
+                                style={{
+                                  flexShrink: 0,
+                                  width: 34, height: 18, borderRadius: 9,
+                                  border: 'none',
+                                  background: flagSaving === flag.flag_key
+                                    ? '#D1D8D8'
+                                    : flag.is_enabled ? '#1F6B66' : '#D1D8D8',
+                                  position: 'relative',
+                                  cursor: flagSaving === flag.flag_key ? 'default' : 'pointer',
+                                  transition: 'background 0.2s',
+                                  padding: 0,
+                                }}
+                              >
+                                <span style={{
+                                  position: 'absolute',
+                                  top: 2,
+                                  left: flag.is_enabled ? 16 : 2,
+                                  width: 14, height: 14,
+                                  borderRadius: '50%', background: 'white',
+                                  transition: 'left 0.15s',
+                                }} />
+                              </button>
+
+                              {/* Label */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <span style={{
+                                  fontSize: 13, fontWeight: 600,
+                                  color: flag.is_enabled ? '#1F2423' : '#B0BABA',
+                                }}>
+                                  {flag.label}
+                                </span>
+                                {flag.phase === 'phase1' && (
+                                  <span style={{
+                                    marginLeft: 7, fontSize: 10, fontWeight: 700,
+                                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                                    background: '#EEF5F4', color: '#1F6B66',
+                                    padding: '1px 5px', borderRadius: 3,
+                                  }}>
+                                    Phase 1
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Status */}
+                              <span style={{
+                                flexShrink: 0, fontSize: 11, fontWeight: 600,
+                                padding: '2px 7px', borderRadius: 4,
+                                background: flag.is_enabled ? '#F0FDF4' : '#F4F6F6',
+                                color: flag.is_enabled ? '#166534' : '#66726F',
+                              }}>
+                                {flagSaving === flag.flag_key ? '…' : flag.is_enabled ? 'On' : 'Off'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  }
+                </>
+              );
+            })()
+          )}
         </div>
       )}
 

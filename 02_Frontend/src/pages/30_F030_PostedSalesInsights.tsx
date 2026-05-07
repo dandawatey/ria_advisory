@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell, PieChart, Pie,
 } from 'recharts';
+import PageExplainer from '../components/common/PageExplainer';
 
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
@@ -215,6 +216,22 @@ export default function PostedSalesInsights() {
           fact_posted_sales — 3,094 entries across Invoice, Payment, Refund, Credit Memo types
         </p>
       </div>
+
+      <PageExplainer
+        icon="🧾"
+        title="What is Posted Sales Insights?"
+        description="This page analyses <strong>3,094 posted sales transactions from Business Central</strong> across Invoice, Payment, Refund, and Credit Memo document types. The By Period tab shows monthly invoice vs. payment vs. refund trends. By Customer ranks top customers by transaction volume. By Type shows the document-type mix as a donut chart. The Drill Detail tab allows entry-level inspection of individual transactions. Filter by entity and fiscal year using the left panel."
+        concepts={[
+          { icon: '📄', color: '#3b82f6', label: 'Invoice', desc: 'Posted sales invoice — records revenue and creates AR' },
+          { icon: '💳', color: '#22c55e', label: 'Payment', desc: 'Cash receipt posted against an invoice — reduces AR balance' },
+          { icon: '↩', color: '#8b5cf6', label: 'Credit Memo', desc: 'Reversal of a posted invoice — reduces revenue and AR' },
+        ]}
+        glossary={[
+          { term: 'fact_posted_sales', def: 'Fact table of posted sales transactions extracted from Business Central' },
+          { term: 'Net Amount', def: 'Invoice amount minus payments and credit memos — effective cash collected' },
+          { term: 'Posted', def: 'Transactions that have been approved and written to the GL — draft entries not included' },
+        ]}
+      />
 
       {/* Zero-amount banner */}
       {!loadSum && !errSum && !amountsAvailable && (

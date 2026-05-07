@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Category {
@@ -265,6 +266,22 @@ export default function HealthScore() {
           </div>
         </div>
       )}
+
+      <PageExplainer
+        icon="🏥"
+        title="What is the Financial Health Score?"
+        description="The Financial Health Score is a <strong>composite 0–100 score across 6 weighted financial categories</strong> — Profitability, Liquidity, Leverage, Efficiency, Coverage, and Growth. Each category contributes a weighted sub-score based on real GL data. The score gives the CFO and board a single-number snapshot of financial health, comparable across entities and time periods. Click the ⓘ button to see the full methodology and benchmark thresholds."
+        concepts={[
+          { icon: '●', color: '#22c55e', label: 'Score ≥ 70', desc: 'Healthy — financial position is strong across most categories' },
+          { icon: '●', color: '#f59e0b', label: 'Score 50–69', desc: 'Moderate — some categories need attention; monitor closely' },
+          { icon: '●', color: '#ef4444', label: 'Score < 50', desc: 'At Risk — significant financial weakness requiring immediate action' },
+        ]}
+        glossary={[
+          { term: 'Weighted Score', def: 'Each category score multiplied by its assigned weight and summed to produce the composite 0–100 score' },
+          { term: 'Coverage', def: 'Ability to meet debt service obligations from operating cash flow — interest coverage ratio' },
+          { term: 'Efficiency', def: 'How effectively assets and working capital are being used to generate revenue' },
+        ]}
+      />
 
       <div className="page-header">
         <h1 className="page-title">Financial Health Score</h1>

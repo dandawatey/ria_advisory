@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import type { AuditLogEntry } from '../types';
+import PageExplainer from '../components/common/PageExplainer';
 
 type ControlStatus = 'pass' | 'warning' | 'fail';
 
@@ -66,6 +67,22 @@ export default function SecurityCompliance() {
           <button className="btn btn-secondary">Run Access Review</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🔒"
+        title="What is Security & Compliance?"
+        description="This page provides the <strong>security posture dashboard, immutable audit log, and access review tools</strong> for the platform. The CISO and compliance team use the Security Posture tab to track controls across encryption, network, access control, immutability, and vulnerability management. The Audit Log records every API call for 7 years. The Access Review tab shows Entra ID group memberships for quarterly review. The platform targets SEC Rule 204-2 and Reg S-P compliance."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Pass', desc: 'Control verified and operating effectively' },
+          { icon: '⚠', color: '#d97706', label: 'Warning', desc: 'Control partially met — remediation in progress (e.g. SOC 2 readiness)' },
+          { icon: '✗', color: '#dc2626', label: 'Fail', desc: 'Control not met — immediate remediation required' },
+        ]}
+        glossary={[
+          { term: 'WORM', def: 'Write Once Read Many — immutable audit data locked for 7 years' },
+          { term: 'SOC 2', def: 'Service Organization Control 2 — trust services criteria audit for security and availability' },
+          { term: 'RBAC', def: 'Role-Based Access Control — permissions granted based on job role, not individual users' },
+        ]}
+      />
 
       <div className="card-grid card-grid-4 mb-24">
         <div className="kpi-tile"><div className="kpi-label">Controls Passing</div><div className="kpi-value" style={{ color: 'var(--color-success)' }}>{passing}/{securityControls.length}</div></div>

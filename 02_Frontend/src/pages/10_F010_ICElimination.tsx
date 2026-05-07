@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { api } from '../api/client';
 import type { GLEntry } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 function fmtUSD(n: number) {
   const abs = Math.abs(n);
@@ -69,6 +70,22 @@ export default function ICElimination() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="⚖️"
+        title="What is IC Elimination?"
+        description="Inter-company (IC) transactions occur when one subsidiary sells to or lends money to another within the same group. For <strong>consolidated financial statements, these transactions must be eliminated</strong> to avoid double-counting revenue and expenses. This page lets finance teams search for IC transactions identified by account ranges, source codes, or description patterns. The net IC balance should approach zero after elimination."
+        concepts={[
+          { icon: '3', color: '#7c3aed', label: 'IC Accounts (3xx)', desc: 'Balance sheet accounts representing inter-company receivables/payables' },
+          { icon: '2', color: '#d97706', label: 'IC Payables (2xx)', desc: 'Payables where the counterparty is another group entity' },
+          { icon: 'IC', color: '#dc2626', label: 'IC Source Code', desc: 'Entries where source_code starts with IC/IT — inter-company journal' },
+        ]}
+        glossary={[
+          { term: 'Net IC Balance', def: 'Sum of all identified IC entries — should be zero or near-zero after elimination' },
+          { term: 'Counterparty', def: 'The other group entity on the other side of the inter-company transaction' },
+          { term: 'Bal Account', def: 'Balancing account — the offsetting GL account for double-entry bookkeeping' },
+        ]}
+      />
 
       {searched && entries.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>

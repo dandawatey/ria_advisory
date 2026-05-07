@@ -16,6 +16,7 @@ import {
   type CollectionCustomerRow,
   type CollectionEntityRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
   if (n == null || isNaN(n)) return '—';
@@ -285,6 +286,22 @@ export default function Collections() {
         <h1 className="page-title">Monthly Collection Report</h1>
         <p className="page-subtitle">Invoice issued vs payments collected — AR efficiency tracking</p>
       </div>
+
+      <PageExplainer
+        icon="💰"
+        title="What is the Monthly Collection Report?"
+        description="This page tracks <strong>invoice-to-payment collection efficiency</strong> — how much was invoiced each month versus how much was actually collected. The Monthly Overview tab shows invoiced vs collected as a stacked chart with collection rate trend. By Customer ranks customers by collection performance. By Entity compares AR efficiency across subsidiaries. Trend Analysis shows rolling collection rate and ageing of uncollected invoices."
+        concepts={[
+          { icon: '$', color: '#3b82f6', label: 'Total Invoiced', desc: 'Sum of all invoice amounts issued in the period' },
+          { icon: '$', color: '#22c55e', label: 'Total Collected', desc: 'Payments received against invoices in the period — excludes future-due amounts' },
+          { icon: '%', color: '#f97316', label: 'Collection Rate', desc: 'Collected ÷ Invoiced × 100 — target is >90% within 30 days' },
+        ]}
+        glossary={[
+          { term: 'Collection Rate', def: 'Percentage of invoiced amount collected in the period — key AR efficiency metric' },
+          { term: 'DSO', def: 'Days Sales Outstanding — average days to collect payment after invoice date' },
+          { term: 'Uncollected', def: 'Invoiced amount not yet matched to a payment — potential AR risk' },
+        ]}
+      />
 
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 20 }}>

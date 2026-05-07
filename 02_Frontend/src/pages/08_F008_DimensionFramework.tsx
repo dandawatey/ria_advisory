@@ -3,6 +3,7 @@
  * Admin page: dimension value mapping, coverage stats.
  */
 import { useState } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 
 const dimensions = ['Entity', 'Region', 'Client Segment', 'Service Line'];
 
@@ -38,6 +39,21 @@ export default function DimensionFramework() {
 
   return (
     <div>
+      <PageExplainer
+        icon="🧩"
+        title="What is the Canonical Dimension Framework?"
+        description="This page manages <strong>cross-entity dimension mappings</strong> — translating each subsidiary's local codes (Region, Client Segment, Service Line, Entity) into a canonical group-wide standard. Without this mapping, consolidation is impossible: SUB01 calls it 'NE' while SUB02 calls it 'REGION-NE' — both mean NORTHEAST. Finance ops admins use this page to review coverage and approve pending mappings."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Mapped', desc: 'Local code resolved to canonical group code' },
+          { icon: '⏳', color: '#d97706', label: 'Pending Approval', desc: 'Suggested mapping awaiting admin sign-off' },
+          { icon: '✗', color: '#dc2626', label: 'Unmapped', desc: 'No canonical equivalent found — reports show raw local code' },
+        ]}
+        glossary={[
+          { term: 'Canonical Code', def: 'Standardised group-level code used in all consolidated reports' },
+          { term: 'Local Code', def: 'Subsidiary-specific dimension value as stored in BC ERP' },
+          { term: 'Coverage %', def: 'Mapped ÷ Total — how complete the dimension translation is for a given type' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Canonical Dimension Framework</h1>
         <p className="page-subtitle">
@@ -48,6 +64,22 @@ export default function DimensionFramework() {
           <button className="btn btn-secondary">Import Mappings CSV</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🗺️"
+        title="What is the Canonical Dimension Framework?"
+        description="Each subsidiary uses its own local dimension codes (e.g. 'NE', 'REGION-NE', 'EAST') that all mean the same canonical value ('NORTHEAST'). This page is where <strong>data engineers map local subsidiary dimension values to canonical group-wide values</strong> for Entity, Region, Client Segment, and Service Line. Without complete mapping, consolidated reports will have fragmented dimensions. Coverage % shows how many local values are mapped."
+        concepts={[
+          { icon: '✓', color: '#16a34a', label: 'Mapped', desc: 'Local value confirmed mapped to a canonical value' },
+          { icon: '⏳', color: '#d97706', label: 'Pending Approval', desc: 'Mapping proposed — awaiting reviewer sign-off' },
+          { icon: '✗', color: '#dc2626', label: 'Unmapped', desc: 'No canonical match yet — reports will show raw local code' },
+        ]}
+        glossary={[
+          { term: 'Canonical Value', def: 'The standardised group-wide value (e.g. NORTHEAST) that all subsidiaries map to' },
+          { term: 'Local Code', def: 'The subsidiary-specific dimension code from their BC environment' },
+          { term: 'Coverage %', def: 'Percentage of known local values that have been mapped to a canonical value' },
+        ]}
+      />
 
       {/* Coverage summary */}
       <div className="card-grid card-grid-4 mb-24">

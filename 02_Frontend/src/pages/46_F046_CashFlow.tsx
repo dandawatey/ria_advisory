@@ -9,6 +9,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { get, type FilterOptions } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface OperatingSection {
@@ -187,6 +188,21 @@ export default function CashFlow() {
 
   return (
     <div>
+      <PageExplainer
+        icon="💵"
+        title="What is the Cash Flow Statement?"
+        description="This page shows the <strong>indirect-method Cash Flow Statement</strong> derived from GL account-class movements. It classifies every GL transaction into Operating (income/expense accounts), Investing (asset accounts), or Financing (liability/equity accounts) flows. CFOs use it to assess liquidity, understand how earnings convert to cash, and plan capital allocation."
+        concepts={[
+          { icon: '⚙', color: '#3b82f6', label: 'Operating', desc: 'Cash from core business operations (4xx–8xx account range)' },
+          { icon: '🏗', color: '#8b5cf6', label: 'Investing', desc: 'Cash used for asset purchases/disposals (1xx account range)' },
+          { icon: '🏦', color: '#f59e0b', label: 'Financing', desc: 'Cash from debt and equity movements (2xx–3xx account range)' },
+        ]}
+        glossary={[
+          { term: 'Indirect Method', def: 'Derives operating cash flow by adjusting net income for non-cash items and working capital changes' },
+          { term: 'Net Cash Change', def: 'Operating + Investing + Financing — the net increase/decrease in cash for the period' },
+          { term: 'Free Cash Flow', def: 'Operating Cash Flow − Capital Expenditure — cash available after maintaining assets' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Cash Flow Statement</h1>
         <p className="page-subtitle">GL-flow indirect method · Operating (4xx–8xx) · Investing (1xx) · Financing (2xx–3xx)</p>

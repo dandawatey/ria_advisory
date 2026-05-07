@@ -5,6 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface AccountRow {
   gl_account_no: string;
@@ -66,6 +67,22 @@ export default function CanonicalCoA() {
 
   return (
     <div>
+      <PageExplainer
+        icon="📋"
+        title="What is the Canonical Chart of Accounts?"
+        description="This page shows the <strong>unified Chart of Accounts (CoA)</strong> derived from all GL transactions across 17 subsidiaries. Each account is classified into a standard category (Assets, Liabilities, Revenue, etc.) so reports work consistently across entities regardless of local ERP account numbering. CFOs and finance teams use this to understand the account structure, validate mappings, and confirm data completeness."
+        concepts={[
+          { icon: '1', color: '#2563eb',  label: 'Assets (1xx)',    desc: 'Balance sheet — what the group owns' },
+          { icon: '4', color: '#16a34a',  label: 'Revenue (4xx)',   desc: 'P&L income — client fees, interest, other income' },
+          { icon: '6', color: '#dc2626',  label: 'OpEx (6xx)',      desc: 'P&L expenses — salaries, rent, overheads' },
+          { icon: '2', color: '#d97706',  label: 'Liabilities (2xx)', desc: 'Balance sheet — what the group owes' },
+        ]}
+        glossary={[
+          { term: 'Account No', def: 'ERP-native account code — may differ per subsidiary (normalised in Gold layer)' },
+          { term: 'Entity Count', def: 'Number of subsidiaries using this account — low count may indicate mapping gap' },
+          { term: 'Total Amount', def: 'Net balance across all entities — negative = credit balance (normal for revenue)' },
+        ]}
+      />
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div>
@@ -86,6 +103,22 @@ export default function CanonicalCoA() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="📋"
+        title="What is the Chart of Accounts?"
+        description="This page shows all <strong>distinct GL account codes and names across all 17 subsidiaries</strong>, sourced from live data. The Chart of Accounts (CoA) is the master list of every account used to record financial transactions. Finance teams use it to understand what accounts exist, how they are categorized, how many entities use each account, and what the net balance is. Clicking a category tile filters the list."
+        concepts={[
+          { icon: '1', color: '#2563eb', label: 'Assets (1xx)', desc: 'Cash, receivables, fixed assets' },
+          { icon: '4', color: '#16a34a', label: 'Revenue (4xx)', desc: 'All income and revenue accounts' },
+          { icon: '6', color: '#dc2626', label: 'OpEx (6xx)', desc: 'Operating expenses including salaries, rent, marketing' },
+          { icon: '5', color: '#d97706', label: 'COGS (5xx)', desc: 'Cost of goods/services sold' },
+        ]}
+        glossary={[
+          { term: 'Net Balance', def: 'Sum of all debit and credit amounts for this account across all entities' },
+          { term: 'Entity Count', def: 'Number of subsidiaries that have transactions in this GL account' },
+        ]}
+      />
 
       {/* Category summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>

@@ -10,6 +10,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from 'recharts';
+import PageExplainer from '../components/common/PageExplainer';
 const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 const PIE_COLORS = [
@@ -324,6 +325,22 @@ export default function InvoiceInsights() {
           Invoice &amp; Credit Memo analysis — Gen. Posting Type = Sale
         </p>
       </div>
+
+      <PageExplainer
+        icon="🧾"
+        title="What is Invoice Insights?"
+        description="This page provides <strong>invoice and credit memo analysis from Business Central posted sales</strong> filtered to Gen. Posting Type = Sale. The By Period tab shows monthly invoice volume and values over time. By Customer ranks customers by total invoiced amount. By Entity compares invoice activity across subsidiaries. The Drill Detail tab allows individual entry inspection. Use the filter panel to scope by company and fiscal year."
+        concepts={[
+          { icon: '📄', color: '#3b82f6', label: 'Invoice', desc: 'Posted sales invoice — records revenue and creates accounts receivable' },
+          { icon: '↩', color: '#8b5cf6', label: 'Credit Memo', desc: 'Reversal of a posted invoice — reduces revenue and AR balance' },
+          { icon: '⚠', color: '#f59e0b', label: 'Zero Amounts', desc: 'Amount fields may show zero if the BC export did not include amount columns' },
+        ]}
+        glossary={[
+          { term: 'Gen. Posting Type', def: 'Business Central field that classifies the transaction as Sale, Purchase, or blank' },
+          { term: 'Total Value', def: 'Sum of all invoice amounts — may be zero if amounts not loaded from BC export' },
+          { term: 'fact_posted_sales', def: 'Fact table of posted sales transactions extracted from Business Central GL' },
+        ]}
+      />
 
       {/* KPI tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>

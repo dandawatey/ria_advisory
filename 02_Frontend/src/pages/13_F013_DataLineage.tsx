@@ -3,6 +3,7 @@
  * Compliance page: lineage graph, column trace, Unity Catalog integration.
  */
 import React, { useState } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 
 interface LineageNode {
   layer: 'Bronze' | 'Silver' | 'Gold' | 'Mapping' | 'UI';
@@ -52,6 +53,23 @@ export default function DataLineage() {
           <button className="btn btn-secondary">Export Lineage Report</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🔗"
+        title="What is Column-Level Data Lineage?"
+        description="This page shows <strong>the exact path each data column takes from source to consumption</strong> — from raw BC API fields through Bronze extraction, Silver transformation, and mapping joins, all the way to the Gold analytics tables used in reports. Compliance and audit teams use this to answer 'where does this number come from?' and demonstrate data provenance for regulatory purposes. Full lineage is also registered in Unity Catalog."
+        concepts={[
+          { icon: 'B', color: '#92400e', label: 'Bronze', desc: 'Raw BC API field — no transformation applied' },
+          { icon: 'S', color: '#64748b', label: 'Silver', desc: 'Type-cast and cleaned field' },
+          { icon: 'M', color: '#1e40af', label: 'Mapping', desc: 'Join to canonical account or dimension table' },
+          { icon: 'G', color: '#854d0e', label: 'Gold', desc: 'Final analytics-ready column' },
+        ]}
+        glossary={[
+          { term: 'Column Trace', def: 'The full transformation history of a single column from source to target' },
+          { term: 'Transformation', def: 'The SQL or logic applied to derive a column value from its upstream source' },
+          { term: 'Unity Catalog', def: 'Databricks governance layer — stores lineage metadata for audit and discovery' },
+        ]}
+      />
 
       {/* Coverage */}
       <div className="card mb-16">

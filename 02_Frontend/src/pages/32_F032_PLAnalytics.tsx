@@ -18,6 +18,7 @@ import {
   type MoMChangeRow,
   type PLYoYRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined, compact = false): string {
   if (n == null || isNaN(n)) return '—';
@@ -237,6 +238,22 @@ export default function PLAnalytics() {
         <h1 className="page-title">Profit & Loss Analytics</h1>
         <p className="page-subtitle">Consolidated P&L · drill by entity, period, and business line</p>
       </div>
+
+      <PageExplainer
+        icon="📊"
+        title="What is Profit & Loss Analytics?"
+        description="This page provides <strong>comprehensive P&L analysis across five tabs</strong>: Waterfall (monthly revenue, cost, and net income bars), Monthly Trend (MoM change analysis), Income Statement (traditional P&L format by line), By Entity (revenue and margin comparison across subsidiaries), and YoY Comparison (year-over-year variance). Use the filter panel to scope by entity, fiscal year, and date range. All data sourced from the GL gold layer."
+        concepts={[
+          { icon: '$', color: '#22c55e', label: 'Gross Profit', desc: 'Revenue minus COGS — profit before operating expenses' },
+          { icon: '%', color: '#3b82f6', label: 'EBIT', desc: 'Earnings Before Interest and Taxes — operating profit' },
+          { icon: '↕', color: '#f97316', label: 'YoY', desc: 'Year-over-year change — current year vs. prior year same period' },
+        ]}
+        glossary={[
+          { term: 'Waterfall Chart', def: 'Bar chart showing how revenue flows through COGS and OpEx to arrive at net income' },
+          { term: 'Gross Margin %', def: 'Gross Profit ÷ Revenue × 100 — measures how efficiently services are delivered' },
+          { term: 'MoM Change', def: 'Month-over-month variance — positive = improvement, negative = decline' },
+        ]}
+      />
 
       {/* KPI Strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 20 }}>

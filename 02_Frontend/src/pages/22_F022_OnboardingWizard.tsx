@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import PageExplainer from '../components/common/PageExplainer';
 
 const STEPS = [
   { id: 1, label: 'Entity Registration' },
@@ -43,6 +44,22 @@ export default function OnboardingWizard() {
           <button className="btn btn-secondary" onClick={() => setView('list')}>Active Onboardings</button>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🚀"
+        title="What is the Subsidiary Onboarding Wizard?"
+        description="This 7-step wizard guides admins through the complete process of <strong>connecting a new subsidiary to the i-CFO360 platform</strong>. Starting from entity registration and Entra ID authentication setup, through validation data loads and account mapping, to full historical load and go-live. The target is ≤30 calendar days per subsidiary. Active onboardings appear in the list view; click Resume to continue from the last completed step."
+        concepts={[
+          { icon: '1', color: '#6b7280', label: 'Register', desc: 'Legal entity name, code, jurisdiction, functional currency' },
+          { icon: '2', color: '#2563eb', label: 'Auth', desc: 'Configure Entra ID app and test OAuth connection' },
+          { icon: '4', color: '#d97706', label: 'Validate', desc: 'Load sample data and verify DQ score before full load' },
+          { icon: '7', color: '#16a34a', label: 'Go Live', desc: 'Entity visible in all platform views and dashboards' },
+        ]}
+        glossary={[
+          { term: 'Entity Catalog', def: 'Set of BC entities (GL, CoA, Customers, etc.) configured for extraction' },
+          { term: 'Validation Load', def: 'Test extraction of CoA + dimensions + 1 month GL before committing to full historical load' },
+        ]}
+      />
 
       {view === 'list' && (
         <div>

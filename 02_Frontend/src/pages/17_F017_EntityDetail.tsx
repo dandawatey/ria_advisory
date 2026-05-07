@@ -8,6 +8,7 @@ import { useParams } from 'react-router-dom';
 import { PowerBIEmbed } from '../components/shared/PowerBIEmbed';
 import { api } from '../api/client';
 import type { EntityDetail as EntityDetailType, TrialBalanceLine, GLEntry } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 function fmtUSD(n: number) {
   const abs = Math.abs(n ?? 0);
@@ -77,6 +78,22 @@ export default function EntityDetail() {
           </div>
         </div>
       </div>
+
+      <PageExplainer
+        icon="🏢"
+        title="What is Entity Detail?"
+        description="This page provides a <strong>subsidiary-scoped deep-dive</strong> into a single legal entity's financial data. The CFO, entity controllers, and finance team use it to review the Trial Balance, search GL entries, investigate DQ exceptions, reconcile inter-company positions, and view the embedded Power BI report. The entity is identified by its code in the URL and all data is scoped to that subsidiary only."
+        concepts={[
+          { icon: '⚖', color: '#2563eb', label: 'Trial Balance', desc: 'All accounts with debit, credit, and net balance totals' },
+          { icon: '📄', color: '#16a34a', label: 'GL Entries', desc: 'Individual posted journal entries with date, account, amount' },
+          { icon: '✓', color: '#7c3aed', label: 'DQ Exceptions', desc: 'Data quality rule violations for this entity' },
+          { icon: '⚖️', color: '#d97706', label: 'IC Recon', desc: 'Inter-company balances and reconciliation status' },
+        ]}
+        glossary={[
+          { term: 'Net Balance', def: 'Debit minus credit for an account — positive = debit balance, negative = credit balance' },
+          { term: 'Doc Type', def: 'Document type of the GL entry (Invoice, Credit Memo, Journal, Payment)' },
+        ]}
+      />
 
       {/* Summary KPI strip */}
       {summary && (

@@ -14,6 +14,7 @@ import {
   type AgeingCustomerRow,
   type AgeingEntityRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 // ── Formatters ────────────────────────────────────────────────────────────────
 function fmt(n: number | null | undefined): string {
   if (n == null || isNaN(n)) return '—';
@@ -177,6 +178,22 @@ export default function Ageing() {
         <h1 className="page-title">AR Ageing</h1>
         <p className="page-subtitle">Accounts Receivable ageing by invoice date buckets</p>
       </div>
+
+      <PageExplainer
+        icon="⏳"
+        title="What is the AR Ageing Report?"
+        description="This page shows <strong>Accounts Receivable balances bucketed by the age of the outstanding invoice</strong>. Buckets are: current (0–30 days), 31–60 days, 61–90 days, 91–120 days, and 120+ days overdue. The Bucket Summary tab shows the overall ageing profile as a bar chart and donut. By Customer ranks customers by overdue balance. By Entity compares ageing risk across subsidiaries. Finance teams use this to prioritise collections and assess credit risk."
+        concepts={[
+          { icon: '✓', color: '#22c55e', label: '0–30 Days', desc: 'Current — within payment terms; no action required' },
+          { icon: '⚠', color: '#f59e0b', label: '31–90 Days', desc: 'Overdue — follow up with customer; send reminder' },
+          { icon: '!', color: '#ef4444', label: '120+ Days', desc: 'Severely overdue — escalate to collections; consider bad debt provision' },
+        ]}
+        glossary={[
+          { term: 'Ageing Bucket', def: 'Time range since invoice date — groups outstanding AR by how long it has been unpaid' },
+          { term: 'Total Outstanding', def: 'Sum of all unpaid invoice balances across all ageing buckets' },
+          { term: 'Bad Debt Provision', def: 'Reserve set aside for invoices unlikely to be collected, typically 120+ days overdue' },
+        ]}
+      />
 
       {/* ── KPI Tiles ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>

@@ -3,6 +3,7 @@
  * Ops page: storage stats, partition browser, WORM/immutability status.
  */
 import { useState } from 'react';
+import PageExplainer from '../components/common/PageExplainer';
 
 const storageStats = {
   totalSizeGB: 2847,
@@ -45,12 +46,43 @@ export default function BronzeZone() {
 
   return (
     <div>
+      <PageExplainer
+        icon="🏗️"
+        title="What is the Bronze Zone?"
+        description="The <strong>Bronze Zone is the raw data landing layer</strong> — the first stop for all data extracted from Business Central. Data arrives here unchanged, partitioned by subsidiary and date, and stored in immutable WORM (Write Once Read Many) format. This ensures a complete, tamper-proof audit trail. Finance ops and data engineers use this page to browse partitions, verify row counts, and check storage tiers."
+        concepts={[
+          { icon: '🔥', color: '#ef4444', label: 'Hot', desc: 'Recent partitions (<30 days) — fast access, higher cost' },
+          { icon: '❄', color: '#60a5fa', label: 'Cool', desc: 'Older partitions (30–90 days) — slower, lower cost' },
+          { icon: '📦', color: '#6b7280', label: 'Archive', desc: 'Historical data (>90 days) — cheapest, retrieval takes hours' },
+        ]}
+        glossary={[
+          { term: 'WORM', def: 'Write Once Read Many — data cannot be modified after landing (audit requirement)' },
+          { term: 'Partition', def: 'Data slice by subsidiary + date — enables efficient time-range queries' },
+          { term: 'CMK', def: 'Customer-Managed Key — encryption key controlled by the tenant, not the cloud provider' },
+        ]}
+      />
       <div className="page-header">
         <h1 className="page-title">Bronze Zone — Raw Data Landing</h1>
         <p className="page-subtitle">
           ADLS Gen2 Delta Lake tables: raw extracts, WORM immutability, partition browser. (F005)
         </p>
       </div>
+
+      <PageExplainer
+        icon="🗄️"
+        title="What is the Bronze Zone?"
+        description="The Bronze Zone is the <strong>raw data landing layer</strong> — the first stop after extraction from Business Central. It stores exact copies of all extracted records in Delta Lake format on Azure Data Lake Storage Gen2, partitioned by subsidiary and date. Data here is <strong>immutable (WORM-locked)</strong> for 7 years for regulatory compliance. DevOps and data engineers use this page to monitor storage, browse partitions, and verify security posture."
+        concepts={[
+          { icon: '🔥', color: '#dc2626', label: 'Hot', desc: 'Frequently accessed — recent data (current + last 90 days)' },
+          { icon: '❄️', color: '#0891b2', label: 'Cool', desc: 'Infrequently accessed — older data (90 days to 2 years)' },
+          { icon: '📦', color: '#6b7280', label: 'Archive', desc: 'Rare access — historical data (2+ years), lowest cost' },
+        ]}
+        glossary={[
+          { term: 'WORM', def: 'Write Once Read Many — immutable storage policy that prevents deletion or modification' },
+          { term: 'CMK', def: 'Customer-Managed Key — encryption key controlled by the organization, not the cloud provider' },
+          { term: 'Delta Lake', def: 'Open-source storage layer with ACID transactions built on Parquet files' },
+        ]}
+      />
 
       {/* Storage overview */}
       <div className="card-grid card-grid-4 mb-24">

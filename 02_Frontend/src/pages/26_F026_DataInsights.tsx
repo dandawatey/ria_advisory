@@ -13,6 +13,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine,
   PieChart, Pie,
 } from 'recharts';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   api,
   type PLWaterfallRow,
@@ -275,6 +276,22 @@ export default function DataInsights() {
           </p>
         </div>
       </div>
+
+      <PageExplainer
+        icon="📉"
+        title="What is GL Data Insights?"
+        description="This page provides <strong>four deep-dive analysis tabs over the full GL dataset</strong> (188,380 entries, 17 subsidiaries, May 2025 – Apr 2026). The GL Overview tab shows monthly P&L trends, entity revenue share, and transaction type mix. Completeness & Coverage shows data gaps, monthly entry volume, and entity-level coverage quality. Expense Intelligence breaks down COGS vs OpEx with account-level detail. Account Naming Quality flags unnamed GL accounts that need remediation in Business Central."
+        concepts={[
+          { icon: '📊', color: '#22c55e', label: 'GL Overview', desc: 'P&L trend, entity revenue share donut, account category totals, doc-type mix' },
+          { icon: '✓', color: '#3b82f6', label: 'Completeness', desc: 'Data gaps, monthly volume, entity coverage matrix (months present out of 12)' },
+          { icon: '💸', color: '#f97316', label: 'Expense Intelligence', desc: 'COGS vs OpEx split, top-30 expense accounts, misclassification alerts' },
+        ]}
+        glossary={[
+          { term: 'Coverage %', def: 'Months with GL data present out of 12 possible — green ≥90%, amber ≥60%, red <60%' },
+          { term: 'Partial Month', def: 'A month where the GL period was open or recently closed — entry count lower than normal' },
+          { term: 'Unnamed Account', def: 'GL account with no name exported from Business Central — cannot be classified in reports' },
+        ]}
+      />
 
       {/* ── Always-visible KPI row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
