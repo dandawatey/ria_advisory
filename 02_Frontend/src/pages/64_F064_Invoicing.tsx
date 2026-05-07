@@ -12,6 +12,7 @@ import {
   type InvoicingEntityRow,
   type InvoicingAccountRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── formatters ────────────────────────────────────────────────────────────────
 const fmt = (v: number) =>
@@ -190,6 +191,21 @@ export default function InvoicingPage() {
             Invoice count and value from GL — revenue accounts (4xx) filtered to Invoice document type
           </p>
         </div>
+
+        <PageExplainer
+          icon="🧾"
+          title="What is the Invoicing Report?"
+          description="This page shows <strong>invoice volume and value from GL entries</strong> — specifically revenue account (4xx) postings where the document type is Invoice. It gives finance teams a GL-sourced view of billing activity: how many invoices were raised, their total value, average size, and year-over-year growth. Use the sidebar to filter by year, month, or entity."
+          concepts={[
+            { icon: '●', color: '#1F6B66', label: 'Invoice Value', desc: 'Total credit value of GL entries classified as Invoice document type' },
+            { icon: '●', color: '#2F7873', label: 'Invoice Count', desc: 'Number of distinct invoice entries in the GL' },
+            { icon: '●', color: '#E8443B', label: 'Negative Growth', desc: 'Invoice value declined year-over-year' },
+          ]}
+          glossary={[
+            { term: 'Avg Invoice', def: 'Total invoice value ÷ invoice count — average size of each invoice' },
+            { term: 'YoY Growth', def: 'Comparison of invoice value to the same period in the prior year' },
+          ]}
+        />
 
         {/* KPI strip */}
         {loadSum ? (

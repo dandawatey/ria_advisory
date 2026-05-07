@@ -16,6 +16,7 @@ import {
   type RevenueEntityRow,
   type RevenueAccountRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 const fmt = (v: number) =>
@@ -185,6 +186,21 @@ export default function Revenue() {
             Recognised revenue from GL accounts (4xx) — all entities
           </div>
         </div>
+
+        <PageExplainer
+          icon="💵"
+          title="What is the Revenue Report?"
+          description="This page shows <strong>recognised revenue from GL accounts in the 4xx range</strong> across all subsidiaries. Revenue is sourced directly from posted GL entries — not from invoices — so it reflects actual earned income per accounting period. Use the sidebar filters to narrow by year, month, or specific entities. Tabs allow drill-down by month, entity, or account."
+          concepts={[
+            { icon: '●', color: '#1F6B66', label: 'Total Revenue', desc: 'Sum of all credit postings to 4xx accounts in the period' },
+            { icon: '●', color: '#2F7873', label: 'Avg Monthly', desc: 'Total revenue divided by number of months in the selection' },
+            { icon: '●', color: '#E8443B', label: 'Negative YoY', desc: 'Revenue declined vs same period last year' },
+          ]}
+          glossary={[
+            { term: 'YoY Growth', def: 'Year-over-year change in revenue — requires selecting a specific year' },
+            { term: '4xx Accounts', def: 'GL account codes starting with 4 — the revenue category in the canonical CoA' },
+          ]}
+        />
 
         {/* KPI strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>

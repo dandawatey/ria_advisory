@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import PageExplainer from '../components/common/PageExplainer';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -232,6 +233,22 @@ export default function View360() {
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', margin: 0 }}>360° Financial View</h1>
         <p style={{ color: '#6b7280', margin: '4px 0 0', fontSize: 14 }}>Unified view: Revenue · Expenses · Invoices · Investments · Budget</p>
       </div>
+
+      <PageExplainer
+        icon="🔭"
+        title="What is the 360° Financial View?"
+        description="This page is the <strong>unified CFO command centre</strong> — combining Revenue, Expenses, Invoices, Investments, and Budget in one animated dashboard. Instead of navigating five separate pages, the 360° view gives a single-screen overview of financial health across all dimensions. Cards are animated with staggered entry for fast visual scanning. Click any metric to drill into the detailed report."
+        concepts={[
+          { icon: '●', color: '#1F6B66', label: 'Revenue', desc: 'Total recognised income from GL 4xx accounts' },
+          { icon: '●', color: '#E8443B', label: 'Expenses', desc: 'Operating and cost-of-sales spend from GL 5xx/6xx accounts' },
+          { icon: '●', color: '#3b82f6', label: 'Investments', desc: 'Total invested capital and current portfolio value' },
+          { icon: '●', color: '#f59e0b', label: 'Budget Utilisation', desc: 'Actual spend as % of approved budget for the period' },
+        ]}
+        glossary={[
+          { term: '360° View', def: 'Single-page cross-module summary pulling from Revenue, Budget, Invoicing, UBR, and Investment APIs' },
+          { term: 'KPI Card', def: 'Key Performance Indicator — one number with trend context for fast executive reading' },
+        ]}
+      />
 
       {loading && <div style={{ color: '#9ca3af', padding: 60, textAlign: 'center', fontSize: 16 }}>Loading 360° data…</div>}
 

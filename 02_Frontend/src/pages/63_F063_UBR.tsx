@@ -19,6 +19,7 @@ import {
   type UBRAccountRow,
   type UBRProjectRow,
 } from '../api/client';
+import PageExplainer from '../components/common/PageExplainer';
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 const fmt = (v: number) =>
@@ -197,6 +198,20 @@ export default function UBR() {
             Revenue recognized (4xx accounts) not yet tied to an Invoice — gap between work done and billed
           </div>
         </div>
+
+        <PageExplainer
+          icon="⏳"
+          title="What is Unbilled Revenue (UBR)?"
+          description="<strong>Unbilled Revenue (UBR)</strong> is revenue that has been recognised in the GL (credit to a 4xx account) but has NOT yet been matched to a customer invoice. It represents work completed but not yet billed — a cash flow risk. High UBR% means the firm is earning but not collecting. Finance teams use this page to identify which entities and projects have the largest billing gaps."
+          concepts={[
+            { icon: '●', color: '#1F6B66', label: 'Billed', desc: 'Revenue entries matched to an Invoice document type' },
+            { icon: '●', color: '#E8443B', label: 'Unbilled (UBR)', desc: 'Revenue entries NOT matched to any invoice — accrued but uncollected' },
+          ]}
+          glossary={[
+            { term: 'UBR %', def: 'Unbilled Revenue ÷ Total Revenue — the proportion not yet invoiced; >30% is a warning sign' },
+            { term: 'Document Type', def: 'The GL entry classification — Invoice, Credit Memo, Journal, Payment, etc.' },
+          ]}
+        />
 
         {/* KPI strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
