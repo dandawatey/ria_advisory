@@ -4,6 +4,8 @@
  * still renders without a running backend.
  */
 
+import type { InvoiceUploadSession } from '../types/index';
+
 const BASE      = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 const TOKEN_KEY = 'ria_token';
 
@@ -59,6 +61,24 @@ export async function del(path: string): Promise<void> {
   const res = await fetch(`${BASE}${path}`, { method: 'DELETE', headers: authHeaders() });
   if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
   if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+}
+
+export async function uploadInvoices(files: File[], batchNotes?: string): Promise<InvoiceUploadSession> {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  if (batchNotes) formData.append('batch_notes', batchNotes);
+
+  const res = await fetch(`${BASE}/api/invoices/upload`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  });
+  if (res.status === 401) { handle401(); throw new Error('Unauthorized'); }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail ?? `Invoice upload failed: ${res.status}`);
+  }
+  return res.json() as Promise<InvoiceUploadSession>;
 }
 
 // ── Shared filter state type ──────────────────────────────────────────────────

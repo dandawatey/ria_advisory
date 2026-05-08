@@ -213,3 +213,29 @@ export interface PowerBIConfig {
   accessToken: string;
   workspaceId: string;
 }
+
+export interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
+  file?: File;
+}
+
+export interface UploadSession {
+  session_id: string;
+  file_count: number;
+  total_size: number;
+  uploaded_at: string;
+}
+
+export type InvoiceUploadSession = UploadSession;
+
+export interface InvoiceUploadFile {
+  file_name: string;
+  file_size: number;
+  status: 'pending' | 'processing' | 'success' | 'error';
+  error_message?: string;
+}
