@@ -32,6 +32,12 @@ def _resolve_companies(
         return effective if effective else []
     return allowed
 
+
+def _add_tenant_filter(clauses: list, params: list, current: dict) -> None:
+    """Add tenant_id filter to WHERE clause — enforces multi-tenant isolation."""
+    clauses.append("g.tenant_id = %s")
+    params.append(current['tenant_id'])
+
 # ── Shared expense FROM + JOIN ─────────────────────────────────────────────────
 _EXP_BASE = """
     FROM fact_gl_entries g
@@ -61,6 +67,8 @@ def trial_balance(
     if account_category:
         clauses.append("tb.account_category = %s")
         params.append(account_category)
+    # Tenant isolation
+    _add_tenant_filter(clauses, params, current)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     return query(f"""
         SELECT tb.company_name, tb.account_no, tb.account_name,
@@ -68,6 +76,7 @@ def trial_balance(
                tb.total_debit, tb.total_credit, tb.net_balance
         FROM v_trial_balance tb
         JOIN dim_company co ON co.company_name = tb.company_name
+        JOIN fact_gl_entries g ON g.company_id = co.company_id
         {wh}
         ORDER BY tb.company_name, tb.account_no
     """, params)
@@ -88,6 +97,8 @@ def trial_balance_summary(
             ph = ", ".join(["%s"] * len(company_id))
             clauses.append(f"co.company_id IN ({ph})")
             params.extend(company_id)
+    # Tenant isolation
+    _add_tenant_filter(clauses, params, current)
     wh = ("WHERE " + " AND ".join(clauses)) if clauses else ""
     rows = query(f"""
         SELECT
@@ -98,6 +109,7 @@ def trial_balance_summary(
             COUNT(DISTINCT tb.company_name) AS entity_count
         FROM v_trial_balance tb
         JOIN dim_company co ON co.company_name = tb.company_name
+        JOIN fact_gl_entries g ON g.company_id = co.company_id
         {wh}
     """, params)
     return rows[0] if rows else {}
