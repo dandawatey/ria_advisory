@@ -20,6 +20,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from database import query  # type: ignore[import]
+from etl.account_enrichment import enrich_accounts_by_source
 
 logger = logging.getLogger(__name__)
 
@@ -458,6 +459,13 @@ def _sync_one_source(source: Dict[str, Any]) -> None:
             return query(sql, params)
 
     rows_promoted = promote_gl_entries(db=DBWrapper(), source_id="BC", logger=logger)
+
+    # 5.5. Enrich GL accounts with canonical CoA mapping
+    try:
+        enriched_count = enrich_accounts_by_source(erp_source_id="BC")
+        logger.info(f"BC enrichment: {enriched_count} accounts enriched post-sync")
+    except Exception as e:
+        logger.warning(f"BC account enrichment failed (non-fatal): {str(e)}")
 
     # 6. Finalize sync_log
     watermark_to = max_posting_date or datetime.now(tz=timezone.utc)

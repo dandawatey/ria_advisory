@@ -72,6 +72,7 @@ import CFORatios               from './pages/61_F061_CFORatios';
 import Revenue                from './pages/62_F062_Revenue';
 import UBR                    from './pages/63_F063_UBR';
 import Invoicing              from './pages/64_F064_Invoicing';
+import ImpersonationConsole   from './pages/64_F064_ImpersonationConsole';
 import FeatureFlagsPage       from './pages/65_F065_FeatureFlags';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
@@ -204,6 +205,12 @@ export default function App() {
                   <Route path="/admin/rbac" element={
                     <ProtectedRoute requiredRole="isource_admin">
                       <FlagGuard flagKey="page_rbac"><RBACConsole /></FlagGuard>
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/admin/impersonation-console" element={
+                    <ProtectedRoute requiredRole="ria_admin">
+                      <ImpersonationConsole />
                     </ProtectedRoute>
                   } />
 

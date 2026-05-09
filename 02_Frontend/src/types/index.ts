@@ -239,3 +239,31 @@ export interface InvoiceUploadFile {
   status: 'pending' | 'processing' | 'success' | 'error';
   error_message?: string;
 }
+
+// ─── RBAC & Impersonation Types ────────────────────────────────────────────────
+
+export interface RBACUser {
+  id: string;
+  email: string;
+  display_name: string;
+  role: UserRole;
+  tenant_id: string;
+  subsidiary_access?: string[];
+  last_login?: string;
+  created_at?: string;
+}
+
+export interface ImpersonationAudit {
+  admin_id: string;
+  admin_name: string;
+  target_id: string;
+  target_name: string;
+  started_at: string;
+  ended_at?: string;
+  reason?: string;
+}
+
+export interface RoleOption {
+  value: UserRole;
+  label: string;
+}

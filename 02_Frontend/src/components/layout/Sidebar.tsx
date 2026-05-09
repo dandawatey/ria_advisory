@@ -115,7 +115,7 @@ const nav: NavSection[] = [
     items: [
       { label: 'Sprint Board',        path: '/admin/sprint',           icon: '◈' },
       { label: 'Feature Flags',       path: '/admin/feature-flags',    icon: '⚑' },  // always visible to admin
-      { label: 'Impersonation',       path: '/impersonation-console',  icon: '👤' },
+      { label: 'Impersonation',       path: '/admin/impersonation-console',  icon: '👤' },
       { label: 'RBAC Console',        path: '/admin/rbac',             icon: '🔒', flagKey: 'page_rbac' },
       { label: 'GL Mapping',          path: '/admin/mappings',         icon: '⇔', flagKey: 'page_gl_mapping' },
       { label: 'Chart of Accounts',   path: '/admin/coa',              icon: '≡', flagKey: 'page_coa' },
