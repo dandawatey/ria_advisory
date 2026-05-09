@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>i-finsights — CFO360 Proposal · RIA Advisory · 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── Design tokens ─────────────────────────────────────────────── */
+:root {
+  --teal-50:  #EEF5F4; --teal-100: #D4E6E3; --teal-200: #A9CDC8;
+  --teal-300: #7DB3AC; --teal-400: #4F948D; --teal-500: #2F7873;
+  --teal-600: #1F6B66; --teal-700: #175551; --teal-800: #0F3F3C;
+  --teal-900: #082624;
+  --coral-300: #EE7D72; --coral-400: #E8564A; --coral-500: #E8443B;
+  --coral-600: #C93328;
+  --neutral-0:  #FFFFFF; --neutral-25: #FAFBFB; --neutral-50: #F4F6F6;
+  --neutral-100:#E8ECEC; --neutral-200:#D1D8D8; --neutral-300:#B0BABA;
+  --neutral-500:#66726F; --neutral-700:#333938; --neutral-800:#1F2423;
+  --font-display: 'Nunito Sans', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+}
+
+/* ── Reset & base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: var(--font-body); color: var(--neutral-800); background: var(--neutral-50); }
+
+/* ── Print layout ─────────────────────────────────────────────── */
+@media print {
+  body { background: white; }
+  .page { page-break-after: always; box-shadow: none !important; }
+  .page:last-child { page-break-after: avoid; }
+  @page { size: A4; margin: 0; }
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────── */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 32px;
+  background: white;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PAGE 1 — COVER
+   ════════════════════════════════════════════════════════════════ */
+.cover {
+  background: var(--teal-900);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+}
+.cover-lattice {
+  position: absolute; inset: 0; opacity: .18; z-index: 0;
+}
+.cover-scrim {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(140deg,
+    rgba(8,38,36,0.96) 0%,
+    rgba(8,38,36,0.70) 55%,
+    rgba(8,38,36,0.30) 100%);
+}
+.cover-body {
+  position: relative; z-index: 2;
+  padding: 56mm 20mm 28mm;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.cover-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; font-size: 11px;
+  color: var(--coral-300); margin-bottom: 18px;
+}
+.cover-rule { width: 56px; height: 3px; background: var(--coral-500); margin-bottom: 22px; }
+.cover h1 {
+  font-family: var(--font-display);
+  font-weight: 900; font-size: 52px; line-height: 1.04;
+  letter-spacing: -0.025em; color: #fff;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+  margin-bottom: 12px;
+}
+.cover-product {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 20px;
+  color: var(--teal-300); margin-bottom: 20px;
+  letter-spacing: .01em;
+}
+.cover-sub {
+  font-size: 15px; line-height: 1.65; color: rgba(255,255,255,0.88);
+  max-width: 128mm; margin-bottom: 32px;
+}
+.cover-meta {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(255,255,255,0.6); letter-spacing: .05em;
+}
+.cover-meta strong { color: #fff; font-weight: 600; }
+
+.cover-footer {
+  position: relative; z-index: 2;
+  background: rgba(8,38,36,0.60);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 20mm;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cover-footer-brand {
+  font-family: var(--font-display); font-size: 13px;
+  font-weight: 600; color: rgba(255,255,255,0.90);
+}
+.cover-footer-brand span {
+  color: rgba(255,255,255,0.50); font-weight: 400; margin-left: 8px;
+}
+.cover-footer-right {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(255,255,255,0.55); letter-spacing: .06em;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INNER PAGE BASE STYLES
+   ════════════════════════════════════════════════════════════════ */
+.inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 297mm;
+}
+.inner-header {
+  background: linear-gradient(135deg, var(--teal-700) 0%, var(--teal-800) 100%);
+  padding: 22px 20mm 24px;
+  position: relative; overflow: hidden;
+}
+.inner-header-lattice {
+  position: absolute; inset: 0; opacity: .12; z-index: 0;
+}
+.inner-header > *:not(.inner-header-lattice) { position: relative; z-index: 1; }
+
+.inner-header .eyebrow {
+  font-family: var(--font-display); font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  font-size: 10px; color: var(--coral-300); margin-bottom: 8px;
+}
+.inner-header h2 {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: 28px; line-height: 1.1; letter-spacing: -0.01em;
+  color: #fff; margin-bottom: 6px;
+}
+.inner-header .header-sub {
+  font-size: 13px; color: rgba(255,255,255,0.80); max-width: 140mm;
+}
+
+.inner-body { flex: 1; padding: 28px 20mm 20px; }
+
+.inner-footer {
+  background: var(--teal-900); padding: 12px 20mm;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.inner-footer-brand {
+  font-family: var(--font-display); font-size: 12px;
+  font-weight: 600; color: rgba(255,255,255,0.88);
+}
+.inner-footer-right {
+  font-family: var(--font-mono); font-size: 11px;
+  color: rgba(255,255,255,0.55); letter-spacing: .06em;
+}
+
+/* ── Inner page components ────────────────────────────────────── */
+.section-label {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: 13px; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--teal-600); margin-bottom: 10px; margin-top: 22px;
+}
+.section-label:first-child { margin-top: 0; }
+
+.lead-text {
+  font-size: 15px; line-height: 1.70; color: var(--neutral-700);
+  margin-bottom: 18px;
+}
+.lead-text strong { color: var(--teal-700); font-weight: 600; }
+
+/* Card grid */
+.card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+.card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 14px 0; }
+.card-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 14px 0; }
+
+.card {
+  border: 1px solid var(--neutral-100);
+  border-top: 3px solid var(--coral-500);
+  border-radius: var(--radius-md);
+  padding: 16px 16px 14px;
+  box-shadow: var(--shadow-sm);
+  background: white;
+}
+.card.teal { border-top-color: var(--teal-500); }
+.card.teal-dark { border-top-color: var(--teal-700); }
+.card.coral-light { border-top-color: var(--coral-300); }
+
+.card-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  background: var(--teal-600); color: white;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.card.teal .card-icon { background: var(--coral-500); }
+.card.teal-dark .card-icon { background: var(--teal-700); }
+
+.card-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.card h3 {
+  font-family: var(--font-display); font-size: 14px;
+  font-weight: 700; color: var(--neutral-800); margin-bottom: 6px;
+}
+.card p {
+  font-size: 12px; line-height: 1.55; color: var(--neutral-500);
+}
+.card-tag {
+  display: inline-block; margin-top: 10px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--teal-700); background: var(--teal-50);
+  padding: 2px 8px; border-radius: 99px; letter-spacing: .04em;
+}
+
+/* Feature report card (Phase 1) */
+.report-card {
+  border: 1px solid var(--neutral-100);
+  border-left: 4px solid var(--coral-500);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  background: white; box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.report-card.teal { border-left-color: var(--teal-500); }
+.report-number {
+  font-family: var(--font-display); font-size: 22px; font-weight: 900;
+  color: var(--neutral-200); line-height: 1; min-width: 28px;
+  padding-top: 2px;
+}
+.report-card.teal .report-number { color: var(--teal-100); }
+.report-content h4 {
+  font-family: var(--font-display); font-size: 14px;
+  font-weight: 700; color: var(--neutral-800); margin-bottom: 4px;
+}
+.report-content p {
+  font-size: 12px; line-height: 1.55; color: var(--neutral-500);
+}
+
+/* Arch diagram */
+.arch-layer {
+  border: 1px solid var(--neutral-100);
+  border-radius: var(--radius-md);
+  overflow: hidden; margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.arch-layer-header {
+  padding: 8px 14px;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: white;
+}
+.arch-layer-header.presentation { background: var(--teal-600); }
+.arch-layer-header.api { background: var(--teal-700); }
+.arch-layer-header.data { background: var(--teal-800); }
+.arch-layer-header.source { background: var(--neutral-700); }
+.arch-layer-header.infra { background: var(--coral-600); }
+
+.arch-layer-body {
+  padding: 10px 14px;
+  background: var(--neutral-25);
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.arch-chip {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 4px 10px; border-radius: 99px; letter-spacing: .03em;
+  background: white; border: 1px solid var(--neutral-200);
+  color: var(--neutral-700);
+}
+.arch-chip.coral { background: var(--coral-50); border-color: var(--coral-200); color: var(--coral-700, #A0271E); }
+.arch-chip.teal { background: var(--teal-50); border-color: var(--teal-200); color: var(--teal-700); }
+
+.arch-arrow {
+  text-align: center; font-size: 16px; color: var(--neutral-300);
+  margin: 2px 0; line-height: 1;
+}
+
+/* Timeline */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: ''; position: absolute; left: 10px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--teal-100);
+}
+.timeline-item { position: relative; margin-bottom: 16px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-dot {
+  position: absolute; left: -28px; top: 3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--teal-600); border: 2px solid white;
+  box-shadow: 0 0 0 2px var(--teal-200);
+}
+.timeline-week {
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--teal-600); margin-bottom: 4px;
+}
+.timeline-title {
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  color: var(--neutral-800); margin-bottom: 4px;
+}
+.timeline-tasks {
+  font-size: 12px; color: var(--neutral-500); line-height: 1.6;
+}
+.timeline-tasks li { margin-left: 14px; }
+
+/* Deliverables table */
+.deliverables-table {
+  width: 100%; border-collapse: collapse; margin: 12px 0;
+  font-size: 12.5px;
+}
+.deliverables-table th {
+  background: var(--teal-800); color: white;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 9px 14px; text-align: left;
+}
+.deliverables-table th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+.deliverables-table th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+.deliverables-table td {
+  padding: 9px 14px; border-bottom: 1px solid var(--neutral-100);
+  color: var(--neutral-700); vertical-align: top;
+}
+.deliverables-table tr:last-child td { border-bottom: none; }
+.deliverables-table tr:nth-child(even) td { background: var(--neutral-25); }
+.tag-done {
+  display: inline-block; font-family: var(--font-mono);
+  font-size: 10px; padding: 2px 8px; border-radius: 99px;
+  background: var(--teal-50); color: var(--teal-700);
+  border: 1px solid var(--teal-200); letter-spacing: .04em;
+}
+.tag-phase1 {
+  display: inline-block; font-family: var(--font-mono);
+  font-size: 10px; padding: 2px 8px; border-radius: 99px;
+  background: var(--coral-50, #FDEDEC); color: var(--coral-600);
+  border: 1px solid var(--coral-200, #F5A9A1); letter-spacing: .04em;
+}
+
+/* Callout box */
+.callout {
+  border-left: 4px solid var(--teal-500);
+  background: var(--teal-50);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 14px 16px; margin: 16px 0;
+}
+.callout p { font-size: 13px; line-height: 1.65; color: var(--teal-800); }
+.callout strong { font-weight: 700; color: var(--teal-700); }
+
+/* Next steps */
+.next-step-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--neutral-100);
+  border-radius: var(--radius-md);
+  background: white; box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+}
+.next-step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--teal-600); color: white;
+  font-family: var(--font-display); font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.next-step-content h4 {
+  font-family: var(--font-display); font-size: 14px;
+  font-weight: 700; color: var(--neutral-800); margin-bottom: 3px;
+}
+.next-step-content p { font-size: 12px; line-height: 1.55; color: var(--neutral-500); }
+
+/* Divider */
+.divider { border: none; border-top: 1px solid var(--neutral-100); margin: 18px 0; }
+
+/* Metric strip */
+.metric-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin: 16px 0;
+}
+.metric-tile {
+  background: white; border: 1px solid var(--neutral-100);
+  border-radius: var(--radius-md); padding: 14px;
+  text-align: center; box-shadow: var(--shadow-sm);
+}
+.metric-tile .value {
+  font-family: var(--font-display); font-size: 26px; font-weight: 900;
+  color: var(--teal-600); line-height: 1;
+}
+.metric-tile .unit {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--coral-500); letter-spacing: .06em; margin-left: 2px;
+}
+.metric-tile .label {
+  font-size: 11px; color: var(--neutral-500); margin-top: 4px;
+  line-height: 1.4;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 1 — COVER
+     ══════════════════════════════════════════════ -->
+<div class="page cover">
+  <!-- Hexagonal lattice background -->
+  <svg class="cover-lattice" viewBox="0 0 595 842" preserveAspectRatio="xMidYMid slice">
+    <defs><pattern id="lp" x="0" y="0" width="100" height="86.6" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#7DB3AC" stroke-width="1.2">
+        <polygon points="25,7 50,7 62,29 50,51 25,51 13,29"/>
+        <polygon points="75,7 100,7 112,29 100,51 75,51 63,29"/>
+        <polygon points="50,51 75,51 87,73 75,95 50,95 38,73"/>
+      </g>
+    </pattern></defs>
+    <rect width="100%" height="100%" fill="url(#lp)"/>
+  </svg>
+  <div class="cover-scrim"></div>
+
+  <div class="cover-body">
+    <div class="cover-eyebrow">Financial Intelligence Platform · 2026</div>
+    <div class="cover-rule"></div>
+    <div class="cover-product">i-finsights · Phase 1 Delivery</div>
+    <h1>CFO360<br>for RIA Advisory</h1>
+    <p class="cover-sub">
+      A purpose-built financial intelligence platform connecting your 17 Business Central tenants into a single, real-time view — starting with the five revenue and receivables reports your finance team needs most.
+    </p>
+    <div class="cover-meta">
+      Prepared for <strong>RIA Advisory — Group Finance Leadership</strong>
+      &nbsp;·&nbsp; May 2026
+      &nbsp;·&nbsp; Confidential
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div class="cover-footer-brand">
+      i-Source Infosystems Pvt. Ltd.
+      <span>Proposal · Confidential</span>
+    </div>
+    <div class="cover-footer-right">01 / 05</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2 — EXECUTIVE SUMMARY
+     ══════════════════════════════════════════════ -->
+<div class="page inner">
+  <div class="inner-header">
+    <svg class="inner-header-lattice" viewBox="0 0 595 100" preserveAspectRatio="xMidYMid slice">
+      <defs><pattern id="lp2" x="0" y="0" width="100" height="86.6" patternUnits="userSpaceOnUse">
+        <g fill="none" stroke="#7DB3AC" stroke-width="1.2">
+          <polygon points="25,7 50,7 62,29 50,51 25,51 13,29"/>
+          <polygon points="75,7 100,7 112,29 100,51 75,51 63,29"/>
+          <polygon points="50,51 75,51 87,73 75,95 50,95 38,73"/>
+        </g>
+      </pattern></defs>
+      <rect width="100%" height="100%" fill="url(#lp2)"/>
+    </svg>
+    <div class="eyebrow">Executive Summary</div>
+    <h2>One number. Real-time. From 17 subsidiaries.</h2>
+    <p class="header-sub">Replacing the 8–10 day Excel close with live, auditable financial intelligence.</p>
+  </div>
+
+  <div class="inner-body">
+
+    <div class="metric-strip">
+      <div class="metric-tile">
+        <div class="value">17<span class="unit">BC</span></div>
+        <div class="label">Business Central tenants consolidated</div>
+      </div>
+      <div class="metric-tile">
+        <div class="value">8–10<span class="unit">days</span></div>
+        <div class="label">Current Excel-driven close cycle</div>
+      </div>
+      <div class="metric-tile">
+        <div class="value">5<span class="unit">rpts</span></div>
+        <div class="label">Phase 1 revenue &amp; AR reports delivered</div>
+      </div>
+      <div class="metric-tile">
+        <div class="value">3<span class="unit">wks</span></div>
+        <div class="label">Phase 1 delivery commitment</div>
+      </div>
+    </div>
+
+    <p class="lead-text">
+      RIA Advisory operates <strong>17 independent Business Central SaaS tenants</strong> — one per subsidiary — across multiple geographies and currencies. Every month, your Group Controller spends 8–10 business days on manual extraction, VLOOKUP consolidation, and email-driven intercompany reconciliation — with no intra-month P&amp;L visibility.
+    </p>
+
+    <p class="lead-text">
+      <strong>i-finsights</strong> connects directly to all 17 BC tenants via OAuth, pulls GL data automatically, and delivers live dashboards and reports — with no manual exports, no Excel, no human step in the data path.
+    </p>
+
+    <div class="callout">
+      <p><strong>Phase 1 commitment:</strong> Collections · Invoicing · Revenue · Unbilled Revenue (UBR) · Accounts Receivable — five revenue and receivables reports plus <strong>Azure Entra ID Single Sign-On</strong>. Deployed on RIA Advisory's own server infrastructure within 3 weeks of engagement start.</p>
+    </div>
+
+    <div class="section-label">The Problem We Solve</div>
+    <div class="card-grid-2">
+      <div class="card teal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        </div>
+        <h3>Manual Excel closes</h3>
+        <p>8–10 days of analyst time extracting from 17 BC tenants, VLOOKUP consolidation, no audit trail.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>No intra-month visibility</h3>
+        <p>Leadership flies blind until close. No real-time P&amp;L, no live AR aging, no collections dashboard.</p>
+      </div>
+      <div class="card teal-dark">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3>No drill-through</h3>
+        <p>Board asks a question — analysts re-extract data from BC. No path from group total to source GL entry.</p>
+      </div>
+      <div class="card coral-light">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3>No programmatic BC access</h3>
+        <p>No BC API integration. Manual exports from each tenant. No automation, no scheduling, no watermarks.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="inner-footer">
+    <div class="inner-footer-brand">i-Source Infosystems Pvt. Ltd. · i-finsights Proposal · RIA Advisory</div>
+    <div class="inner-footer-right">02 / 05</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 3 — PHASE 1 SCOPE & ARCHITECTURE
+     ══════════════════════════════════════════════ -->
+<div class="page inner">
+  <div class="inner-header">
+    <svg class="inner-header-lattice" viewBox="0 0 595 100" preserveAspectRatio="xMidYMid slice">
+      <defs><use href="#lp2"/></defs>
+      <rect width="100%" height="100%" fill="url(#lp2)"/>
+    </svg>
+    <div class="eyebrow">Phase 1 · 3-Week Delivery</div>
+    <h2>Scope &amp; Platform Architecture</h2>
+    <p class="header-sub">Five revenue &amp; AR reports + SSO — on your infrastructure.</p>
+  </div>
+
+  <div class="inner-body">
+
+    <div class="section-label">Phase 1 — What Gets Built</div>
+
+    <div class="report-card">
+      <div class="report-number">01</div>
+      <div class="report-content">
+        <h4>Collections Dashboard</h4>
+        <p>Real-time view of outstanding receivables by client, age bucket, and entity. Month-by-month collection rate trend. Overdue alerts by subsidiary controller.</p>
+      </div>
+    </div>
+    <div class="report-card teal">
+      <div class="report-number">02</div>
+      <div class="report-content">
+        <h4>Invoicing Report</h4>
+        <p>Invoice count and value by entity, client, month, and vertical. Drill-through to individual invoice lines posted in Business Central. Export-ready.</p>
+      </div>
+    </div>
+    <div class="report-card">
+      <div class="report-number">03</div>
+      <div class="report-content">
+        <h4>Revenue Report</h4>
+        <p>Recognised revenue by subsidiary, month, and account category. Year-on-year comparison. Breakdown by department and vertical. Sourced directly from BC GL entries.</p>
+      </div>
+    </div>
+    <div class="report-card teal">
+      <div class="report-number">04</div>
+      <div class="report-content">
+        <h4>Unbilled Revenue (UBR)</h4>
+        <p>Work-in-progress and unbilled work by project and entity. Revenue recognised vs invoiced gap. Real-time from BC posted sales and GL.</p>
+      </div>
+    </div>
+    <div class="report-card">
+      <div class="report-number">05</div>
+      <div class="report-content">
+        <h4>Accounts Receivable (AR) Aging</h4>
+        <p>Full AR aging by entity: 0–30, 31–60, 61–90, 90+ days. Customer-level drill-through. Group-consolidated and per-subsidiary views.</p>
+      </div>
+    </div>
+    <div class="report-card teal">
+      <div class="report-number">06</div>
+      <div class="report-content">
+        <h4>Azure Entra ID Single Sign-On</h4>
+        <p>All RIA Advisory users log in with their existing Microsoft 365 credentials. No separate password. Role-based access controls per report and per subsidiary.</p>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-label">High-Level Architecture</div>
+
+    <div class="arch-layer">
+      <div class="arch-layer-header presentation">Presentation Layer — React 18 + TypeScript</div>
+      <div class="arch-layer-body">
+        <span class="arch-chip teal">Collections Dashboard</span>
+        <span class="arch-chip teal">Invoicing Report</span>
+        <span class="arch-chip teal">Revenue Report</span>
+        <span class="arch-chip teal">UBR Report</span>
+        <span class="arch-chip teal">AR Aging</span>
+        <span class="arch-chip coral">Azure SSO (MSAL)</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-layer">
+      <div class="arch-layer-header api">API Layer — FastAPI (Python)</div>
+      <div class="arch-layer-body">
+        <span class="arch-chip">REST endpoints</span>
+        <span class="arch-chip">JWT auth</span>
+        <span class="arch-chip">Tenant isolation</span>
+        <span class="arch-chip">Role-based access</span>
+        <span class="arch-chip coral">BC sync trigger</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-layer">
+      <div class="arch-layer-header data">Data Layer — PostgreSQL (Star Schema)</div>
+      <div class="arch-layer-body">
+        <span class="arch-chip teal">fact_gl_entries</span>
+        <span class="arch-chip teal">fact_gl_normalized</span>
+        <span class="arch-chip">dim_company</span>
+        <span class="arch-chip">dim_account</span>
+        <span class="arch-chip">dim_date</span>
+        <span class="arch-chip">Incremental sync watermark</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-layer">
+      <div class="arch-layer-header source">Source — Microsoft Dynamics 365 Business Central</div>
+      <div class="arch-layer-body">
+        <span class="arch-chip">OData API v2.0</span>
+        <span class="arch-chip">OAuth (client credentials)</span>
+        <span class="arch-chip">17 BC tenants</span>
+        <span class="arch-chip coral">GL Entries · Posted Sales · CoA · AR</span>
+      </div>
+    </div>
+    <div class="arch-arrow">↕</div>
+    <div class="arch-layer">
+      <div class="arch-layer-header infra">Infrastructure — RIA Advisory Server (On-Premises)</div>
+      <div class="arch-layer-body">
+        <span class="arch-chip">Docker Compose</span>
+        <span class="arch-chip">Ubuntu 22.04 LTS</span>
+        <span class="arch-chip">4 vCPU · 16 GB RAM · 500 GB SSD</span>
+        <span class="arch-chip coral">All data stays on RIA infrastructure</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="inner-footer">
+    <div class="inner-footer-brand">i-Source Infosystems Pvt. Ltd. · i-finsights Proposal · RIA Advisory</div>
+    <div class="inner-footer-right">03 / 05</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 4 — DELIVERABLES & TIMELINE
+     ══════════════════════════════════════════════ -->
+<div class="page inner">
+  <div class="inner-header">
+    <svg class="inner-header-lattice" viewBox="0 0 595 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100%" height="100%" fill="url(#lp2)"/>
+    </svg>
+    <div class="eyebrow">Deliverables &amp; Timeline</div>
+    <h2>What You Receive · When</h2>
+    <p class="header-sub">3-week delivery. On your server. Ready for finance team from day one.</p>
+  </div>
+
+  <div class="inner-body">
+
+    <div class="section-label">Complete Deliverables — Phase 1</div>
+
+    <table class="deliverables-table">
+      <thead>
+        <tr>
+          <th style="width:40%">Deliverable</th>
+          <th style="width:30%">What It Includes</th>
+          <th style="width:18%">Phase</th>
+          <th style="width:12%">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Collections Dashboard</strong></td>
+          <td>AR aging, collection rate, overdue alerts</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>Invoicing Report</strong></td>
+          <td>Invoice count, value, client, month drill-down</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>Revenue Report</strong></td>
+          <td>GL-sourced revenue by entity, month, department</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>Unbilled Revenue (UBR)</strong></td>
+          <td>WIP vs invoiced gap, project-level view</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>Accounts Receivable Aging</strong></td>
+          <td>0–30 / 31–60 / 61–90 / 90+ buckets, per entity</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>Azure Entra ID SSO</strong></td>
+          <td>Microsoft 365 login, RBAC, subsidiary access control</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>BC API Integration</strong></td>
+          <td>OAuth connector, incremental sync, 17 tenants, auto-refresh</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>On-Premises Deployment</strong></td>
+          <td>Docker Compose on RIA server, production config, SSL</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+        <tr>
+          <td><strong>User Training &amp; Handover</strong></td>
+          <td>Finance team walkthrough, admin handover, runbook</td>
+          <td><span class="tag-phase1">Phase 1</span></td>
+          <td><span class="tag-done">Included</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <hr class="divider">
+
+    <div class="section-label">3-Week Delivery Timeline</div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-week">Week 1 — Foundation</div>
+        <div class="timeline-title">Infrastructure Setup · BC API Integration · Data Pipeline</div>
+        <ul class="timeline-tasks">
+          <li>Server provisioned and Docker Compose deployed on RIA infrastructure</li>
+          <li>BC OAuth credentials configured for all active tenants</li>
+          <li>GL data pull operational — incremental sync running</li>
+          <li>PostgreSQL star schema migrations applied, data seeded</li>
+          <li>Azure Entra ID SSO configured and tested with RIA user accounts</li>
+        </ul>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-week">Week 2 — Reports Build</div>
+        <div class="timeline-title">5 Reports Live · Role-Based Access</div>
+        <ul class="timeline-tasks">
+          <li>Collections Dashboard — live AR aging from BC data</li>
+          <li>Invoicing Report — invoice count and value by entity and month</li>
+          <li>Revenue Report — GL-sourced revenue breakdown</li>
+          <li>UBR Report — unbilled revenue gap analysis</li>
+          <li>AR Aging — 4-bucket aging per entity, group-consolidated view</li>
+          <li>RBAC: subsidiary access controls mapped to RIA org structure</li>
+        </ul>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-week">Week 3 — UAT &amp; Handover</div>
+        <div class="timeline-title">Finance Team Testing · Sign-off · Production Go-Live</div>
+        <ul class="timeline-tasks">
+          <li>Finance team UAT — validate report numbers against BC source</li>
+          <li>Issue resolution and fine-tuning</li>
+          <li>Finance team training session (CFO, Controller, analysts)</li>
+          <li>Admin handover — runbook, credential management, BC sync</li>
+          <li>Production sign-off and go-live</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top: 18px;">
+      <p><strong>On-premises deployment:</strong> All data stays on RIA Advisory's own server. No cloud dependencies beyond the BC API connection and Azure SSO (both already part of your Microsoft 365 subscription). No data leaves your infrastructure.</p>
+    </div>
+
+  </div>
+
+  <div class="inner-footer">
+    <div class="inner-footer-brand">i-Source Infosystems Pvt. Ltd. · i-finsights Proposal · RIA Advisory</div>
+    <div class="inner-footer-right">04 / 05</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     PAGE 5 — NEXT STEPS
+     ══════════════════════════════════════════════ -->
+<div class="page inner">
+  <div class="inner-header">
+    <svg class="inner-header-lattice" viewBox="0 0 595 100" preserveAspectRatio="xMidYMid slice">
+      <rect width="100%" height="100%" fill="url(#lp2)"/>
+    </svg>
+    <div class="eyebrow">Next Steps</div>
+    <h2>From Proposal to Go-Live</h2>
+    <p class="header-sub">Four steps to get Phase 1 running on your server.</p>
+  </div>
+
+  <div class="inner-body">
+
+    <div class="next-step-item">
+      <div class="next-step-num">1</div>
+      <div class="next-step-content">
+        <h4>Proposal Review &amp; Approval</h4>
+        <p>RIA Group Finance Leadership reviews this proposal. Commercial terms reviewed separately (Appendix). Sign-off and engagement confirmation.</p>
+      </div>
+    </div>
+
+    <div class="next-step-item">
+      <div class="next-step-num">2</div>
+      <div class="next-step-content">
+        <h4>Infrastructure Readiness</h4>
+        <p>RIA Advisory provisions server per hardware requirements: Ubuntu 22.04 LTS, 4 vCPU, 16 GB RAM, 500 GB SSD, outbound HTTPS access to BC API and Azure AD. i-Source confirms access and deploys base stack.</p>
+      </div>
+    </div>
+
+    <div class="next-step-item">
+      <div class="next-step-num">3</div>
+      <div class="next-step-content">
+        <h4>BC API Credential Handover</h4>
+        <p>RIA IT provides Azure AD App Registration client credentials (client ID + secret) with Business Central API read permissions for all active tenants. i-Source configures OAuth and validates GL data pull.</p>
+      </div>
+    </div>
+
+    <div class="next-step-item">
+      <div class="next-step-num">4</div>
+      <div class="next-step-content">
+        <h4>Kick-off &amp; Week 1 Begins</h4>
+        <p>Kick-off meeting with RIA Finance and IT teams. Week 1 delivery begins. Weekly check-in calls during 3-week build. Finance team UAT in Week 3. Go-live.</p>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-label">Phase 2 — What Comes After</div>
+    <p class="lead-text">
+      Phase 1 delivers the highest-priority revenue and AR reports. <strong>Phase 2</strong> expands to the full i-finsights platform — Executive Dashboard, Close Cockpit, GL Explorer, full P&amp;L Analytics, Trial Balance, Balance Sheet, Cash Flow, Budget vs Actuals, Intercompany Reconciliation, Multi-Dimensional Analytics, and the complete pipeline with IC elimination, FX translation, and data quality gates. Phase 2 scope and timeline to be agreed post Phase 1 go-live.
+    </p>
+
+    <div class="callout">
+      <p><strong>Infrastructure requirement (to be provisioned by RIA Advisory):</strong> Ubuntu 22.04 LTS server · 4 vCPU · 16 GB RAM · 500 GB SSD · Outbound HTTPS (443) to <code style="font-family: var(--font-mono); font-size: 12px; background: rgba(31,107,102,0.1); padding: 1px 5px; border-radius: 3px;">api.businesscentral.dynamics.com</code> and <code style="font-family: var(--font-mono); font-size: 12px; background: rgba(31,107,102,0.1); padding: 1px 5px; border-radius: 3px;">login.microsoftonline.com</code></p>
+    </div>
+
+    <hr class="divider">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+      <div>
+        <div style="font-family: var(--font-display); font-size: 22px; font-weight: 900; color: var(--teal-800);">i-finsights · Phase 1</div>
+        <div style="font-size: 12px; color: var(--neutral-500); margin-top: 4px;">
+          Collections · Invoicing · Revenue · UBR · AR · SSO<br>
+          3-week delivery · On-premises · RIA Advisory server
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--neutral-400);">
+          i-Source Infosystems Pvt. Ltd.<br>
+          Prepared for RIA Advisory · May 2026<br>
+          Confidential — Not for distribution
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="inner-footer">
+    <div class="inner-footer-brand">i-Source Infosystems Pvt. Ltd. · i-finsights Proposal · RIA Advisory</div>
+    <div class="inner-footer-right">05 / 05</div>
+  </div>
+</div>
+
+</body>
+</html>
