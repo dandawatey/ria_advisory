@@ -41,6 +41,20 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("BC sync scheduler init failed (non-fatal): %s", exc)
 
+    # Startup — SAP scheduled sync worker (ICFO-65-S3)
+    try:
+        from workers.sap_sync_worker import start_sap_scheduler
+        start_sap_scheduler()
+    except Exception as exc:
+        logger.warning("SAP sync scheduler init failed (non-fatal): %s", exc)
+
+    # Startup — Odoo scheduled sync worker (ICFO-65-S3)
+    try:
+        from workers.odoo_sync_worker import start_odoo_scheduler
+        start_odoo_scheduler()
+    except Exception as exc:
+        logger.warning("Odoo sync scheduler init failed (non-fatal): %s", exc)
+
     yield
 
     # Shutdown — stop BC sync scheduler
@@ -50,6 +64,20 @@ async def lifespan(app: FastAPI):
             stop_scheduler(_scheduler)
         except Exception as exc:
             logger.warning("BC sync scheduler shutdown error (non-fatal): %s", exc)
+
+    # Shutdown — stop SAP sync scheduler
+    try:
+        from workers.sap_sync_worker import stop_sap_scheduler
+        stop_sap_scheduler()
+    except Exception as exc:
+        logger.warning("SAP sync scheduler shutdown error (non-fatal): %s", exc)
+
+    # Shutdown — stop Odoo sync scheduler
+    try:
+        from workers.odoo_sync_worker import stop_odoo_scheduler
+        stop_odoo_scheduler()
+    except Exception as exc:
+        logger.warning("Odoo sync scheduler shutdown error (non-fatal): %s", exc)
 
 
 app = FastAPI(

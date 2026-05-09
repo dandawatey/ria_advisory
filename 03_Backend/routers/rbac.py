@@ -37,6 +37,19 @@ class ImpersonateRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class PermissionResponse(BaseModel):
+    resource: str
+    action: str
+    role: str
+
+
+class PermissionsListResponse(BaseModel):
+    role: str
+    tenant_id: Optional[str]
+    permissions: List[PermissionResponse]
+    permission_count: int
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _assert_admin(current: dict) -> None:
@@ -139,6 +152,85 @@ def assign_role(req: RoleAssignRequest, current: dict = Depends(require_auth)):
         "message": f"Role updated to '{req.role}'",
         "user": _serialize_rbac_user(updated),
     }
+
+
+# ── Role reset/deletion ───────────────────────────────────────────────────────
+
+@router.delete("/roles/{user_id}", status_code=204)
+def reset_user_role(user_id: str, current: dict = Depends(require_auth)):
+    """
+    Reset user role to 'viewer' (base unprivileged role).
+    Requires ria_admin, isource_admin, or superadmin.
+
+    Rules:
+    - Cannot reset own role (use different admin).
+    - Cannot reset user with equal or higher privilege.
+    - Triggers Casbin policy reload immediately.
+    """
+    _assert_admin(current)
+
+    # Prevent self-reset
+    if user_id == current["sub"]:
+        raise HTTPException(status_code=403, detail="Cannot reset own role — use another admin")
+
+    target = _get_user_or_404(user_id)
+    _assert_same_tenant(current, str(target["tenant_id"]))
+
+    # Privilege escalation check: actor must be higher than target
+    actor_role = current.get("role", "viewer")
+    target_role = target["role"]
+    if not is_higher_privilege(actor_role, target_role):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Cannot reset user with role '{target_role}' — must be strictly lower privilege"
+        )
+
+    # Reset to viewer
+    query(
+        "UPDATE users SET role = %s, updated_at = NOW() WHERE id = %s",
+        ("viewer", user_id)
+    )
+
+    # Reload Casbin policies (role change affects permissions)
+    reload_policy()
+
+    return None  # 204 No Content
+
+
+# ── Permissions listing ───────────────────────────────────────────────────────
+
+@router.get("/permissions", response_model=PermissionsListResponse)
+def get_current_permissions(current: dict = Depends(require_auth)):
+    """
+    List all permissions for the current user's role in their tenant.
+    Returns resource + action pairs from Casbin policy.
+    """
+    enforcer = get_enforcer()
+    role = current.get("role", "viewer")
+    domain = current.get("tenant_id")
+
+    # Casbin: get_permissions_for_user(role_name, domain) → list[list[str]]
+    # Returns: [['viewer', domain, '/api/reports', 'GET'], ...]
+    policies = enforcer.get_permissions_for_user(role, domain)
+
+    # Transform to response format
+    permissions = []
+    for p in policies:
+        if len(p) >= 4:
+            permissions.append(
+                PermissionResponse(
+                    resource=p[2],
+                    action=p[3],
+                    role=p[0]
+                )
+            )
+
+    return PermissionsListResponse(
+        role=role,
+        tenant_id=domain,
+        permissions=permissions,
+        permission_count=len(permissions)
+    )
 
 
 # ── Subsidiary access assignment ──────────────────────────────────────────────
