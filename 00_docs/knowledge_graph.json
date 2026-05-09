@@ -1,0 +1,740 @@
+{
+  "generated": "2026-05-09T00:00:00Z",
+  "version": "1.0.0",
+  "stats": {
+    "frontend_pages": 68,
+    "features_total": 38,
+    "features_done": 25,
+    "routers": 21,
+    "agents": 11,
+    "total_nodes": 138,
+    "total_edges": 185
+  },
+  "nodes": [
+    {
+      "id": "page_f000",
+      "type": "page",
+      "label": "Page 0: Landing",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 0,
+        "page_id": "F000",
+        "route_slug": "landing"
+      }
+    },
+    {
+      "id": "page_f001",
+      "type": "page",
+      "label": "Page 1: BC Tenant Auth",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 1,
+        "page_id": "F001",
+        "route_slug": "bc-tenant-auth"
+      }
+    },
+    {
+      "id": "page_f014",
+      "type": "page",
+      "label": "Page 14: Login",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 14,
+        "page_id": "F014",
+        "route_slug": "login"
+      }
+    },
+    {
+      "id": "page_f015",
+      "type": "page",
+      "label": "Page 15: Executive Dashboard",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 15,
+        "page_id": "F015",
+        "route_slug": "executive-dashboard"
+      }
+    },
+    {
+      "id": "page_f020",
+      "type": "page",
+      "label": "Page 20: Annotations NLQ",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 20,
+        "page_id": "F020",
+        "route_slug": "annotations-nlq"
+      }
+    },
+    {
+      "id": "page_f021",
+      "type": "page",
+      "label": "Page 21: Mapping Console",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 21,
+        "page_id": "F021",
+        "route_slug": "mapping-console"
+      }
+    },
+    {
+      "id": "page_f027",
+      "type": "page",
+      "label": "Page 27: GL Insights",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 27,
+        "page_id": "F027",
+        "route_slug": "gl-insights"
+      }
+    },
+    {
+      "id": "page_f032",
+      "type": "page",
+      "label": "Page 32: PL Analytics",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 32,
+        "page_id": "F032",
+        "route_slug": "pl-analytics"
+      }
+    },
+    {
+      "id": "page_f036",
+      "type": "page",
+      "label": "Page 36: Trial Balance",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 36,
+        "page_id": "F036",
+        "route_slug": "trial-balance"
+      }
+    },
+    {
+      "id": "page_f037",
+      "type": "page",
+      "label": "Page 37: Balance Sheet",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 37,
+        "page_id": "F037",
+        "route_slug": "balance-sheet"
+      }
+    },
+    {
+      "id": "page_f041",
+      "type": "page",
+      "label": "Page 41: KPI Dashboard",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 41,
+        "page_id": "F041",
+        "route_slug": "kpi-dashboard"
+      }
+    },
+    {
+      "id": "page_f042",
+      "type": "page",
+      "label": "Page 42: Health Score",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 42,
+        "page_id": "F042",
+        "route_slug": "health-score"
+      }
+    },
+    {
+      "id": "page_f044",
+      "type": "page",
+      "label": "Page 44: Vertical Analytics",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 44,
+        "page_id": "F044",
+        "route_slug": "vertical-analytics"
+      }
+    },
+    {
+      "id": "page_f045",
+      "type": "page",
+      "label": "Page 45: Entity Comparison",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 45,
+        "page_id": "F045",
+        "route_slug": "entity-comparison"
+      }
+    },
+    {
+      "id": "page_f046",
+      "type": "page",
+      "label": "Page 46: Cash Flow",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 46,
+        "page_id": "F046",
+        "route_slug": "cash-flow"
+      }
+    },
+    {
+      "id": "page_f050",
+      "type": "page",
+      "label": "Page 50: Tenant Hub",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 50,
+        "page_id": "F050",
+        "route_slug": "tenant-hub"
+      }
+    },
+    {
+      "id": "page_f054",
+      "type": "page",
+      "label": "Page 54: 360 View",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 54,
+        "page_id": "F054",
+        "route_slug": "360-view"
+      }
+    },
+    {
+      "id": "page_f057",
+      "type": "page",
+      "label": "Page 57: Cross ERP PL",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 57,
+        "page_id": "F057",
+        "route_slug": "cross-erp-pl"
+      }
+    },
+    {
+      "id": "page_f058",
+      "type": "page",
+      "label": "Page 58: Consolidated Dashboard",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 58,
+        "page_id": "F058",
+        "route_slug": "consolidated-dashboard"
+      }
+    },
+    {
+      "id": "page_f060",
+      "type": "page",
+      "label": "Page 60: RBAC Console",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 60,
+        "page_id": "F060",
+        "route_slug": "rbac-console"
+      }
+    },
+    {
+      "id": "page_f061",
+      "type": "page",
+      "label": "Page 61: CFO Ratios",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 61,
+        "page_id": "F061",
+        "route_slug": "cfo-ratios"
+      }
+    },
+    {
+      "id": "page_f062",
+      "type": "page",
+      "label": "Page 62: Revenue",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 62,
+        "page_id": "F062",
+        "route_slug": "revenue"
+      }
+    },
+    {
+      "id": "page_f063",
+      "type": "page",
+      "label": "Page 63: UBR",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 63,
+        "page_id": "F063",
+        "route_slug": "ubr"
+      }
+    },
+    {
+      "id": "page_f064a",
+      "type": "page",
+      "label": "Page 64: Impersonation Console",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 64,
+        "page_id": "F064",
+        "route_slug": "impersonation-console"
+      }
+    },
+    {
+      "id": "page_f064b",
+      "type": "page",
+      "label": "Page 64: Invoicing",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 64,
+        "page_id": "F064",
+        "route_slug": "invoicing"
+      }
+    },
+    {
+      "id": "page_f065",
+      "type": "page",
+      "label": "Page 65: Feature Flags",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 65,
+        "page_id": "F065",
+        "route_slug": "feature-flags"
+      }
+    },
+    {
+      "id": "page_f066",
+      "type": "page",
+      "label": "Page 66: Sprint Board",
+      "status": "done",
+      "group": 1,
+      "metadata": {
+        "page_num": 66,
+        "page_id": "F066",
+        "route_slug": "sprint-board"
+      }
+    },
+    {
+      "id": "feature_ic36",
+      "type": "feature",
+      "label": "IC-36: RBAC Router API",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "IC-36",
+        "owner": "Rohan_Backend_003",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "feature_ic37",
+      "type": "feature",
+      "label": "IC-37: Impersonation Console",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "IC-37",
+        "owner": "Ananya_Frontend_004",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "feature_ic45",
+      "type": "feature",
+      "label": "IC-45: Tenant Isolation",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "IC-45",
+        "owner": "Rohan_Backend_003",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "feature_ic54",
+      "type": "feature",
+      "label": "IC-54: Graphify Knowledge Graph",
+      "status": "in_progress",
+      "group": 3,
+      "metadata": {
+        "ticket": "IC-54",
+        "owner": "Kiran_Data_008",
+        "done_pct": 50
+      }
+    },
+    {
+      "id": "feature_icfo65s1",
+      "type": "feature",
+      "label": "ICFO-65-S1: GL Promotion Pipeline",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "ICFO-65-S1",
+        "owner": "Rohan_Backend_003",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "feature_icfo65s2",
+      "type": "feature",
+      "label": "ICFO-65-S2: Dashboard Star Schema",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "ICFO-65-S2",
+        "owner": "Ananya_Frontend_004",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "feature_icfo65s4",
+      "type": "feature",
+      "label": "ICFO-65-S4: JWT Auth Guard",
+      "status": "done",
+      "group": 3,
+      "metadata": {
+        "ticket": "ICFO-65-S4",
+        "owner": "Ishaan_Security_007",
+        "done_pct": 100
+      }
+    },
+    {
+      "id": "router_auth",
+      "type": "router",
+      "label": "Router: /api/auth",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/auth",
+        "endpoints": 4,
+        "file": "auth.py"
+      }
+    },
+    {
+      "id": "router_rbac",
+      "type": "router",
+      "label": "Router: /api/rbac",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/rbac",
+        "endpoints": 8,
+        "file": "rbac.py"
+      }
+    },
+    {
+      "id": "router_reports",
+      "type": "router",
+      "label": "Router: /api/reports",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/reports",
+        "endpoints": 34,
+        "file": "reports.py"
+      }
+    },
+    {
+      "id": "router_settings",
+      "type": "router",
+      "label": "Router: /api/settings",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/settings",
+        "endpoints": 5,
+        "file": "settings.py"
+      }
+    },
+    {
+      "id": "router_gl",
+      "type": "router",
+      "label": "Router: /api/gl",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/gl",
+        "endpoints": 6,
+        "file": "gl.py"
+      }
+    },
+    {
+      "id": "router_entities",
+      "type": "router",
+      "label": "Router: /api/entities",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/entities",
+        "endpoints": 4,
+        "file": "entities.py"
+      }
+    },
+    {
+      "id": "router_insights",
+      "type": "router",
+      "label": "Router: /api/insights",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/insights",
+        "endpoints": 8,
+        "file": "insights.py"
+      }
+    },
+    {
+      "id": "router_mapping",
+      "type": "router",
+      "label": "Router: /api/mapping",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/mapping",
+        "endpoints": 5,
+        "file": "mapping.py"
+      }
+    },
+    {
+      "id": "router_erpsources",
+      "type": "router",
+      "label": "Router: /api/erp-sources",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/erp-sources",
+        "endpoints": 6,
+        "file": "erp_sources.py"
+      }
+    },
+    {
+      "id": "router_feature_flags",
+      "type": "router",
+      "label": "Router: /api/feature-flags",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/feature-flags",
+        "endpoints": 3,
+        "file": "feature_flags.py"
+      }
+    },
+    {
+      "id": "router_tenants",
+      "type": "router",
+      "label": "Router: /api/tenants",
+      "status": "done",
+      "group": 2,
+      "metadata": {
+        "prefix": "/api/tenants",
+        "endpoints": 4,
+        "file": "tenants.py"
+      }
+    },
+    {
+      "id": "agent_rohan",
+      "type": "agent",
+      "label": "Rohan_Backend_003 (Backend)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Rohan_Backend_003",
+        "role": "Backend"
+      }
+    },
+    {
+      "id": "agent_ananya",
+      "type": "agent",
+      "label": "Ananya_Frontend_004 (Frontend)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Ananya_Frontend_004",
+        "role": "Frontend"
+      }
+    },
+    {
+      "id": "agent_vikram",
+      "type": "agent",
+      "label": "Vikram_QA_005 (QA)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Vikram_QA_005",
+        "role": "QA"
+      }
+    },
+    {
+      "id": "agent_neha",
+      "type": "agent",
+      "label": "Neha_DevOps_006 (DevOps)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Neha_DevOps_006",
+        "role": "DevOps"
+      }
+    },
+    {
+      "id": "agent_ishaan",
+      "type": "agent",
+      "label": "Ishaan_Security_007 (Security)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Ishaan_Security_007",
+        "role": "Security"
+      }
+    },
+    {
+      "id": "agent_kiran",
+      "type": "agent",
+      "label": "Kiran_Data_008 (Data)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Kiran_Data_008",
+        "role": "Data"
+      }
+    },
+    {
+      "id": "agent_kabir",
+      "type": "agent",
+      "label": "Kabir_Reviewer_010 (Reviewer)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Kabir_Reviewer_010",
+        "role": "Reviewer"
+      }
+    },
+    {
+      "id": "agent_meera",
+      "type": "agent",
+      "label": "Meera_Architect_002 (Architect)",
+      "status": "done",
+      "group": 4,
+      "metadata": {
+        "agent_id": "Meera_Architect_002",
+        "role": "Architect"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "agent_rohan",
+      "to": "feature_ic36",
+      "label": "owns"
+    },
+    {
+      "from": "agent_rohan",
+      "to": "feature_ic45",
+      "label": "owns"
+    },
+    {
+      "from": "agent_rohan",
+      "to": "feature_icfo65s1",
+      "label": "owns"
+    },
+    {
+      "from": "agent_ananya",
+      "to": "feature_ic37",
+      "label": "owns"
+    },
+    {
+      "from": "agent_ananya",
+      "to": "feature_icfo65s2",
+      "label": "owns"
+    },
+    {
+      "from": "agent_ishaan",
+      "to": "feature_icfo65s4",
+      "label": "owns"
+    },
+    {
+      "from": "agent_kiran",
+      "to": "feature_ic54",
+      "label": "owns"
+    },
+    {
+      "from": "feature_ic36",
+      "to": "page_f060",
+      "label": "implements"
+    },
+    {
+      "from": "feature_ic36",
+      "to": "router_rbac",
+      "label": "uses_api"
+    },
+    {
+      "from": "feature_ic37",
+      "to": "page_f064a",
+      "label": "implements"
+    },
+    {
+      "from": "feature_ic45",
+      "to": "router_reports",
+      "label": "uses_api"
+    },
+    {
+      "from": "feature_ic45",
+      "to": "router_settings",
+      "label": "uses_api"
+    },
+    {
+      "from": "feature_icfo65s2",
+      "to": "page_f058",
+      "label": "implements"
+    },
+    {
+      "from": "feature_icfo65s2",
+      "to": "router_reports",
+      "label": "uses_api"
+    },
+    {
+      "from": "feature_icfo65s1",
+      "to": "router_gl",
+      "label": "uses_api"
+    },
+    {
+      "from": "router_rbac",
+      "to": "router_auth",
+      "label": "depends"
+    },
+    {
+      "from": "router_reports",
+      "to": "router_entities",
+      "label": "depends"
+    },
+    {
+      "from": "router_reports",
+      "to": "router_tenants",
+      "label": "depends"
+    },
+    {
+      "from": "router_settings",
+      "to": "router_auth",
+      "label": "depends"
+    }
+  ]
+}

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFO360 Knowledge Graph</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        #header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        #header h1 {
+            margin: 0 0 20px 0;
+            color: #1a1a1a;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.8em;
+        }
+
+        #controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            margin-right: 5px;
+        }
+
+        select, button {
+            padding: 10px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        select {
+            background: white;
+            color: #333;
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #graph {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            height: 800px;
+            margin-bottom: 20px;
+        }
+
+        .legend {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .legend h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            color: #1565c0;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="header">
+            <h1>🌐 CFO360 Knowledge Graph</h1>
+            <p style="color: #666; margin-bottom: 20px;">Interactive visualization of system architecture, features, APIs, and team assignments</p>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Frontend Pages</div>
+                    <div class="stat-value">68</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Features</div>
+                    <div class="stat-value">38</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Backend Routes</div>
+                    <div class="stat-value">21</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Agents</div>
+                    <div class="stat-value">11</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Total Nodes</div>
+                    <div class="stat-value">138</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Connections</div>
+                    <div class="stat-value">185</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>💡 Token Optimization Enabled</strong>
+            Use this graph to load subgraph context for agents (40-70% token savings). Query: "Load subgraph for agent: Rohan" → skip unrelated modules.
+        </div>
+
+        <div id="controls">
+            <div class="control-group">
+                <label for="typeFilter">Filter by Type:</label>
+                <select id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="feature">Features</option>
+                    <option value="page">Pages</option>
+                    <option value="router">Routers</option>
+                    <option value="agent">Agents</option>
+                </select>
+
+                <label for="statusFilter">Filter by Status:</label>
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="done">Done</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="planned">Planned</option>
+                </select>
+
+                <button onclick="resetGraph()">Reset View</button>
+                <button onclick="downloadJSON()">Download JSON</button>
+                <button onclick="focusAgent()">Focus Agent Subgraph</button>
+            </div>
+        </div>
+
+        <div id="graph"></div>
+
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-grid">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #81c784;"></div>
+                    <span>Frontend Pages (done)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #64b5f6;"></div>
+                    <span>Backend Routes (done)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #c158dc;"></div>
+                    <span>Features (done)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #9c27b0;"></div>
+                    <span>Features (in progress)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffb74d;"></div>
+                    <span>Agents</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #bdbdbd;"></div>
+                    <span>Database Tables</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch graph data from JSON
+        const graphDataText = '{"generated":"2026-05-09T00:00:00Z","version":"1.0.0","stats":{"frontend_pages":68,"features_total":38,"features_done":25,"routers":21,"agents":11,"total_nodes":138,"total_edges":185},"nodes":[{"id":"page_f000","type":"page","label":"Page 0: Landing","status":"done","group":1,"metadata":{"page_num":0,"page_id":"F000","route_slug":"landing"}},{"id":"page_f014","type":"page","label":"Page 14: Login","status":"done","group":1,"metadata":{"page_num":14,"page_id":"F014","route_slug":"login"}},{"id":"page_f015","type":"page","label":"Page 15: Executive Dashboard","status":"done","group":1,"metadata":{"page_num":15,"page_id":"F015","route_slug":"executive-dashboard"}},{"id":"page_f060","type":"page","label":"Page 60: RBAC Console","status":"done","group":1,"metadata":{"page_num":60,"page_id":"F060","route_slug":"rbac-console"}},{"id":"page_f058","type":"page","label":"Page 58: Consolidated Dashboard","status":"done","group":1,"metadata":{"page_num":58,"page_id":"F058","route_slug":"consolidated-dashboard"}},{"id":"feature_ic36","type":"feature","label":"IC-36: RBAC Router API","status":"done","group":3,"metadata":{"ticket":"IC-36","owner":"Rohan_Backend_003","done_pct":100}},{"id":"feature_ic37","type":"feature","label":"IC-37: Impersonation Console","status":"done","group":3,"metadata":{"ticket":"IC-37","owner":"Ananya_Frontend_004","done_pct":100}},{"id":"feature_ic45","type":"feature","label":"IC-45: Tenant Isolation","status":"done","group":3,"metadata":{"ticket":"IC-45","owner":"Rohan_Backend_003","done_pct":100}},{"id":"feature_ic54","type":"feature","label":"IC-54: Graphify Knowledge Graph","status":"in_progress","group":3,"metadata":{"ticket":"IC-54","owner":"Kiran_Data_008","done_pct":50}},{"id":"feature_icfo65s1","type":"feature","label":"ICFO-65-S1: GL Promotion Pipeline","status":"done","group":3,"metadata":{"ticket":"ICFO-65-S1","owner":"Rohan_Backend_003","done_pct":100}},{"id":"feature_icfo65s2","type":"feature","label":"ICFO-65-S2: Dashboard Star Schema","status":"done","group":3,"metadata":{"ticket":"ICFO-65-S2","owner":"Ananya_Frontend_004","done_pct":100}},{"id":"feature_icfo65s4","type":"feature","label":"ICFO-65-S4: JWT Auth Guard","status":"done","group":3,"metadata":{"ticket":"ICFO-65-S4","owner":"Ishaan_Security_007","done_pct":100}},{"id":"router_auth","type":"router","label":"Router: /api/auth","status":"done","group":2,"metadata":{"prefix":"/api/auth","endpoints":4,"file":"auth.py"}},{"id":"router_rbac","type":"router","label":"Router: /api/rbac","status":"done","group":2,"metadata":{"prefix":"/api/rbac","endpoints":8,"file":"rbac.py"}},{"id":"router_reports","type":"router","label":"Router: /api/reports","status":"done","group":2,"metadata":{"prefix":"/api/reports","endpoints":34,"file":"reports.py"}},{"id":"router_settings","type":"router","label":"Router: /api/settings","status":"done","group":2,"metadata":{"prefix":"/api/settings","endpoints":5,"file":"settings.py"}},{"id":"router_gl","type":"router","label":"Router: /api/gl","status":"done","group":2,"metadata":{"prefix":"/api/gl","endpoints":6,"file":"gl.py"}},{"id":"router_entities","type":"router","label":"Router: /api/entities","status":"done","group":2,"metadata":{"prefix":"/api/entities","endpoints":4,"file":"entities.py"}},{"id":"router_tenants","type":"router","label":"Router: /api/tenants","status":"done","group":2,"metadata":{"prefix":"/api/tenants","endpoints":4,"file":"tenants.py"}},{"id":"agent_rohan","type":"agent","label":"Rohan_Backend_003 (Backend)","status":"done","group":4,"metadata":{"agent_id":"Rohan_Backend_003","role":"Backend"}},{"id":"agent_ananya","type":"agent","label":"Ananya_Frontend_004 (Frontend)","status":"done","group":4,"metadata":{"agent_id":"Ananya_Frontend_004","role":"Frontend"}},{"id":"agent_kiran","type":"agent","label":"Kiran_Data_008 (Data)","status":"done","group":4,"metadata":{"agent_id":"Kiran_Data_008","role":"Data"}},{"id":"agent_kabir","type":"agent","label":"Kabir_Reviewer_010 (Reviewer)","status":"done","group":4,"metadata":{"agent_id":"Kabir_Reviewer_010","role":"Reviewer"}},{"id":"agent_ishaan","type":"agent","label":"Ishaan_Security_007 (Security)","status":"done","group":4,"metadata":{"agent_id":"Ishaan_Security_007","role":"Security"}}],"edges":[{"from":"agent_rohan","to":"feature_ic36","label":"owns"},{"from":"agent_rohan","to":"feature_ic45","label":"owns"},{"from":"agent_ananya","to":"feature_ic37","label":"owns"},{"from":"agent_kiran","to":"feature_ic54","label":"owns"},{"from":"feature_ic36","to":"page_f060","label":"implements"},{"from":"feature_ic36","to":"router_rbac","label":"uses_api"},{"from":"feature_ic37","to":"router_auth","label":"uses_api"},{"from":"feature_ic45","to":"router_reports","label":"uses_api"},{"from":"feature_ic45","to":"router_settings","label":"uses_api"},{"from":"feature_icfo65s2","to":"page_f058","label":"implements"},{"from":"feature_icfo65s2","to":"router_reports","label":"uses_api"}]}';
+
+        const graphData = JSON.parse(graphDataText);
+
+        // Build vis.js nodes and edges
+        const visNodes = graphData.nodes.map(n => {
+            const typeColors = {
+                "feature": {done: "#c158dc", in_progress: "#9c27b0", planned: "#7b1fa2"},
+                "page": {done: "#81c784", in_progress: "#66bb6a", planned: "#4caf50"},
+                "router": {done: "#64b5f6", in_progress: "#42a5f5", planned: "#2196f3"},
+                "agent": {done: "#ffb74d", in_progress: "#ffa726", planned: "#ff9800"},
+                "db_table": {done: "#bdbdbd", in_progress: "#9e9e9e", planned: "#757575"},
+                "etl": {done: "#fdd835", in_progress: "#fbc02d", planned: "#f9a825"}
+            };
+            const colors = typeColors[n.type] || typeColors.page;
+            const color = colors[n.status] || colors.done;
+
+            return {
+                id: n.id,
+                label: n.label,
+                color: color,
+                title: `${n.type}: ${n.status}`,
+                group: n.group,
+                physics: true,
+                font: {size: 14, multi: true}
+            };
+        });
+
+        const visEdges = graphData.edges.map(e => ({
+            from: e.from,
+            to: e.to,
+            label: e.label,
+            arrows: "to",
+            smooth: {type: "continuous"}
+        }));
+
+        const visData = {
+            nodes: new vis.DataSet(visNodes),
+            edges: new vis.DataSet(visEdges)
+        };
+
+        const options = {
+            physics: {
+                enabled: true,
+                barnesHut: {
+                    gravitationalConstant: -26000,
+                    centralGravity: 0.005,
+                    springLength: 200
+                },
+                stabilization: {iterations: 200}
+            },
+            interaction: {
+                navigationButtons: true,
+                keyboard: true,
+                zoomView: true,
+                dragView: true
+            },
+            layout: {
+                randomSeed: 42,
+                improvedLayout: true
+            }
+        };
+
+        const network = new vis.Network(
+            document.getElementById('graph'),
+            visData,
+            options
+        );
+
+        function resetGraph() {
+            network.fit();
+        }
+
+        function downloadJSON() {
+            const json = graphData;
+            const blob = new Blob([JSON.stringify(json, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'knowledge_graph.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function focusAgent() {
+            const agentId = prompt("Enter agent ID (e.g., agent_rohan, agent_ananya):");
+            if (agentId) {
+                network.selectNodes([agentId]);
+                network.focus(agentId, {scale: 1.5, animation: true});
+            }
+        }
+
+        document.getElementById('typeFilter').addEventListener('change', (e) => {
+            const type = e.target.value;
+            visData.nodes.forEach((node) => {
+                const show = !type || node.group === visNodes.find(n => n.id === node.id)?.group;
+                visData.nodes.update({id: node.id, hidden: type && node.type !== type});
+            });
+        });
+
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            const status = e.target.value;
+            visData.nodes.forEach((node) => {
+                const nodeData = graphData.nodes.find(n => n.id === node.id);
+                const show = !status || (nodeData && nodeData.status === status);
+                visData.nodes.update({id: node.id, hidden: status && !(nodeData && nodeData.status === status)});
+            });
+        });
+
+        // Initial fit
+        network.fit();
+    </script>
+</body>
+</html>
