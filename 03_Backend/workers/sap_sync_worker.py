@@ -13,6 +13,7 @@ from datetime import datetime, date, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from database import query
+from etl.account_enrichment import enrich_accounts_by_source
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,13 @@ def _sync_single_sap_source(source):
 
         # 6. Promote GL entries from fact_gl_normalized → fact_gl_entries
         _promote_gl_entries(source_id, sync_id)
+
+        # 6.5. Enrich GL accounts with canonical CoA mapping
+        try:
+            enriched_count = enrich_accounts_by_source(erp_source_id=source_id)
+            logger.info(f"SAP {source_id} enrichment: {enriched_count} accounts enriched post-sync")
+        except Exception as e:
+            logger.warning(f"SAP {source_id} account enrichment failed (non-fatal): {str(e)}")
 
         # 7. Log success
         sql = """
