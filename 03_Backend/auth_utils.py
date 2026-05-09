@@ -224,3 +224,58 @@ def get_casbin_subject(current: dict) -> tuple:
     role   = current.get("role", "viewer")
     domain = current.get("tenant_id") or "*"
     return role, domain
+
+
+# ── Scope-based Decorator (for protecting endpoints by permission scope) ──────
+
+def require_auth(scope: str = "sync:read"):
+    """
+    Decorator: verify Bearer token + check scope.
+    Usage: @require_auth(scope="admin")
+
+    Raises:
+      401 if token missing/invalid
+      403 if scope insufficient
+    """
+    from functools import wraps
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(request, *args, **kwargs):
+            auth_header = request.headers.get("authorization", "")
+
+            if not auth_header.startswith("Bearer "):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Missing token"
+                )
+
+            token = auth_header[7:]
+
+            try:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            except JWTError:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token"
+                )
+
+            token_scope = payload.get("scope", "")
+            token_scopes = token_scope.split() if token_scope else []
+
+            if scope not in token_scopes:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Insufficient permissions"
+                )
+
+            if hasattr(request, "state"):
+                request.state.tenant_id = payload.get("tenant_id")
+                request.state.user_id = payload.get("sub")
+                request.state.scope = token_scope
+
+            return func(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator

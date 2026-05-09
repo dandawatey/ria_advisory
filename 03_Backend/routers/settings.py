@@ -8,12 +8,13 @@ DELETE /api/settings/bc         → clear BC config
 """
 import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 import psycopg2
 import psycopg2.extras
 from database import get_conn
+from auth_utils import require_auth
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -84,13 +85,15 @@ class BCConfig(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("")
-def get_settings():
+@require_auth(scope="admin")
+def get_settings(request: Request):
     """All app settings — secrets redacted."""
     return _get_all_settings()
 
 
 @router.get("/bc/status")
-def bc_status():
+@require_auth(scope="admin")
+def bc_status(request: Request):
     """Quick BC connection status without re-testing."""
     return {
         "connected":    _get_setting("bc.connected") == "true",
@@ -102,7 +105,8 @@ def bc_status():
 
 
 @router.post("/bc")
-def save_bc_config(cfg: BCConfig):
+@require_auth(scope="admin")
+def save_bc_config(request: Request, cfg: BCConfig):
     """Save BC connection config. Skips secret if placeholder sent."""
     PLACEHOLDER = "••••••••"
 
@@ -121,7 +125,8 @@ def save_bc_config(cfg: BCConfig):
 
 
 @router.post("/bc/test")
-def test_bc_connection():
+@require_auth(scope="admin")
+def test_bc_connection(request: Request):
     """
     Acquire Azure AD token via client credentials,
     then hit BC OData /companies endpoint.
@@ -234,7 +239,8 @@ def test_bc_connection():
 
 
 @router.delete("/bc")
-def clear_bc_config():
+@require_auth(scope="admin")
+def clear_bc_config(request: Request):
     """Remove all BC configuration."""
     _delete_settings_by_prefix("bc.")
     return {"ok": True, "message": "BC configuration cleared"}

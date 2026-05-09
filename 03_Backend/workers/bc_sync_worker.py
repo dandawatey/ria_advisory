@@ -202,6 +202,109 @@ def _fetch_gl_entries(
     return all_entries
 
 
+# ── GL Promotion Pipeline ───────────────────────────────────────────────────
+
+def promote_gl_entries(db, source_id: str, logger=None) -> int:
+    """
+    Promotion pipeline: fact_gl_normalized → fact_gl_entries
+
+    1. Fetch all normalized rows for this source
+    2. Deduplicate by natural key: (erp_source_id, entity_id, erp_native_journal_id, erp_native_line_number)
+    3. Upsert to fact_gl_entries with ON CONFLICT UPDATE
+    4. Log promotion result
+
+    Args:
+        db: Database connection/cursor object (supports query() and execute() methods)
+        source_id: ERP source ID (e.g., 'BC', 'SAP', 'Odoo')
+        logger: Logger instance (optional)
+
+    Returns: count of unique rows promoted
+    """
+    if logger is None:
+        logger = logging.getLogger(__name__)
+
+    # 1. Fetch all normalized rows for this source
+    try:
+        normalized_rows = db.query(
+            "SELECT * FROM fact_gl_normalized WHERE erp_source_id = %s", source_id
+        )
+    except Exception as exc:
+        logger.error(
+            "promote_gl_entries: fetch failed source_id=%s: %s",
+            source_id, exc,
+        )
+        return 0
+
+    if not normalized_rows:
+        logger.info(
+            "promote_gl_entries: no rows to promote source_id=%s",
+            source_id,
+        )
+        return 0
+
+    # 2. Deduplicate by natural key
+    seen = set()
+    deduped = []
+    for row in normalized_rows:
+        # Natural key: (erp_source_id, entity_id, erp_native_journal_id, erp_native_line_number)
+        key = (
+            getattr(row, "erp_source_id", None),
+            getattr(row, "entity_id", None),
+            getattr(row, "erp_native_journal_id", None),
+            getattr(row, "erp_native_line_number", None),
+        )
+        if key not in seen:
+            seen.add(key)
+            deduped.append(row)
+
+    # 3. Upsert to fact_gl_entries with ON CONFLICT UPDATE
+    for row in deduped:
+        try:
+            db.execute(
+                """
+                INSERT INTO fact_gl_entries (
+                    erp_source_id, entity_id, erp_native_journal_id, erp_native_line_number,
+                    account_code, account_name, debit_amount, credit_amount,
+                    posting_date, document_type, document_id, currency, description
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (erp_source_id, entity_id, erp_native_journal_id, erp_native_line_number)
+                DO UPDATE SET
+                    account_code  = EXCLUDED.account_code,
+                    debit_amount  = EXCLUDED.debit_amount,
+                    credit_amount = EXCLUDED.credit_amount,
+                    posting_date  = EXCLUDED.posting_date,
+                    description   = EXCLUDED.description
+                """,
+                (
+                    getattr(row, "erp_source_id", None),
+                    getattr(row, "entity_id", None),
+                    getattr(row, "erp_native_journal_id", None),
+                    getattr(row, "erp_native_line_number", None),
+                    getattr(row, "account_code", None),
+                    getattr(row, "account_name", None),
+                    getattr(row, "debit_amount", None),
+                    getattr(row, "credit_amount", None),
+                    getattr(row, "posting_date", None),
+                    getattr(row, "document_type", None),
+                    getattr(row, "document_id", None),
+                    getattr(row, "currency", None),
+                    getattr(row, "description", None),
+                ),
+            )
+        except Exception as exc:
+            logger.warning(
+                "promote_gl_entries: upsert failed source_id=%s: %s",
+                source_id, exc,
+            )
+
+    logger.info(
+        "promote_gl_entries: complete source_id=%s rows_promoted=%d",
+        source_id, len(deduped),
+    )
+
+    return len(deduped)
+
+
 # ── Core sync function ───────────────────────────────────────────────────────
 
 def _sync_one_source(source: Dict[str, Any]) -> None:
@@ -343,6 +446,19 @@ def _sync_one_source(source: Dict[str, Any]) -> None:
             )
             # Continue processing remaining entries
 
+    # 5b. Promote GL entries to fact_gl_entries
+    # Create simple db wrapper to work with promote_gl_entries
+    class DBWrapper:
+        @staticmethod
+        def query(sql: str, params: tuple):
+            return query(sql, params)
+
+        @staticmethod
+        def execute(sql: str, params: tuple):
+            return query(sql, params)
+
+    rows_promoted = promote_gl_entries(db=DBWrapper(), source_id="BC", logger=logger)
+
     # 6. Finalize sync_log
     watermark_to = max_posting_date or datetime.now(tz=timezone.utc)
     try:
@@ -366,8 +482,8 @@ def _sync_one_source(source: Dict[str, Any]) -> None:
         return
 
     logger.info(
-        "BC sync done erp_source_id=%s tenant=%s fetched=%d upserted=%d",
-        erp_source_id, tenant_id, rows_fetched, rows_upserted,
+        "BC sync done erp_source_id=%s tenant=%s fetched=%d upserted=%d promoted=%d",
+        erp_source_id, tenant_id, rows_fetched, rows_upserted, rows_promoted,
     )
 
 
