@@ -73,6 +73,7 @@ import Revenue                from './pages/62_F062_Revenue';
 import UBR                    from './pages/63_F063_UBR';
 import Invoicing              from './pages/64_F064_Invoicing';
 import FeatureFlagsPage       from './pages/65_F065_FeatureFlags';
+import SprintBoard            from './pages/66_F066_SprintBoard';
 import { AppShellBlank }  from './components/layout/AppShellBlank';
 import Landing            from './pages/00_F000_Landing';
 
@@ -144,6 +145,13 @@ export default function App() {
                   <Route path="/admin/feature-flags" element={
                     <ProtectedRoute requiredRole="isource_admin">
                       <FeatureFlagsPage />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Sprint Board admin — always accessible to isource_admin */}
+                  <Route path="/admin/sprint" element={
+                    <ProtectedRoute requiredRole="isource_admin">
+                      <SprintBoard />
                     </ProtectedRoute>
                   } />
 
