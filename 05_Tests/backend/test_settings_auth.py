@@ -41,7 +41,7 @@ def test_settings_no_token_returns_401(mock_request, mock_db, mock_logger):
     Setup: Call GET /api/settings without Authorization header
     Expected: HTTPException(status_code=401)
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
 
     mock_request.headers = {}  # No Authorization header
 
@@ -64,7 +64,7 @@ def test_settings_invalid_token_returns_401(mock_request, mock_db, mock_logger):
     Setup: Authorization: Bearer invalid_token_xyz
     Expected: HTTPException(status_code=401)
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
 
     mock_request.headers = {"authorization": "Bearer invalid_token_xyz"}
 
@@ -87,7 +87,7 @@ def test_settings_insufficient_scope_returns_403(mock_request, mock_db, mock_log
     Setup: Token with scope="sync:read" (not admin)
     Expected: HTTPException(status_code=403)
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
     from jose import jwt
     import os
 
@@ -124,7 +124,7 @@ async def test_settings_valid_admin_token_returns_200(mock_request, mock_db, moc
     Setup: Token with scope="admin"
     Expected: Endpoint executes successfully
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
     from jose import jwt
     import os
 
@@ -196,7 +196,7 @@ def test_settings_malformed_auth_header_returns_401(mock_request, mock_db, mock_
       - "Authorization: InvalidToken xyz" (missing "Bearer")
       - "Authorization: Bearer" (missing token)
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
 
     @require_auth(scope="admin")
     async def get_settings_protected(request: Request):
@@ -222,7 +222,7 @@ def test_settings_expired_token_returns_401(mock_request, mock_db, mock_logger):
     Setup: Token with exp in past
     Expected: HTTPException(status_code=401)
     """
-    from routers.settings import require_auth
+    from routers.settings import require_scope as require_auth
 
     mock_request.headers = {"authorization": "Bearer expired_token"}
 

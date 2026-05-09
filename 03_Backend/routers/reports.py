@@ -433,9 +433,12 @@ _GL_BASE = """
     JOIN dim_company co ON co.company_id = g.company_id
 """
 
-def _gl_where(company_ids=None, year=None):
+def _gl_where(company_ids=None, year=None, tenant_id: str | None = None):
     clauses: list = ["g.account_no != '999999'"]
     params:  list = []
+    if tenant_id:
+        clauses.append("g.tenant_id = %s")
+        params.append(tenant_id)
     if company_ids is not None:
         if not company_ids:
             clauses.append("FALSE")
@@ -465,7 +468,7 @@ def kpi_ratios(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
 
     # P&L from fact_gl_entries
     pl = query(f"""
@@ -486,6 +489,8 @@ def kpi_ratios(
     p = pl[0] if pl else {}
 
     # Balance sheet from fact_coa_balances
+    # TODO(IC-45): fact_coa_balances has no tenant_id column (migration 009 gap).
+    # Cross-tenant data isolation NOT enforced on this table. Separate ticket (migration 010) required.
     bs_clauses: list = []
     bs_params:  list = []
     if company_id:
@@ -534,7 +539,7 @@ def kpi_ratios_trend(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id)
+    wh, params = _gl_where(company_id, tenant_id=current.get('tenant_id'))
     return query(f"""
         SELECT
             d.year,
@@ -564,7 +569,7 @@ def kpi_ratios_by_entity(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -633,6 +638,7 @@ def health_score(
     opex_ratio   = ratios.get("opex_ratio_pct")   or 0
 
     # Entity coverage (months present / 12 across companies)
+    tenant_id = current.get('tenant_id')
     cov = query("""
         SELECT AVG(LEAST(months_present, 12) * 100.0 / 12) AS avg_coverage
         FROM (
@@ -640,9 +646,10 @@ def health_score(
             FROM fact_gl_entries g
             JOIN dim_company co ON co.company_id = g.company_id
             JOIN dim_date    d  ON d.date_id     = g.date_id
+            WHERE g.tenant_id = %s
             GROUP BY co.company_id
         ) sub
-    """)
+    """, (tenant_id,))
     coverage_pct = float((cov[0].get("avg_coverage") or 0)) if cov else 50.0
 
     # Score each category
@@ -737,7 +744,7 @@ def project_financials_summary(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             COUNT(DISTINCT p.project_no)                                        AS project_count,
@@ -759,7 +766,7 @@ def project_financials(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
     return query(f"""
         SELECT
             COALESCE(NULLIF(TRIM(p.project_no), ''), '(no project)') AS project_no,
@@ -797,9 +804,12 @@ _VERT_BASE = """
 _VERT_EXCL = "AND dp.vertical_code IS NOT NULL AND dp.vertical_code NOT IN ('OPENBAL', 'PREJUNE2025')"
 
 
-def _vert_where(company_ids=None, year=None):
+def _vert_where(company_ids=None, year=None, tenant_id: str | None = None):
     clauses = [f"g.account_no != '999999' {_VERT_EXCL}"]
     params: list = []
+    if tenant_id:
+        clauses.append("g.tenant_id = %s")
+        params.append(tenant_id)
     if company_ids is not None:
         if not company_ids:
             clauses.append("FALSE")
@@ -820,7 +830,7 @@ def vertical_analytics(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _vert_where(company_id, year)
+    wh, params = _vert_where(company_id, year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             dp.vertical_code,
@@ -865,7 +875,7 @@ def vertical_departments(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _vert_where(company_id, year)
+    wh, params = _vert_where(company_id, year, tenant_id=current.get('tenant_id'))
     if vertical_code:
         wh += " AND dp.vertical_code = %s"
         params.append(vertical_code)
@@ -905,7 +915,7 @@ def entity_comparison(
     current: dict = Depends(require_auth),
 ):
     allowed = _resolve_companies(None, current)
-    wh, params = _gl_where(company_ids=allowed, year=year)
+    wh, params = _gl_where(company_ids=allowed, year=year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1004,7 +1014,7 @@ def cash_flow(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             LEFT(g.account_no, 1)         AS account_class,
@@ -1021,7 +1031,7 @@ def cash_flow_trend(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id)
+    wh, params = _gl_where(company_id, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             d.year,
@@ -1069,7 +1079,7 @@ def cfo_ratios(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _gl_where(company_id, year)
+    wh, params = _gl_where(company_id, year, tenant_id=current.get('tenant_id'))
 
     # ── P&L block ────────────────────────────────────────────────────────────
     pl = query(f"""
@@ -1099,6 +1109,8 @@ def cfo_ratios(
     ebitda   = rev - cogs - opex
 
     # ── Balance sheet block ───────────────────────────────────────────────────
+    # TODO(IC-45): fact_coa_balances has no tenant_id column (migration 009 gap).
+    # Cross-tenant data isolation NOT enforced on this table. Separate ticket (migration 010) required.
     bs_clauses: list = []
     bs_params:  list = []
     if company_id:
@@ -1197,7 +1209,7 @@ def cfo_ratios_by_entity(
     current: dict = Depends(require_auth),
 ):
     allowed = _resolve_companies(None, current)
-    wh, params = _gl_where(company_ids=allowed, year=year)
+    wh, params = _gl_where(company_ids=allowed, year=year, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1236,13 +1248,16 @@ def cfo_ratios_by_entity(
 
 # ── Revenue Report helpers ─────────────────────────────────────────────────────
 
-def _rev_where(company_ids=None, year=None, month_from=None, month_to=None):
+def _rev_where(company_ids=None, year=None, month_from=None, month_to=None, tenant_id: str | None = None):
     """WHERE clause scoped to revenue accounts (4xx) with optional filters."""
     clauses: list = [
         "g.account_no != '999999'",
         "ac.account_no LIKE '4%%'",
     ]
     params: list = []
+    if tenant_id:
+        clauses.append("g.tenant_id = %s")
+        params.append(tenant_id)
     if company_ids is not None:
         if not company_ids:
             clauses.append("FALSE")           # tenant has no allowed companies
@@ -1273,7 +1288,7 @@ def revenue_summary(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _rev_where(company_id, year, month_from, month_to)
+    wh, params = _rev_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             -SUM(g.amount)                       AS total_revenue,
@@ -1313,7 +1328,7 @@ def revenue_by_month(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _rev_where(company_id, year, month_from, month_to)
+    wh, params = _rev_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             d.year,
@@ -1342,7 +1357,7 @@ def revenue_by_entity(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _rev_where(company_id, year, month_from, month_to)
+    wh, params = _rev_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1374,7 +1389,7 @@ def revenue_by_account(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _rev_where(company_id, year, month_from, month_to)
+    wh, params = _rev_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             ac.account_no,
@@ -1408,9 +1423,9 @@ _UBR_BASE = """
     LEFT JOIN dim_document dd ON dd.document_id = g.document_id
 """
 
-def _ubr_where(company_ids=None, year=None, month_from=None, month_to=None):
+def _ubr_where(company_ids=None, year=None, month_from=None, month_to=None, tenant_id: str | None = None):
     """WHERE clause scoped to revenue accounts (4xx) — same as _rev_where."""
-    return _rev_where(company_ids, year, month_from, month_to)
+    return _rev_where(company_ids, year, month_from, month_to, tenant_id)
 
 
 # ── UBR endpoints ──────────────────────────────────────────────────────────────
@@ -1424,7 +1439,7 @@ def ubr_summary(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    wh, params = _ubr_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             -SUM(g.amount) AS total_revenue,
@@ -1461,7 +1476,7 @@ def ubr_by_month(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    wh, params = _ubr_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             d.year,
@@ -1498,7 +1513,7 @@ def ubr_by_entity(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    wh, params = _ubr_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1534,7 +1549,7 @@ def ubr_by_account(
     current: dict = Depends(require_auth),
 ):
     company_id = _resolve_companies(company_id, current)
-    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    wh, params = _ubr_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             ac.account_no,
@@ -1564,7 +1579,7 @@ def ubr_by_account(
 
 # ── Invoicing Report helpers ────────────────────────────────────────────────────
 
-def _inv_where(company_ids=None, year=None, month_from=None, month_to=None):
+def _inv_where(company_ids=None, year=None, month_from=None, month_to=None, tenant_id: str | None = None):
     """WHERE clause scoped to revenue invoice entries (4xx + Invoice doc type)."""
     clauses: list = [
         "g.account_no != '999999'",
@@ -1572,6 +1587,9 @@ def _inv_where(company_ids=None, year=None, month_from=None, month_to=None):
         "dd.document_type ILIKE '%%Invoice%%'",
     ]
     params: list = []
+    if tenant_id:
+        clauses.append("g.tenant_id = %s")
+        params.append(tenant_id)
     if company_ids is not None:
         if not company_ids:
             clauses.append("FALSE")
@@ -1605,7 +1623,7 @@ def invoicing_summary(
     if company_id == []:
         return {"total_invoices": 0, "total_value": 0.0, "avg_invoice": None,
                 "entity_count": 0, "yoy_growth_pct": None}
-    wh, params = _inv_where(company_id, year, month_from, month_to)
+    wh, params = _inv_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             COUNT(DISTINCT g.document_no)         AS total_invoices,
@@ -1643,7 +1661,7 @@ def invoicing_by_month(
     company_id = _resolve_companies(company_id, current)
     if company_id == []:
         return []
-    wh, params = _inv_where(company_id, year, month_from, month_to)
+    wh, params = _inv_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             d.year,
@@ -1674,7 +1692,7 @@ def invoicing_by_entity(
     company_id = _resolve_companies(company_id, current)
     if company_id == []:
         return []
-    wh, params = _inv_where(company_id, year, month_from, month_to)
+    wh, params = _inv_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             co.company_name,
@@ -1708,7 +1726,7 @@ def invoicing_by_account(
     company_id = _resolve_companies(company_id, current)
     if company_id == []:
         return []
-    wh, params = _inv_where(company_id, year, month_from, month_to)
+    wh, params = _inv_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             ac.account_no,
@@ -1745,7 +1763,7 @@ def ubr_by_project(
     company_id = _resolve_companies(company_id, current)
     if company_id == []:
         return []
-    wh, params = _ubr_where(company_id, year, month_from, month_to)
+    wh, params = _ubr_where(company_id, year, month_from, month_to, tenant_id=current.get('tenant_id'))
     rows = query(f"""
         SELECT
             COALESCE(dp.project_name, SPLIT_PART(g.description, ' ', 1), 'Unassigned') AS project_name,

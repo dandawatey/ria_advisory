@@ -14,7 +14,7 @@ from typing import Optional
 import psycopg2
 import psycopg2.extras
 from database import get_conn
-from auth_utils import require_auth
+from auth_utils import require_scope
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -85,14 +85,14 @@ class BCConfig(BaseModel):
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("")
-@require_auth(scope="admin")
+@require_scope(scope="admin")
 def get_settings(request: Request):
     """All app settings — secrets redacted."""
     return _get_all_settings()
 
 
 @router.get("/bc/status")
-@require_auth(scope="admin")
+@require_scope(scope="admin")
 def bc_status(request: Request):
     """Quick BC connection status without re-testing."""
     return {
@@ -105,7 +105,7 @@ def bc_status(request: Request):
 
 
 @router.post("/bc")
-@require_auth(scope="admin")
+@require_scope(scope="admin")
 def save_bc_config(request: Request, cfg: BCConfig):
     """Save BC connection config. Skips secret if placeholder sent."""
     PLACEHOLDER = "••••••••"
@@ -125,7 +125,7 @@ def save_bc_config(request: Request, cfg: BCConfig):
 
 
 @router.post("/bc/test")
-@require_auth(scope="admin")
+@require_scope(scope="admin")
 def test_bc_connection(request: Request):
     """
     Acquire Azure AD token via client credentials,
@@ -239,7 +239,7 @@ def test_bc_connection(request: Request):
 
 
 @router.delete("/bc")
-@require_auth(scope="admin")
+@require_scope(scope="admin")
 def clear_bc_config(request: Request):
     """Remove all BC configuration."""
     _delete_settings_by_prefix("bc.")

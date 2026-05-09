@@ -228,10 +228,10 @@ def get_casbin_subject(current: dict) -> tuple:
 
 # ── Scope-based Decorator (for protecting endpoints by permission scope) ──────
 
-def require_auth(scope: str = "sync:read"):
+def require_scope(scope: str = "sync:read"):
     """
     Decorator: verify Bearer token + check scope.
-    Usage: @require_auth(scope="admin")
+    Usage: @require_scope(scope="admin")
 
     Raises:
       401 if token missing/invalid
