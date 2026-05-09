@@ -610,4 +610,10 @@ export const api = {
     stats:    () => get<GLStats[]>('/api/gl/stats'),
     accounts: () => get<{ gl_account_no: string; gl_account_name: string | null; entity_count: number; total_amount: number }[]>('/api/gl/accounts'),
   },
+  sprint: {
+    summary:  () => get<any>('/api/sprint/summary'),
+    tickets:  () => get<any[]>('/api/sprint/tickets'),
+    features: () => get<any[]>('/api/sprint/features'),
+    agents:   () => get<any[]>('/api/sprint/agents'),
+  },
 };

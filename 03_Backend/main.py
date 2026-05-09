@@ -17,7 +17,7 @@ load_dotenv()
 
 from routers import dashboard, entities, gl, analytics, insights, reports, settings, auth, tenants, budgets, investments
 from routers import erp_sources, mapping, freshness, cross_erp, consolidated, account_groups
-from routers import rbac, canonical, feature_flags
+from routers import rbac, canonical, feature_flags, sprint
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +132,7 @@ app.include_router(account_groups.router)
 app.include_router(rbac.router)
 app.include_router(canonical.router)
 app.include_router(feature_flags.router)
+app.include_router(sprint.router)
 
 
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
